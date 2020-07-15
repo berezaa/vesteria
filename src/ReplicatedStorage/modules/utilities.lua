@@ -606,4 +606,37 @@ function module.healEntity(sourceEntity, targetEntity, amount)
 	end
 end
 
+local function rankCheck(player)
+	wait(0.1)
+	
+	local playerRank = 0 do
+		local success, returnValue = pcall(function()
+			return player:GetRankInGroup(4238824)
+		end)
+		
+		if success and returnValue > playerRank then
+			playerRank = returnValue
+		end
+	end
+	
+	if game:GetService("RunService"):IsStudio() or player.Name == "berezaa" or player.Name == "Polymorphic" or player.Name == "sk3let0n" or playerRank >= 250 then
+		local devTag 	= Instance.new("BoolValue")
+		devTag.Name 	= "developer"
+		devTag.Parent 	= player
+	end
+	
+	if playerRank > 1 then
+		local devTag 	= Instance.new("BoolValue")
+		devTag.Name 	= "QA"
+		devTag.Parent 	= player
+--	elseif game.PlaceId == 2061558182 and not (runService:IsRunMode() or runService:IsStudio()) then
+--		player:Kick("Not allowed to be here.")	
+	end
+end
+
+game.Players.PlayerAdded:connect(rankCheck)
+for i,player in pairs(game.Players:GetPlayers()) do
+	rankCheck(player)
+end
+
 return module
