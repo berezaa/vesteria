@@ -1,4 +1,4 @@
--[[
+--[[
 	BANS & SUSPICION
 --]]
 

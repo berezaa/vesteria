@@ -1873,7 +1873,7 @@ local function grantPlayerItemsByInventoryTranferData_intermediateCollection(pla
 	local playerData = playerDataContainer[player]
 	
 	local inventoryTransferDataCollection = utilities.copyTable(inventoryTransferDataCollection_g)
-	
+
 	if playerData then
 		local hasInventoryChanged = false
 				
@@ -3180,33 +3180,16 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	replicatePlayerCharacterAppearance(player, playerData)
 	
 	local function onCharacterSpawn(character)
---		if isPlayerSpawningTag.Value and not isFirstTimeSpawning.Value then warn("not going to spawn player", isPlayerSpawningTag.Value, not isFirstTimeSpawning.Value) return false end
-		
 		isPlayerSpawningTag.Value = true
 		playerSpawnTimeTag.Value = os.time()
---		isFirstTimeSpawning.Value = false
-		
-		if player.Character ~= character then
---			warn("player character is not character?")
-		end
-	
+
 		if character.Parent == nil then
---			warn("character Parent nil, overriding")
 			character.Parent = entityManifestCollectionFolder
 		end		
 		
 		if character.PrimaryPart == nil then
 			repeat wait(0.1) until character.PrimaryPart or character:FindFirstChild("hitbox") or character.Parent == nil
 		end
-		
-		if character.Parent == nil then
-			if player.Character == character then
-				character.Parent = entityManifestCollectionFolder
-			else
-				character:Destroy()
-				return
-			end
-		end		
 		
 		if character:FindFirstChild("hitbox") and character.PrimaryPart ~= character.hitbox then
 			character.PrimaryPart = character.hitbox
