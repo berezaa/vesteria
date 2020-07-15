@@ -1,3 +1,0 @@
-return {
-	chestModel = "gnomeChest" -- default
-}

@@ -1,4 +1,0 @@
-
-return
-{id=145,name="Sun Staff",rarity="Common",image="rbxassetid://2661684021",description="A shortstaff from the Colosseum that draws considerable power for its size.",isEquippable=true,equipmentSlot=1,equipmentType="staff",gripCFrame=CFrame.Angles(
-math.pi/2,0,math.pi/2)*CFrame.new(0,0.24,0.5),baseDamage=80,modifierData={{}},blessedUpgrade={vit=1},buyValue=20000,sellValue=5000,magicColor=Color3.fromRGB(234,211,128),customTag={text="Solar Magic",font=Enum.Font.SourceSans,textColor3=Color3.fromRGB(234,211,128),textTransparency=0},minimumClass="mage",minLevel=27,canStack=false,canBeBound=false,canAwaken=true,isImportant=false,category="equipment"}

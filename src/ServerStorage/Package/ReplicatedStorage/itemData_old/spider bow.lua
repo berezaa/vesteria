@@ -1,3 +1,0 @@
-
-return
-{id=92,name="Spider Leg Bow",rarity="Legendary",image="rbxassetid://2886700078",description="A fine bow crafted from the Spider Queen's legs.",perks={["webbedshots"]=true},baseDamage=70,buyValue=20000,sellValue=5000,minimumClass="hunter",minLevel=25,modifierData={{}},isEquippable=true,equipmentSlot=1,equipmentType="bow",projectileSpeed=200,canStack=false,canBeBound=false,canAwaken=false,isImportant=false,category="equipment"}

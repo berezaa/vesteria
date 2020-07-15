@@ -1,7 +1,0 @@
-
-local b={attackRange=6,baseSpeed=5,attackSpeed=3,baseHealth=0.8,baseDamage=1.1,baseEXP=11,level=17,baseMoney=10,monsterSpawnRegions={[script.Name]=1,[script.Name.."2"]=1,[script.Name.."3"]=1},variations={snelvin={specialName="Snelvin",level=17,additionalLootDrops={{itemName="snelvin shell",spawnChance=0.05}}},snelleth={specialName="Snelleth",level=19,additionalLootDrops={{itemName="snelleth shell",spawnChance=0.05}}},["snel snel"]={specialName="Snel Snel",dye={r=194,g=215,b=248},level=21,additionalLootDrops={{itemName="snel snel shell",spawnChance=0.05}}},snelly={specialName="Snelly",dye={r=194,g=215,b=248},level=23,additionalLootDrops={{itemName="snelly shell",spawnChance=0.05}}}},damageHitboxCollection={{partName="LeftEye",castType="sphere",radius=1,originOffset=CFrame.new(0,0,.5)},{partName="RightEye",castType="sphere",radius=1,originOffset=CFrame.new(0,0,.5)},{partName="MiddleEye",castType="sphere",radius=1,originOffset=CFrame.new(0,0,.5)}},monsterBookPage=2,cameraOffset=CFrame.new(.9,0,
--0.65),lootDrops={{id=1,spawnChance=1},{itemName="snel eye",spawnChance=.6},{itemName="snel eye",spawnChance=.3},{itemName="fish",spawnChance=0.05,idols=2},{itemName="100% weapon attack scroll",spawnChance=0.0025,idols=7},{itemName="strength potion",spawnChance=0.005,idols=5}},animationDamageStart=.2,animationDamageEnd=.3,module=script}
-b.maxHealth=b.baseHealth*
-require(game.ReplicatedStorage.modules.levels).getMonsterHealthForLevel(b.level)
-b.damage=b.baseDamage*
-require(game.ReplicatedStorage.modules.levels).getMonsterDamageForLevel(b.level)return b

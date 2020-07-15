@@ -1,3 +1,0 @@
-
-return
-{id=126,name="Gladiator Armor",rarity="Legendary",image="rbxassetid://3063996417",description="Rugged armor that marks its wearer as a fierce fighter from the Colosseum.",tier=2,isEquippable=true,equipmentSlot=8,equipmentType="armour",minimumClass="warrior",minLevel=27,buyValue=60000,sellValue=10000,perks={["reckless"]=true},canStack=false,canBeBound=false,canAwaken=true,isImportant=false,category="equipment"}

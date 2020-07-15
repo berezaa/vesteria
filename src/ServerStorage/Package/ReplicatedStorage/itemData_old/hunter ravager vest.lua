@@ -1,3 +1,0 @@
-
-return
-{id=129,name="Ravager Vest",rarity="Legendary",image="rbxassetid://3063996457",description="A fine hide adorned with magical charms that marks a fearsome hunter from the Colosseum.",tier=2,perks={["resonance"]=true},isEquippable=true,equipmentSlot=8,equipmentType="armour",minimumClass="hunter",minLevel=27,buyValue=60000,sellValue=10000,canStack=false,canBeBound=false,canAwaken=true,isImportant=false,category="equipment"}

@@ -1,3 +1,0 @@
-
-return
-{id=98,name="Plated Iron Helmet",rarity="Common",image="rbxassetid://2846352326",description="A heavy variant of the iron helmet.",isEquippable=true,equipmentSlot=2,equipmentType="hat",equipmentHairType=3,minimumClass="warrior",minLevel=21,buyValue=20000,sellValue=2500,modifierData={{walkspeed=-1}},defenseMulti=1.25,canStack=false,canBeBound=false,canAwaken=true,isImportant=false,category="equipment"}
