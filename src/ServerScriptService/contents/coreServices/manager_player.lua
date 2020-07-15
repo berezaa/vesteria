@@ -3,56 +3,55 @@
 -- author: Polymorphic
 -- editor: berezaa
 
-local module 						= {}
-local playerDataContainer 			= {}
-local playerPositionDataContainer 	= {}
-local datastoreInterface 			= require(script.datastoreInterface)
+local module = {}
+local playerDataContainer = {}
+local playerPositionDataContainer = {}
+local datastoreInterface = require(script.datastoreInterface)
 
 local shuttingDown = false
-
 local runService = game:GetService("RunService")
 
-local teleportService 	= game:GetService("TeleportService")
+local teleportService = game:GetService("TeleportService")
 local collectionService = game:GetService("CollectionService")
-local httpService 		= game:GetService("HttpService")
+local httpService = game:GetService("HttpService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
-	local modules 			= require(replicatedStorage.modules)
-		local network 			= modules.load("network")
-		local utilities 		= modules.load("utilities")
-		local physics 			= modules.load("physics")
-		local levels 			= modules.load("levels")
-		local mapping 			= modules.load("mapping")
-		local configuration 	= modules.load("configuration")
-		local ability_utilities = modules.load("ability_utilities")
-		local placeSetup 		= modules.load("placeSetup")
-		local enchantment 		= modules.load("enchantment")
-		local events            = modules.load("events")
-		local detection         = modules.load("detection")
-		
-			-- todo: phase out
-			local playerManifestCollectionFolder 	= placeSetup.getPlaceFolder("playerManifestCollection")
-			local playerRenderCollectionFolder 		= placeSetup.getPlaceFolder("playerRenderCollection")
-			local monsterManifestCollectionFolder 	= placeSetup.getPlaceFolder("monsterManifestCollection")
-		
-			local entityManifestCollectionFolder 	= placeSetup.getPlaceFolder("entityManifestCollection")
-			local entityRenderCollectionFolder 		= placeSetup.getPlaceFolder("entityRenderCollection")
-			local pvpZoneCollectionFolder 			= placeSetup.getPlaceFolder("pvpZoneCollection")
-			local temporaryEquipmentFolder			= placeSetup.getPlaceFolder("temporaryEquipment")
-	local itemLookup 			= require(replicatedStorage.itemData)
-	local itemAttributes		= require(replicatedStorage.itemAttributes)
-	local perkLookup 			= require(replicatedStorage.perkLookup)
-	local monsterLookup			= require(replicatedStorage.monsterLookup)
-	local questLookup 			= require(replicatedStorage.questLookup)
-	local abilityBookLookup 	= require(replicatedStorage.abilityBookLookup)
-	local abilityLookup 		= require(replicatedStorage.abilityLookup)
-	local blessingLookup 		= require(replicatedStorage.blessingLookup)
-	local statusEffectLookup 	= require(replicatedStorage.statusEffectLookup)
-	local professionLookup		= require(replicatedStorage.professionLookup)
+local modules = require(replicatedStorage.modules)
+local network = modules.load("network")
+local utilities = modules.load("utilities")
+local physics = modules.load("physics")
+local levels = modules.load("levels")
+local mapping = modules.load("mapping")
+local configuration = modules.load("configuration")
+local ability_utilities = modules.load("ability_utilities")
+local placeSetup = modules.load("placeSetup")
+local enchantment = modules.load("enchantment")
+local events = modules.load("events")
+local detection = modules.load("detection")
+
+-- todo: phase out
+local playerManifestCollectionFolder = placeSetup.getPlaceFolder("playerManifestCollection")
+local playerRenderCollectionFolder = placeSetup.getPlaceFolder("playerRenderCollection")
+local monsterManifestCollectionFolder = placeSetup.getPlaceFolder("monsterManifestCollection") 
+local entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
+local entityRenderCollectionFolder = placeSetup.getPlaceFolder("entityRenderCollection")
+local pvpZoneCollectionFolder = placeSetup.getPlaceFolder("pvpZoneCollection")
+local temporaryEquipmentFolder = placeSetup.getPlaceFolder("temporaryEquipment")
+
+local itemLookup = require(replicatedStorage.itemData)
+local itemAttributes = require(replicatedStorage.itemAttributes)
+local perkLookup = require(replicatedStorage.perkLookup)
+local monsterLookup = require(replicatedStorage.monsterLookup)
+local questLookup = require(replicatedStorage.questLookup)
+local abilityBookLookup = require(replicatedStorage.abilityBookLookup)
+local abilityLookup = require(replicatedStorage.abilityLookup)
+local blessingLookup = require(replicatedStorage.blessingLookup)
+local statusEffectLookup = require(replicatedStorage.statusEffectLookup)
+local professionLookup = require(replicatedStorage.professionLookup)
 
 -- has to load here due to requirements on stuff above
-local projectile 		= modules.load("projectile")
-local ticksPerSecond 	= 3
-local PLAYER_LEVEL_CAP 	= 49
+local projectile = modules.load("projectile")
+local ticksPerSecond = 3
+local PLAYER_LEVEL_CAP = 49
 
 -- free weekend has no level cap
 if game.gameId == 712031239 or game.PlaceId == 2103419922 then
@@ -62,12 +61,12 @@ end
 -- todo: purge spawnChance and itemName (and also futureproof)
 -- from inventorySlotData due to item drops metadata being lootDrop based!
 local INVENTORY_SLOTS_DATA_INDEXES = {
-	id 					= true;
-	stacks 				= true;
-	modifierData 		= true;
-	position 			= true;
-	successfulUpgrades 	= true;
-	upgrades 			= true;
+	id = true;
+	stacks = true;
+	modifierData = true;
+	position = true;
+	successfulUpgrades = true;
+	upgrades = true;
 }
 
 local function getPlayerData(player)
@@ -98,11 +97,8 @@ network:create("getPlayerGlobalData", "BindableFunction", "OnInvoke", function(p
 end)
 
 network:create("setPlayerGlobalData", "BindableFunction", "OnInvoke", function(player, GlobalData)
-	
 	local playerId = player.userId
-	
-	
-	
+
 	local success, status, version = datastoreInterface:updatePlayerGlobalSaveFileData(playerId, GlobalData)	
 	
 	if not success then
@@ -273,7 +269,6 @@ local function performDeathCheck(player, isPlayerLeavingGame)
 	if playerData then
 		if replicatedStorage:FindFirstChild("isGlobalUnsafeZone") or (playerData.nonSerializeData.isInPVPZone and playerData.nonSerializeData.isPVPZoneUnsafe) then
 			-- player died in pvp zone, unsafe. figure out what killed them
-			
 			if player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart:FindFirstChild("health") and player.Character.PrimaryPart.health:FindFirstChild("killingBlow") then
 				if player.Character.PrimaryPart.health.killingBlow.Value == "damage" then
 					-- bye bye data
@@ -488,7 +483,6 @@ local function banPlayer(player, duration, reason, source)
 	end
 
 	handleBanHistory(player, playerBanHistory)
-	
 end
 
 network:create("banPlayer", "BindableFunction", "OnInvoke", banPlayer)
@@ -944,17 +938,11 @@ function grantProfessionExp(player, profession, exp)
 				particle.Parent = Attach
 				particle.Color = ColorSequence.new(professionData.color)
 				particle:Emit(1)
-				
 
-				
 				game.Debris:AddItem(Attach, 5)
-				
-
-
 			end					
-			
 		end	
-		
+
 		playerData.nonSerializeData.playerDataChanged:Fire("professions")
 	end
 end
@@ -1243,9 +1231,6 @@ end
 local function onPlayerRequest_returnToMainMenu(player)
 	game:GetService("TeleportService"):Teleport(2376885433, player, {teleportReason = "Heading back to the main menu..."}, game.ReplicatedStorage.returnToLobby)
 end
-
-
-
 
 local function onPlayerRequest_respawnMyCharacter(player)
 	if player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart:FindFirstChild("health") then
@@ -1631,9 +1616,7 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 	end
 	
 	completePlayerStats.activePerks = activePerks
-	
 
-	
 	playerData.nonSerializeData.statistics_final = completePlayerStats
 	
 	applyMaxHealth(player, true)
@@ -1698,7 +1681,6 @@ local function isStartingValueRemoved(primaryPart, child)
 	return not not game.StarterPlayer.StarterCharacter.PrimaryPart:FindFirstChild(child.Name)
 end
 
-
 local RESPAWN_POINT_RADIUS = 32
 local RESPAWN_POINT_RADIUS_SQ = RESPAWN_POINT_RADIUS ^ 2
 
@@ -1750,7 +1732,6 @@ end
 local function onCharacterAdded(player, character)
 	while character.Parent ~= entityManifestCollectionFolder do
 		wait(0.1)
-		
 		character.Parent = entityManifestCollectionFolder
 	end
 	
@@ -3238,7 +3219,6 @@ end
 local function grantPlayerAbilityBook(player, abilityBook)
 	local playerData = playerDataContainer[player]
 	
-
 	if playerData then
 		
 		abilityBook = string.lower(abilityBook)
@@ -3295,9 +3275,6 @@ local function checkForOutdatedQuests(player)
 	playerData.nonSerializeData.playerDataChanged:Fire("quests")
 end
 
-
-
-
 -- couldn't find a better place to put this
 -- spawn point logic
 local spawnPoints = Instance.new("Folder")
@@ -3337,8 +3314,6 @@ local function getPlaceName(destination)
 	end
 	return "???"
 end
-
-
 
 local function registerTeleportAsSpawn(Child)
 	if Child and Child:FindFirstChild("teleportDestination") then
@@ -6877,49 +6852,7 @@ local function onReplicateClientWeaponStateChanged(player, weaponState)
 	end
 end
 
-local function onGetPlayerAbilityRankByAbilityId(player, abilityId)
-	local playerData 		= network:invoke("getPlayerData", player)
-	local abilityBaseData 	= abilityLookup[abilityId]
-	if playerData and playerData.abilities and abilityBaseData then
-		for _, abilitySlotData in pairs(playerData.abilities) do
-			if abilitySlotData.id == abilityId then
-				return abilitySlotData.rank
-			end
-		end
-	end
-		
-	return 0
-end
-
-network:create("getPlayerAbilityRankByAbilityId", "BindableFunction", "OnInvoke", onGetPlayerAbilityRankByAbilityId)
-
-
-
-
-
 network:create("playerRequestAlphaGift", "RemoteFunction", "OnServerInvoke")
-
-local function onReplicateClientCastingAbilityId(player, castingAbilityId)
-	if not castingAbilityId or type(castingAbilityId) ~= "number" then return end
-	
-	if player and player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart:FindFirstChild("castingAbilityId") then
-		if castingAbilityId > 0 then
-			local playerData = playerDataContainer[player]
-			local abilityBaseData = abilityLookup[castingAbilityId](playerData)
-			
-			if abilityBaseData then
-				if abilityBaseData.castingType == "skill-shot" and onGetPlayerAbilityRankByAbilityId(player, castingAbilityId) > 0 then
-					
-					player.Character.PrimaryPart.castingAbilityId.Value = castingAbilityId
-				end
-			end
-		elseif castingAbilityId == 0 then
-			player.Character.PrimaryPart.castingAbilityId.Value = 0
-		end
-	end
-end
-
-network:create("replicateClientCastingAbilityId", "RemoteEvent", "OnServerEvent", onReplicateClientCastingAbilityId)
 
 -- NOTE: This is not the same route that state animations take (ie, walking running etc!)
 local function onReplicatePlayerAnimationSequence(player, animationCollection, animationName, extraData)
@@ -6941,29 +6874,6 @@ local function onReplicatePlayerAnimationSequence(player, animationCollection, a
 		-- replicate this to other clients
 		network:fireAllClientsExcludingPlayer("replicatePlayerAnimationSequence", player, player, animationCollection, animationName, extraData)
 	end
-end
-
-local function revokePlayerAbilityBook(player, abilityBook)
-	local playerData = playerDataContainer[player]
-	
-	if playerData then
-		if playerData.abilityBooks[abilityBook] and abilityBookLookup[abilityBook] then
-			playerData.abilityBooks[abilityBook] = nil
-			
-			-- let the game know we changed abilities
-			playerData.nonSerializeData.playerDataChanged:Fire("abilityBooks")
-			
-			return true, "successfully revoked"
-		else
-			if not playerData.abilityBooks[abilityBook] then
-				return false, "doesnt have book"
-			else
-				return false, "invalid book"
-			end
-		end
-	end
-	
-	return false, "invalid playerData"
 end
 
 local function changePlayerClass(player, class)
@@ -7192,9 +7102,7 @@ local function main()
 	
 	network:create("replicateClientStateChanged", "RemoteEvent", "OnServerEvent", onReplicateClientStateChanged)
 	network:create("replicateClientWeaponStateChanged", "RemoteEvent", "OnServerEvent", onReplicateClientWeaponStateChanged)
-	
-	
-	
+
 	network:create("playerRequest_equipTemporaryEquipment", "RemoteFunction", "OnServerInvoke", onPlayerRequest_equipTemporaryEquipment)
 	
 	-- data interfacing with server
@@ -7218,8 +7126,6 @@ local function main()
 	network:create("playerRequest_submitQuest", "RemoteFunction", "OnServerInvoke", submitQuest)
 	
 	network:create("alertPlayerNotification","RemoteEvent")
-
-	network:create("playerRequest_incrementPlayerAbilityRankById", "RemoteFunction", "OnServerInvoke", incrementPlayerAbilityRank)
 	
 	network:create("playerRequest_incrementPlayerStatPointsByStatName", "RemoteFunction", "OnServerInvoke", incrementPlayerStatPointsByStatName)
 	network:create("playerStatisticsChanged", "RemoteEvent")
@@ -7246,11 +7152,9 @@ local function main()
 	network:create("playerInventoryChanged_server", "BindableEvent")
 	
 	network:create("playerWasExhausted", "RemoteEvent", "OnServerEvent", function()
-		
+
 	end)
-	
-	
-	
+
 	game.Players.PlayerRemoving:connect(onPlayerRemoving)
 	
 	spawn(int__tickForPVP)
