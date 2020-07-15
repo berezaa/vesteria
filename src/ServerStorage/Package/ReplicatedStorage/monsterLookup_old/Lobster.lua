@@ -1,0 +1,3 @@
+
+return
+{attackRange=2,baseSpeed=6,baseHealth=100000,doNotLure=true,attackSpeed=2,baseDamage=10,baseEXP=10,level=1,baseMoney=10,monsterSpawnRegions={[script.Name]=1,[script.Name.."2"]=1,[script.Name.."3"]=1},damageHitboxCollection={{partName="Cap",castType="box",originOffset=CFrame.new(0,0,0)}},lootDrops={{id=9,spawnChance=0.8},{id=1,spawnChance=1},{id=6,spawnChance=0.2},{id=7,spawnChance=0.025}},module=script,id="chicken"}

@@ -1,0 +1,3 @@
+
+return
+{firing_bow={animationId="rbxassetid://2726792530",looped=false,priority=Enum.AnimationPriority.Action},stretching_bow={animationId="rbxassetid://2728300592",looped=false,priority=Enum.AnimationPriority.Action},stretching_bow_stance={animationId="rbxassetid://4719315890",looped=false,priority=Enum.AnimationPriority.Action},firing_bow_stance={animationId="rbxassetid://4719339750",looped=false,priority=Enum.AnimationPriority.Action}}

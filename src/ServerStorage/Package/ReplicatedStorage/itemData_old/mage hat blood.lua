@@ -1,0 +1,3 @@
+
+return
+{id=132,name="Bloodmage Hat",rarity="Rare",image="rbxassetid://3063996306",description="An intimidating blood red mage hat made in the Colosseum.",isEquippable=true,equipmentSlot=2,equipmentType="hat",minimumClass="mage",minLevel=27,buyValue=30000,sellValue=5000,modifierData={},statDistribution={str=0,dex=0,int=0,vit=1},statUpgrade={str=0,dex=0,int=0,vit=1},canStack=false,canBeBound=false,canAwaken=true,equipmentHairType=2,isImportant=false,category="equipment"}

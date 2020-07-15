@@ -1,0 +1,3 @@
+
+return
+{id=130,name="Ravager Boots",rarity="Legendary",image="rbxassetid://3065315687",description="Excellent hunter boots from the Colosseum.",isEquippable=true,equipmentSlot=9,equipmentType="armour",minimumClass="hunter",minLevel=27,buyValue=20000,sellValue=8000,modifierData={{walkspeed=3,stamina=1,maxMana=30}},canStack=false,canBeBound=false,canAwaken=true,isImportant=false,category="equipment"}

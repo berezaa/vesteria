@@ -1,0 +1,5 @@
+--[[
+	statusEffect {}
+		string icon;
+		
+]]

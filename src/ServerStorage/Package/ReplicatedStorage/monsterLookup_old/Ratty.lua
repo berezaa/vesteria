@@ -1,0 +1,7 @@
+
+local b={baseEXP=10,level=21,baseMoney=10,baseHealth=1,baseDamage=1.12,attackRange=4.2,baseSpeed=23,attackSpeed=1.5,monsterSpawnRegions={[script.Name]=1,[script.Name.."2"]=1,[script.Name.."3"]=1},variations={pit={specialName="Pit Ratty",dye={r=160,g=255,b=160},level=23,bonusXPMulti=2.5,bonusLootMulti=4,healthMulti=2,scale=1.25,baseDamage=1.3}},damageHitboxCollection={{partName="Jaw",castType="box",hitboxSizeMultiplier=Vector3.new(3.5,3.5,3.5),originOffset=CFrame.new()}},monsterBookPage=3,cameraOffset=CFrame.new(.3,
+-.3,-2.5),lootDrops={{id=1,spawnChance=0.8},{itemName="ratty tail",spawnChance=0.8},{itemName="ratty head",spawnChance=0.05,idols=2},{itemName="mana potion 2",spawnChance=0.01,idols=3},{itemName="vitality potion",spawnChance=0.004,idols=5},{itemName="willow staff",spawnChance=0.0005,idols=8},{itemName="ancient weapon attack scroll",spawnChance=0.0008,idols=10},{itemName="hunter rat vest",spawnChance=0.00025,idols=12},{itemName="item dye green",spawnChance=0.0001,idols=15}},module=script,monsterEvents={}}
+b.maxHealth=b.baseHealth*
+require(game.ReplicatedStorage.modules.levels).getMonsterHealthForLevel(b.level)
+b.damage=b.baseDamage*
+require(game.ReplicatedStorage.modules.levels).getMonsterDamageForLevel(b.level)return b

@@ -1,0 +1,1 @@
+local function b(c)end;return b

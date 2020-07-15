@@ -1,0 +1,3 @@
+
+return
+{id=163,name="Steel Boots",rarity="Common",image="rbxassetid://3210808009",description="Intimidating boots that offer a ton of protection.",isEquippable=true,equipmentSlot=9,equipmentType="armour",minimumClass="warrior",minLevel=28,buyValue=40000,sellValue=5000,modifierData={{defense=2,stamina=3,jump=-6}},canStack=false,canBeBound=false,canAwaken=true,isImportant=false,category="equipment"}

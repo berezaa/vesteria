@@ -1,0 +1,8 @@
+
+local b={baseEXP=10,level=13,baseMoney=10,baseHealth=0.9,baseDamage=1.15,attackRange=4.2,baseSpeed=19,attackSpeed=3,monsterSpawnRegions={[script.Name]=1,[script.Name.."2"]=1,[script.Name.."3"]=1},variations={royal={specialName="Royal Spider",dye={r=255,g=0,b=100},level=18,bonusXPMulti=3,bonusLootMulti=2,healthMulti=2,scale=1.2,attackSpeed=1.5,baseSpeed=30,attackRange=5},stalker={isNightTimeVariant=true,nightTimeSpawnChance=0.1,specialName="Stalker Spider",variant="stalker",dye={r=625,g=1000,b=400},level=17,bonusXPMulti=1,bonusLootMulti=2,healthMulti=0.9,baseDamage=1.3,scale=0.8,attackSpeed=1,aggressionRange=70,baseSpeed=40,attackRange=5}},damageHitboxCollection={{partName="Mandible",castType="sphere",radius=4,originOffset=CFrame.new()}},monsterBookPage=2,lootDrops={{id=1,spawnChance=0.8},{itemName="spider fang",spawnChance=0.9},{itemName="spider fang",spawnChance=0.3},{itemName="mana potion 2",spawnChance=
+1 /10},{itemName="intelligence potion",spawnChance=1 /20},{itemName="mage hat",spawnChance=1 /25},{itemName="ancient staff",spawnChance=
+1 /30},{itemName="tomahawk",spawnChance=1 /50},{itemName="70% armor defense scroll",spawnChance=1 /70}},module=script,monsterEvents={}}
+b.maxHealth=b.baseHealth*
+require(game.ReplicatedStorage.modules.levels).getMonsterHealthForLevel(b.level)
+b.damage=b.baseDamage*
+require(game.ReplicatedStorage.modules.levels).getMonsterDamageForLevel(b.level)return b

@@ -1,0 +1,3 @@
+
+return
+{id=100,name="Ranging Gear",rarity="Common",image="rbxassetid://2852145959",description="Hunting equipment that improves bow performance but offers little protection.",isEquippable=true,equipmentSlot=8,equipmentType="armour",minimumClass="hunter",minLevel=17,buyValue=36000,sellValue=5500,modifierData={{rangedDamage=22}},blessedUpgrade={rangedDamage=8},canStack=false,canBeBound=false,canAwaken=true,isImportant=false,category="equipment"}

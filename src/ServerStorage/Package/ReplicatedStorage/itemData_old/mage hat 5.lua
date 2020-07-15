@@ -1,0 +1,3 @@
+
+return
+{id=220,name="Surveyor Hat",rarity="Common",image="rbxassetid://4460400863",description="How difficult it can be to seperate the ravings of a genius from that of a maniac.",isEquippable=true,equipmentSlot=2,equipmentType="hat",minimumClass="mage",minLevel=33,buyValue=25000,sellValue=5000,modifierData={{}},canStack=false,canBeBound=false,canAwaken=true,equipmentHairType=2,isImportant=false,category="equipment"}

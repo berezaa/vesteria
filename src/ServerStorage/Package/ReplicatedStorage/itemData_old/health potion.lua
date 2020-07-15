@@ -1,0 +1,11 @@
+
+local c=require(game:GetService("ReplicatedStorage"):WaitForChild("modules"))local d=c.load("network")
+return
+{id=6,name="Red Potion",rarity="Common",image="rbxassetid://2528902180",description="A magical potion that restores 50 HP",useSound="potion",activationEffect=function(_a)
+if
+
+_a.Character and _a.Character.PrimaryPart and
+_a.Character.PrimaryPart.health.Value>0 and
+
+_a.Character.PrimaryPart.health.Value<_a.Character.PrimaryPart.maxHealth.Value then
+local aa=d:invoke("{AB4CDDDB-D1C5-46A3-8B72-F09379DDD79F}",_a.Character.PrimaryPart,50,nil,"item",6)return aa,aa and"You feel refreshed."or"ERRORRRR"end;return false,"Character is invalid."end,stackSize=32,buyValue=50,sellValue=20,canStack=true,canBeBound=true,canAwaken=false,isImportant=false,category="consumable"}

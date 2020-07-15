@@ -1,0 +1,3 @@
+
+return
+{id=224,name="Embarker Mask",rarity="Common",image="rbxassetid://4460400905",description="They will confidently follow you to your collective demise.",equipmentHairType=2,isEquippable=true,equipmentSlot=2,equipmentType="hat",minimumClass="hunter",minLevel=33,buyValue=20000,sellValue=1500,modifierData={{}},canStack=false,canBeBound=false,canAwaken=true,isImportant=false,category="equipment"}

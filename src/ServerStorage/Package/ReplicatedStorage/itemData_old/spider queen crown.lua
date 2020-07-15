@@ -1,0 +1,3 @@
+
+return
+{id=68,name="Spider Queen's Crown",rarity="Legendary",image="rbxassetid://2684647780",description="Wear it like royalty.",tier=5,notUpgradable=true,isEquippable=true,equipmentSlot=2,equipmentType="hat",buyValue=50000,sellValue=10000,modifierData={},statDistribution={str=0.4,dex=0.4,int=0.4,vit=0.4},minLevel=25,canStack=false,canBeBound=false,canAwaken=true,isImportant=false,category="equipment"}

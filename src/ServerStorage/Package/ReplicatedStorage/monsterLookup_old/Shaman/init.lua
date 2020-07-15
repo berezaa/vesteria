@@ -1,0 +1,6 @@
+
+local b={baseEXP=20,level=13,baseMoney=10,baseHealth=1,baseDamage=.8,attackRange=2,baseSpeed=10,attackSpeed=1.5,monsterSpawnRegions={[script.Name]=1,[script.Name.."2"]=1,[script.Name.."3"]=1},damageHitboxCollection={{partName="hitStick",castType="box",hitboxSizeMultiplier=Vector3.new(1.6,1.05,1.6),originOffset=CFrame.new()}},monsterBookPage=2,lootDrops={{id=1,spawnChance=0.8},{itemName="goblin necklace",spawnChance=0.8},{itemName="ratty head",spawnChance=0.05,idols=2},{itemName="mana potion 2",spawnChance=0.01,idols=3},{itemName="willow staff",spawnChance=0.004,idols=5},{itemName="lapis staff",spawnChance=0.0005,idols=8},{itemName="ancient weapon attack scroll",spawnChance=0.0008,idols=10},{itemName="item dye green",spawnChance=0.0001,idols=15}},module=script,monsterEvents={}}
+b.maxHealth=b.baseHealth*
+require(game.ReplicatedStorage.modules.levels).getMonsterHealthForLevel(b.level)
+b.damage=b.baseDamage*
+require(game.ReplicatedStorage.modules.levels).getMonsterDamageForLevel(b.level)return b

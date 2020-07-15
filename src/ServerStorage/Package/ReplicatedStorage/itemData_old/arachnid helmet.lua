@@ -1,0 +1,3 @@
+
+return
+{id=175,name="Arachnid Helmet",rarity="Legendary",image="rbxassetid://3267724022",description="See like a spider.",isEquippable=true,equipmentSlot=2,equipmentType="hat",equipmentHairType=3,minimumClass="warrior",minLevel=25,buyValue=9000,sellValue=3000,modifierData={},statDistribution={str=0,dex=1,int=0,vit=0},statUpgrade={str=0,dex=1,int=0,vit=0},canStack=false,canBeBound=false,canAwaken=true,isImportant=false,category="equipment"}

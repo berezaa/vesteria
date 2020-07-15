@@ -1,0 +1,8 @@
+
+local b={baseEXP=10,level=20,baseMoney=10,baseHealth=500,bonusXPMulti=200,baseDamage=2.4,aggressionRange=80,attackRange=15,baseSpeed=22,attackSpeed=3,boss=true,portrait="rbxassetid://3186205714",variations={golden={specialName="Golden Yeti",dye={r=255,g=230,b=40},level=50,bonusXPMulti=5,goldMulti=1000,bonusLootMulti=30,healthMulti=1}},monsterSpawnRegions={[script.Name]=1,[
+script.Name.."2"]=1,[script.Name.."3"]=1},damageHitboxCollection={{partName="RightHand",castType="sphere",radius=9,originOffset=CFrame.new()},{partName="LeftHand",castType="sphere",radius=9,originOffset=CFrame.new()},{partName="Torso",castType="box",hitboxSizeMultiplier=Vector3.new(1.1,1.1,1.1),originOffset=CFrame.new()}},damageHitboxCollection2={{partName="Horns",castType="box",hitboxSizeMultiplier=Vector3.new(1,1,1),originOffset=CFrame.new()}},monsterBookPage=99,goldMulti=18,bonusLootMulti=10,lootDrops={{id=1,spawnChance=0.8},{itemName="yeti fur",stacks=3,spawnChance=0.9},{itemName="yeti antler",spawnChance=0.5},{itemName="health potion flagon",stacks=5,spawnChance=0.1},{itemName="mana potion 2",stacks=5,spawnChance=0.1},{itemName="strength potion",spawnChance=0.05},{itemName="70% weapon attack scroll",spawnChance=0.04},{itemName="70% armor defense scroll",spawnChance=0.04},{itemName="70% headgear defense scroll",spawnChance=0.025},{itemName="yeti boots",spawnChance=0.025},{itemName="icicle dagger",spawnChance=0.015},{itemName="iron helmet plated",spawnChance=0.050},{itemName="baby yeti pet",spawnChance=
+1 / (1000 *17)}},module=script,monsterEvents={}}
+b.maxHealth=b.baseHealth*
+require(game.ReplicatedStorage.modules.levels).getMonsterHealthForLevel(b.level)
+b.damage=b.baseDamage*
+require(game.ReplicatedStorage.modules.levels).getMonsterDamageForLevel(b.level)return b

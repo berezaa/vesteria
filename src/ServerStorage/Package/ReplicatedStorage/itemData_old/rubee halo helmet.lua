@@ -1,0 +1,3 @@
+
+return
+{id=124,name="Rubee Halo",rarity="Rare",image="rbxassetid://3065164224",description="The magic that once bounded this Halo to its Rubee has faded.",isEquippable=true,equipmentSlot=2,equipmentType="hat",minLevel=15,buyValue=15000,sellValue=3000,defenseMulti=0,modifierData={{maxHealth=150}},statDistribution={str=0,dex=0,int=0,vit=0},statUpgrade={maxHealth=15},canStack=false,canBeBound=false,canAwaken=true,isImportant=false,category="equipment"}
