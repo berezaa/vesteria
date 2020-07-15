@@ -1,5 +1,6 @@
 local module = {}
 
+print("hello world!")
 local frame = script.Parent.gameUI.menu_abilities
 
 function module.show()
