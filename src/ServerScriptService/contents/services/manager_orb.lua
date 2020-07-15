@@ -126,4 +126,70 @@ spawn(function()
 	end
 end)
 
+local function playerRequest_enchantAbility(player, orb, requestData)
+	local playerData = playerDataContainer[player]
+	if playerData then
+		if typeof(orb) == "Instance" and orb:FindFirstChild("itemEnchanted") and orb:IsDescendantOf(workspace) then
+			if player.Character and player.Character.PrimaryPart and (player.Character.PrimaryPart.Position - orb.Position).magnitude <= 100 then
+				local abilitySlotData
+				for i, abilityData in pairs(playerData.abilities) do
+					if abilityData.id == requestData.id then
+						abilitySlotData = abilityData
+						break
+					end
+				end
+				
+				local abilityBaseData = abilityLookup[abilitySlotData.id](playerData)
+				if abilitySlotData and abilityBaseData then
+					local metadata = abilityBaseData.metadata
+					if metadata then
+						local AP = playerData.level - 1
+						local availablePoints = AP - getPlayerDataSpentAP(playerData)
+						if requestData.request == "upgrade" then
+							if metadata.upgradeCost and metadata.maxRank and availablePoints >= metadata.upgradeCost then
+								if abilitySlotData.rank > 0 and abilitySlotData.rank < metadata.maxRank then		
+									abilitySlotData.rank = abilitySlotData.rank + 1
+									playerData.nonSerializeData.playerDataChanged:Fire("abilities")
+									orb.itemEnchanted:Play()
+									if orb:FindFirstChild("steady") then
+										orb.steady:Emit(50)
+									end									
+									
+									return true, "upgrade applied"									
+								end	
+							end				
+						elseif requestData.request == "variant" then
+							if abilitySlotData.variant == nil or metadata.variants[abilitySlotData.variant].default then
+								local variantData = metadata.variants[requestData.variant]
+								if variantData and variantData.cost and availablePoints >= variantData.cost then
+									if variantData.requirement and variantData.requirement(playerData) then
+										abilitySlotData.variant = requestData.variant
+										playerData.nonSerializeData.playerDataChanged:Fire("abilities")
+										orb.itemEnchanted:Play()
+										if orb:FindFirstChild("steady") then
+											orb.steady:Emit(50)
+										end																			
+										
+										return true, "variant applied"
+									end
+									return false, "requirements not fufilled"
+								end
+								return false, "not enough points"
+							end
+							return false, "ability already has variant"
+						end
+						return false, "invalid request"
+					end
+					return false, "unsupported ability"
+				end
+				return false, "no data for ability"
+			end
+			return false, "too far from orb"
+		end
+		return false, "invalid orb"
+	end
+end
+
+network:create("playerRequest_enchantAbility", "RemoteFunction", "OnServerInvoke", playerRequest_enchantAbility)
+
 return {}

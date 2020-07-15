@@ -862,4 +862,65 @@ end
 
 main()
 
+-- Offshoot from player manager, needs to be integrated
+
+local function playerRequest_dropItem(player, inventorySlotData)
+	local playerData = playerDataContainer[player]
+	
+	if player:FindFirstChild("DataSaveFailed") then
+		network:fireClient("alertPlayerNotification", player, {text = "Cannot drop items during DataStore outage."; textColor3 = Color3.fromRGB(255, 57, 60)})
+		return false, "This feature is temporarily disabled" 											
+	end
+	
+	if player:FindFirstChild("DataLoaded") == nil then
+		return false
+	end
+	
+	if not configuration.getConfigurationValue("isTradingEnabled", player) then
+		return false
+	end
+	
+	if playerData and player and player.Character and player.Character.PrimaryPart then
+		local isInInventory, pos = false, nil
+		for i, trueInventorySlotData in pairs(playerData.inventory) do
+			if trueInventorySlotData.id == inventorySlotData.id and trueInventorySlotData.position == inventorySlotData.position then
+				isInInventory 	= true
+				pos 			= i
+			end
+		end
+		
+		if isInInventory then
+			local trueMetadata = table.remove(playerData.inventory, pos)
+			
+			local itemBaseData = itemLookup[trueMetadata.id]
+			
+			-- xero's tablet. fail treasure hunt quest
+			if inventorySlotData.id == 138 then
+				failQuest(player, 10)
+			end
+			
+			if trueMetadata.soulbound or itemBaseData.soulbound then
+				playerData.nonSerializeData.playerDataChanged:Fire("inventory")
+				return false, "Item is soulbound"
+			end			
+			
+			local drop = network:invoke("spawnItemOnGround", trueMetadata, player.Character.PrimaryPart.Position + player.Character.PrimaryPart.CFrame.lookVector * 5, nil)
+			
+			if drop then
+				local playerDropSource = Instance.new("NumberValue")
+				playerDropSource.Name = "playerDropSource"
+				playerDropSource.Value = player.userId
+				playerDropSource.Parent = drop
+			
+				playerData.nonSerializeData.playerDataChanged:Fire("inventory")
+			else
+				table.insert(playerData.inventory, trueMetadata)
+			end
+		end
+	end
+	
+	return false, "invalid player data"
+end
+network:create("playerRequest_dropItem", "RemoteFunction", "OnServerInvoke", playerRequest_dropItem)
+
 return module

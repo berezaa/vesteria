@@ -198,7 +198,6 @@ local function changeAbilityState(casterContainer, requestedState, executionData
 		end
 	end
 end
-
 -------------------------------------------------
 ----------------@ Main Function @----------------
 -------------------------------------------------
@@ -215,5 +214,174 @@ local function main()
 end
 
 spawn(main)
+
+-- Transplanted from player manager, needs to be integrated 
+local function getPlayerAbilitySlotDataById(player, abilityId)
+	local playerData = playerDataContainer[player]
+	
+	if playerData then
+		for i, abilitySlotData in pairs(playerData.abilities) do
+			if abilitySlotData.id == abilityId then
+				return abilitySlotData
+			end
+		end
+	end
+	
+	return nil
+end
+
+local function getAbilityBookAbilityDataById(abilityBookName, abilityId)
+	local abilityBookData = abilityBookLookup[abilityBookName]
+	
+	if abilityBookData then
+		for i, abilityBookAbilityData in pairs(abilityBookData.abilities) do
+			if abilityBookAbilityData.id == abilityId then
+				return abilityBookAbilityData
+			end
+		end
+	end
+	
+	return nil
+end
+
+local function canPlayerIncrementAbility(player, abilityId)
+	
+	local playerData = playerDataContainer[player]
+	local abilityBaseData = abilityLookup[abilityId](playerData)
+	
+	
+	if playerData and abilityBaseData then
+		if abilityBaseData.prerequisite then
+			local metPrerequisites = 0
+			
+			for i, abilityPrerequisiteData in pairs(abilityBaseData.prerequisite) do
+				if onGetPlayerAbilityRankByAbilityId(player, abilityPrerequisiteData.id) >= abilityPrerequisiteData.rank then
+					metPrerequisites = metPrerequisites + 1
+				end
+			end
+			
+			-- ez pz
+			return metPrerequisites == #abilityBaseData.prerequisite
+		else
+			-- ability doesnt have any prerequisites, keep it juicy and let it go
+			return true
+		end
+	end
+	
+	return false
+end
+
+local function incrementPlayerAbilityRank(player, abilityBookName, abilityId)
+	local playerData = playerDataContainer[player]
+	
+	if playerData then
+		if playerData.abilityBooks[abilityBookName] then
+			local abilitySlotData = getPlayerAbilitySlotDataById(player, abilityId)
+			if not abilitySlotData then
+				local abilityBookAbilityData = getAbilityBookAbilityDataById(abilityBookName, abilityId)
+				
+				if abilityBookAbilityData then
+					abilitySlotData = {id = abilityId; rank = 0}
+					
+					table.insert(playerData.abilities, abilitySlotData)
+				else
+					return false, "this should never happen"
+				end
+			end
+			
+			if abilitySlotData then
+				local abilityBaseData = abilityLookup[abilityId](playerData)
+				if canPlayerIncrementAbility(player, abilityId) then
+					if (abilityBaseData.maxRank or 1) > abilitySlotData.rank then
+						local remainingPoints = ability_utilities.getUnusedAbilityBookPoints(abilityBookName, playerData.level, playerData.abilityBooks[abilityBookName].pointsAssigned)
+						
+						if remainingPoints > 0 then
+							playerData.abilityBooks[abilityBookName].pointsAssigned = playerData.abilityBooks[abilityBookName].pointsAssigned + 1
+							abilitySlotData.rank 									= abilitySlotData.rank + 1
+							
+							playerData.nonSerializeData.playerDataChanged:Fire("abilityBooks")
+							playerData.nonSerializeData.playerDataChanged:Fire("abilities")
+							
+							return true, "successfully assigned points"
+						else
+							return false, "not enough points"
+						end
+					else
+						return false, "ability is max rank"
+					end
+				else
+					return false, "ability preq not met"
+				end
+			else
+				return false, "invalid ability"
+			end
+		else
+			return false, "invalid ability book"
+		end
+	end
+	
+	return false, "invalid playerData"
+end
+
+local function getPlayerDataSpentAP(playerData)
+	local spentAP = 0
+	for i, abilitySlotData in pairs(playerData.abilities) do
+		if abilitySlotData.rank ~= 0 then
+			local abilityBaseData = abilityLookup[abilitySlotData.id](playerData)
+			if abilityBaseData and abilityBaseData.metadata then
+				spentAP = spentAP + abilityBaseData.metadata.cost
+			end
+			local upgrades = abilitySlotData.rank - 1
+			if upgrades > 0 and abilityBaseData.metadata and abilityBaseData.metadata.upgradeCost then
+				spentAP = spentAP + abilityBaseData.metadata.upgradeCost * upgrades
+			end
+			if abilitySlotData.variant then
+				local variantData = abilityBaseData.metadata.variants[abilitySlotData.variant]
+				spentAP = spentAP + variantData.cost
+			end
+		end
+	end
+	return spentAP 
+end	
+
+
+-- NEW ABILITY LEARNING TECHNOLOGY CHANGES THE GAME 
+function playerRequest_learnAbility(player, abilityId)
+	local playerData = playerDataContainer[player]
+	if playerData then	
+		local abilitySlotEntry
+		
+		for i, abilitySlotData in pairs(playerData.abilities) do
+			if abilitySlotData.id == abilityId then
+				-- abilitySlotData entry exists but is 0
+				if abilitySlotData.rank == 0 or abilitySlotData.rank == nil then
+					abilitySlotEntry = abilitySlotData	
+				else
+					return false, "ability already learned"			
+				end	
+			end
+		end
+
+		local ability = abilityLookup[abilityId](playerData)
+		if ability and ability.metadata and ability.metadata.requirement and ability.metadata.requirement(playerData) then
+			local AP = playerData.level - 1
+			if ability.metadata.cost <= AP - getPlayerDataSpentAP(playerData) then
+				if abilitySlotEntry == nil then
+					abilitySlotEntry = {id = abilityId; rank = 1}
+					table.insert(playerData.abilities, abilitySlotEntry)
+				end
+				abilitySlotEntry.rank = 1
+				playerData.nonSerializeData.playerDataChanged:Fire("abilities")
+				return true, "ability learned"
+			end
+			return false, "not enough AP to learn"
+		end
+		return false, "ability cannot be learned"	
+			
+	end
+	return false, "invalid playerData"
+end
+
+network:create("playerRequest_learnAbility", "RemoteFunction", "OnServerInvoke", playerRequest_learnAbility)
 
 return module
