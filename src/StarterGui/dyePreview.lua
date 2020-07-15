@@ -5,7 +5,7 @@ local module = {}
 local runService = game:GetService("RunService")
 
 local promptOut
-local promptFrame = script.Parent
+local promptFrame = script.Parent.gameUI.dyePreview
 local buttonCons = {}
 local currentDecision
 
@@ -175,9 +175,9 @@ function module.init(Modules)
 		end
 		--[[
 		for i=1,3 do
-			local flare = script.Parent.flare:Clone()
+			local flare = promptFrame.flare:Clone()
 			flare.Name = "flareCopy"
-			flare.Parent = script.Parent
+			flare.Parent = promptFrame
 			flare.Visible = true
 			flare.Size = UDim2.new(1,4,1,4)
 			flare.Position = UDim2.new(0,-2,0.5,0)
@@ -335,9 +335,9 @@ function module.init(Modules)
 		promptFrame.curve.yes.Visible = true
 		promptFrame.curve.no.Visible = true		
 		for i=1,3 do
-			local flare = script.Parent.flare:Clone()
+			local flare = promptFrame.flare:Clone()
 			flare.Name = "flareCopy"
-			flare.Parent = script.Parent
+			flare.Parent = promptFrame
 			flare.Visible = true
 			flare.Size = UDim2.new(1,4,1,4)
 			flare.Position = UDim2.new(0,-2,0.5,0)

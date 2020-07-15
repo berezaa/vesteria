@@ -8,6 +8,8 @@ end
 local COUNTDOWN_TIME = 60
 
 function module.init(Modules)
+
+	local frame = script.Parent.gameUI.deathScreen
 	
 	local network = Modules.network
 	local tween = Modules.tween
@@ -29,8 +31,8 @@ function module.init(Modules)
 		local level = network:invoke("getCacheValueByNameTag", "level")
 		local expForNextLevel = levels.getEXPToNextLevel(level)
 		local expLost = math.min(exp, expForNextLevel*0.2)
-		script.Parent.curve.exp.Text = "-" .. utilities.formatNumber(expLost) .. " XP"
-		money.setLabelAmount(script.Parent.curve.cost, -gold*0.1)
+		frame.curve.exp.Text = "-" .. utilities.formatNumber(expLost) .. " XP"
+		money.setLabelAmount(frame.curve.cost, -gold*0.1)
 	end
 	
 	spawn(function()
@@ -68,22 +70,22 @@ function module.init(Modules)
 		
 		network:invoke("ambienceSetIsDead", true)
 		delay(4, function()
-			if script.Parent and script:FindFirstChild("chorus") then
+			if frame and script:FindFirstChild("chorus") then
 				script.chorus:Play()
 			end
-			script.Parent.gradient.ImageTransparency = 1
-			script.Parent.gradient.BackgroundTransparency = 1
-			tween(script.Parent.gradient, {"ImageTransparency"}, 0, 1)
---			tween(script.Parent.gradient, {"BackgroundTransparency"}, 0.4, 2)	
-			script.Parent.Visible = true
+			frame.gradient.ImageTransparency = 1
+			frame.gradient.BackgroundTransparency = 1
+			tween(frame.gradient, {"ImageTransparency"}, 0, 1)
+--			tween(frame.gradient, {"BackgroundTransparency"}, 0.4, 2)	
+			frame.Visible = true
 			--[[
 			for i=COUNTDOWN_TIME,0,-1 do
-				script.Parent.timer.Text = tostring(i)
+				frame.timer.Text = tostring(i)
 				wait(1)
 			end
 			]]
-			script.Parent.curve.timer.progress.Size = UDim2.new(0,0,1,0)
-			tween(script.Parent.curve.timer.progress, {"Size"}, UDim2.new(1,0,1,0), COUNTDOWN_TIME, Enum.EasingStyle.Linear)
+			frame.curve.timer.progress.Size = UDim2.new(0,0,1,0)
+			tween(frame.curve.timer.progress, {"Size"}, UDim2.new(1,0,1,0), COUNTDOWN_TIME, Enum.EasingStyle.Linear)
 			wait(COUNTDOWN_TIME)
 			module.accept()					
 		end)
@@ -95,7 +97,7 @@ function module.init(Modules)
 	end
 	
 
-	script.Parent.curve.respawn.Activated:connect(module.accept)
+	frame.curve.respawn.Activated:connect(module.accept)
 	
 	network:connect("deathGuiRequested", "OnClientEvent", module.show)
 	

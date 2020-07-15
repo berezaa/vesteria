@@ -19,16 +19,18 @@ local currentBall
 
 
 function module.init(Modules)
+
+	local frame = frame.gameUI.menu_enchant
 	
 	local tween = Modules.tween
 	local localization = Modules.localization
 	
 	function module.close()
-		script.Parent.Visible = false
+		frame.Visible = false
 		Modules.playerMenu.closeSelected()	
 		-- disgusting
-		if script.Parent.Parent.Parent.Visible then
-			Modules.focus.toggle(script.Parent.Parent.Parent)
+		if frame.Parent.Parent.Visible then
+			Modules.focus.toggle(frame.Parent.Parent)
 		end
 	end	
 	
@@ -40,13 +42,13 @@ function module.init(Modules)
 			
 			local s = s or math.random(1,3) == 2 and math.random(2,6)/2 or 1
 			
-			local sprite = script.Parent.sprite:Clone()
+			local sprite = frame.sprite:Clone()
 			local start = UDim2.new(math.random(),0,1,0)
 			sprite.Position = start 
 			
 			local lifetime = math.random(40,150)/100 
 			
-			sprite.Parent = script.Parent.curve.sprites
+			sprite.Parent = frame.curve.sprites
 			
 			
 			
@@ -137,7 +139,7 @@ function module.init(Modules)
 	function module.open(ball)
 		currentBall = ball
 		module.reset()
-		Modules.playerMenu.selectMenu(script.Parent, Modules[script.Name])
+		Modules.playerMenu.selectMenu(frame, Modules[script.Name])
 		network:fire("localSignal_enchantOpened")
 	end	
 	

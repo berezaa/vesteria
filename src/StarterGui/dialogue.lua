@@ -38,7 +38,7 @@ local superRootDialogueData
 	})
 	--]]
 
-local dialogueFrameUI = script.Parent
+local dialogueFrameUI = script.Parent.gameUI.dialogueFrame
 local gameUI = dialogueFrameUI.Parent
 local uiCreator
 local userInputService 	= game:GetService("UserInputService")
@@ -70,11 +70,11 @@ function module.init(Modules)
 	uiCreator = Modules.uiCreator
 
 	local function inputUpdate()
-		script.Parent.UIScale.Scale = Modules.input.menuScale or 1
+		dialogueFrameUI.UIScale.Scale = Modules.input.menuScale or 1
 		if Modules.input.mode.Value == "mobile" then
-			script.Parent.Position = UDim2.new(0.5, 0,1, -20)
+			dialogueFrameUI.Position = UDim2.new(0.5, 0,1, -20)
 		else
-			script.Parent.Position = UDim2.new(0.5, 0,1, -140)
+			dialogueFrameUI.Position = UDim2.new(0.5, 0,1, -140)
 		end
 	end
 
@@ -284,7 +284,7 @@ function module.init(Modules)
 	function dialogueHandler:startDialogue(dialogueNumber, questResponseType)
 		if not self.currentDialogueData then return end
 		
-		script.Parent.UIScale.Scale = 1
+		dialogueFrameUI.UIScale.Scale = 1
 		
 		if self.currentDialogueData.onClose then
 			globalOnClose = self.currentDialogueData.onClose
@@ -855,7 +855,7 @@ function module.init(Modules)
 		inputUpdate()
 		Modules.focus.toggle(dialogueFrameUI)
 		
-		if Modules.input.mode.Value == "xbox" and (game.GuiService.SelectedObject == nil or not game.GuiService.SelectedObject:IsDescendantOf(script.Parent)) then
+		if Modules.input.mode.Value == "xbox" and (game.GuiService.SelectedObject == nil or not game.GuiService.SelectedObject:IsDescendantOf(dialogueFrameUI)) then
 			game.GuiService.SelectedObject = Modules.focus.getBestButton(dialogueFrameUI.contents)
 		end
 		
@@ -910,8 +910,8 @@ function module.init(Modules)
 			end
 		end
 		--[[
-		script.Parent.UIScale.Scale = 0.8
-		Modules.tween(script.Parent.UIScale, {"Scale"}, 1, 0.5, Enum.EasingStyle.Bounce)	
+		dialogueFrameUI.UIScale.Scale = 0.8
+		Modules.tween(dialogueFrameUI.UIScale, {"Scale"}, 1, 0.5, Enum.EasingStyle.Bounce)	
 		]]
 	end
 	
@@ -919,7 +919,7 @@ function module.init(Modules)
 	
 	function module.endDialogue()
 		
-		script.Parent.Visible = false
+		dialogueFrameUI.Visible = false
 		
 		if globalOnClose then
 			globalOnClose(utilities, dialogueHandler.extraData)

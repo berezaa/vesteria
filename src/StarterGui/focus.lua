@@ -58,7 +58,8 @@ function module.init(Modules)
 	local function update()
 		local isMenuInFocus = not (module.focused == nil or module.focused.Visible == false)
 		network:fire("signal_menuFocusChanged", isMenuInFocus)
-		script.Parent.xboxMenuPrompt.Visible = isMenuInFocus
+--		script.Parent.xboxMenuPrompt.Visible = isMenuInFocus
+-- ??????????
 	end
 
 	function module.close()

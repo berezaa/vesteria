@@ -11,21 +11,21 @@ local enchantment = modules.load("enchantment")
 local itemData = require(replicatedStorage:WaitForChild("itemData"))
 local itemAttributes = require(replicatedStorage:WaitForChild("itemAttributes"))
 
+local menu = script.Parent.gameUI.menu_equipment
 
 
-
-local content = script.Parent.content
-local viewport = script.Parent.character.ViewportFrame
+local content = menu.content
+local viewport = menu.character.ViewportFrame
 local player = game.Players.LocalPlayer
 
 function module.show()
-	script.Parent.Visible = not script.Parent.Visible
+	menu.Visible = not menu.Visible
 end
 function module.hide()
-	script.Parent.Visible = false
+	menu.Visible = false
 end
 
-script.Parent.close.Activated:connect(module.hide)
+menu.close.Activated:connect(module.hide)
 
 local equipmentSlotPairing = {}
 local lastSelected
@@ -339,7 +339,7 @@ function module.init(Modules)
 		network:connect("propogationRequestToSelf", "Event", onPropogationRequestToSelf)
 		network:create("getEquipmentSlotDataByEquipmentSlotUI", "BindableFunction", "OnInvoke", onGetEquipmentSlotDataByEquipmentSlotUI)
 		
-		for i,item in pairs(script.Parent.content:GetChildren()) do
+		for i,item in pairs(menu.content:GetChildren()) do
 			if item:FindFirstChild("equipItemButton") then
 				item.equipItemButton.MouseEnter:connect(function() onInventoryItemMouseEnter(item.equipItemButton) end)
 				item.equipItemButton.MouseLeave:connect(function() onInventoryItemMouseLeave(item.equipItemButton) end)
@@ -364,7 +364,7 @@ function module.postInit(Modules)
 	module.update()
 	local network = Modules.network
 	network:connect("signal_isEnchantingEquipmentSet", "Event", function(value, inventorySlotData_enchantment)
-		for i, equipmentButton in pairs(script.Parent.content:GetChildren()) do
+		for i, equipmentButton in pairs(framemenu.content:GetChildren()) do
 			if equipmentButton:FindFirstChild("equipItemButton") then
 				if value and inventorySlotData_enchantment then
 					local equipmentSlotData = equipmentSlotPairing[equipmentButton.equipItemButton]

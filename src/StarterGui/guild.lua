@@ -3,8 +3,10 @@ local module = {}
 -- Guild menu and local guild logic for inviting/other actions
 -- Written by berezaa
 
+local menu = script.Parent.gameUI.guild
+
 function module.open()
-	script.Parent.Visible = true
+	menumenu.Visible = true
 end
 
 local httpService = game:GetService("HttpService")
@@ -24,14 +26,14 @@ function module.init(Modules)
 
 	
 	function module.open()
-		if not script.Parent.Visible then
-			script.Parent.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
-			Modules.tween(script.Parent.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)
+		if not menumenu.Visible then
+			menumenu.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
+			Modules.tween(menumenu.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)
 		end				
-		Modules.focus.toggle(script.Parent)
+		Modules.focus.toggle(menumenu)
 	end
 	
-	script.Parent.close.Activated:connect(function()
+	menumenu.close.Activated:connect(function()
 		module.open()
 	end)		
 	
@@ -70,14 +72,14 @@ function module.init(Modules)
 		local guildData = getGuildData(guid)
 		module.guildData = guildData
 		local guildPlayerData = getGuildPlayerData(game.Players.LocalPlayer, guid)
-		script.Parent.Parent.inspectPlayer.content.buttons.guild.Visible = false
+		menumenu.Parent.inspectPlayer.content.buttons.guild.Visible = false
 		if guildData and guildPlayerData then
 			local canInvite = guildPlayerData.rank == "leader" or guildPlayerData.rank == "officer" or guildPlayerData.rank == "general"
-			script.Parent.Parent.inspectPlayer.content.buttons.guild.Visible = canInvite
-			script.Parent.curve.Visible = true
-			script.Parent.Parent.right.buttons.openGuild.Visible = true
-			script.Parent.curve.intro.title.Text = guildData.name
-			script.Parent.curve.intro.notice.value.Text = guildData.notice or "There is no notice at this time."
+			menumenu.Parent.inspectPlayer.content.buttons.guild.Visible = canInvite
+			menumenu.curve.Visible = true
+			menumenu.Parent.right.buttons.openGuild.Visible = true
+			menumenu.curve.intro.title.Text = guildData.name
+			menumenu.curve.intro.notice.value.Text = guildData.notice or "There is no notice at this time."
 			
 			local guildLeader = "no one!"
 			for userIdString, playerInfo in pairs(guildData.members) do
@@ -86,16 +88,16 @@ function module.init(Modules)
 				end
 			end
 			
-			script.Parent.curve.intro.leader.Text = "led by "..guildLeader
+			menumenu.curve.intro.leader.Text = "led by "..guildLeader
 			
-			for i,guildMemberButton in pairs(script.Parent.curve.side.members.list:GetChildren()) do
+			for i,guildMemberButton in pairs(menumenu.curve.side.members.list:GetChildren()) do
 				if guildMemberButton:IsA("GuiObject") then
 					guildMemberButton:Destroy()
 				end
 			end
 			local memberCount = 0
 			for memberString, memberData in pairs(guildData.members) do
-				local guildMemberButton = script.Parent.curve.side.members.example:Clone()
+				local guildMemberButton = menumenu.curve.side.members.example:Clone()
 				guildMemberButton.content.username.Text = memberData.name
 				local level = guildMemberButton.content.level.value
 				level.Text = "Lvl. "..memberData.level
@@ -116,7 +118,7 @@ function module.init(Modules)
 				guildMemberButton.LayoutOrder = 5-guildMemberRankValue
 				
 				guildMemberButton.content.rank.Image = "rbxgameasset://Images/rank_"..memberData.rank:lower()
-				guildMemberButton.Parent = script.Parent.curve.side.members.list
+				guildMemberButton.Parent = menumenu.curve.side.members.list
 				guildMemberButton.Visible = true
 				guildMemberButton.Name = memberString
 				memberCount = memberCount + 1
@@ -125,7 +127,7 @@ function module.init(Modules)
 					if guildMemberButton.actions.Visible then
 						guildMemberButton.actions.Visible = false
 					else
-						for i,otherButton in pairs(script.Parent.curve.side.members.list:GetChildren()) do
+						for i,otherButton in pairs(menumenu.curve.side.members.list:GetChildren()) do
 							if otherButton:IsA("GuiObject") then
 								otherButton.actions.Visible = false
 								otherButton.ZIndex = 1
@@ -208,12 +210,12 @@ function module.init(Modules)
 
 				
 			end
-			script.Parent.curve.side.members.title.Text = memberCount .. " " .. (memberCount == 1 and "member" or "members")
+			menumenu.curve.side.members.title.Text = memberCount .. " " .. (memberCount == 1 and "member" or "members")
 			
 			
 		else
-			script.Parent.curve.Visible = false
-			script.Parent.Parent.right.buttons.openGuild.Visible = false
+			menumenu.curve.Visible = false
+			menumenu.Parent.right.buttons.openGuild.Visible = false
 		end
 	end
 	spawn(updatePlayerGuildData)
@@ -235,7 +237,7 @@ function module.init(Modules)
 		return false
 	end)
 	
-	script.Parent.curve.intro.leave.Activated:connect(function()
+	menumenu.curve.intro.leave.Activated:connect(function()
 		if Modules.prompting_Fullscreen.prompt("Are you sure you wish to LEAVE the guild?") then
 			local success, reason = network:invokeServer("playerRequest_leaveMyGuild", false)
 			if not success then

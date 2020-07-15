@@ -1,17 +1,18 @@
 local module = {}
 
+local frame = script.Parent.gameUI.bossHealth
 
 function module.init(Modules)
 	
 	local network = Modules.network
-	script.Parent.Visible = false
+	frame.Visible = false
 	
 	network:create("prepareBossHealthUIForMonster", "BindableFunction", "OnInvoke", function(monsterData)
 		if monsterData.portrait then
-			script.Parent.thumbnail.Image = monsterData.portrait
+			frame.thumbnail.Image = monsterData.portrait
 		end
-		script.Parent.Visible = true
-		return script.Parent
+		frame.Visible = true
+		return frame
 	end)
 	
 end

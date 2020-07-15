@@ -1,12 +1,14 @@
 local module = {}
 
+local frame = script.Parent.gameUI.menu_abilities
+
 function module.show()
-	script.Parent.Visible = not script.Parent.Visible
+	frame.Visible = not frame.Visible
 end
 function module.hide()
-	script.Parent.Visible = false
+	frame.Visible = false
 end
 
-script.Parent.close.Activated:connect(module.hide)
+frame.close.Activated:connect(module.hide)
 
 return module

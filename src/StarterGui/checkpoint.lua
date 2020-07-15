@@ -6,7 +6,7 @@ function module.init(Modules)
 	
 	local currentSpawnPoint
 	
-	local textLabel = script.Parent
+	local textLabel = script.Parent.gameUI.checkpoint
 	
 	events:registerForEvent("playerRespawnPointChanged", function(spawnPoint)
 		if spawnPoint:FindFirstChild("description") then
