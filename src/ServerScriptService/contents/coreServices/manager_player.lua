@@ -735,14 +735,14 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 	
 	local playerData = playerData or playerDataContainer[player]
 	
-	local baseStats 				= {}
-	local baseStatsAdditive 		= {}
-	local baseStatsMultiplicative 	= {}
-	local totalStatsAdditive 		= {}
-	local totalStatsMultiplicative 	= {}
+	local baseStats = {}
+	local baseStatsAdditive = {}
+	local baseStatsMultiplicative = {}
+	local totalStatsAdditive = {}
+	local totalStatsMultiplicative = {}
 	
-	local equipmentDefense 	= 0
-	local equipmentDamage 	= 0
+	local equipmentDefense = 0
+	local equipmentDamage = 0
 	
 	local function incorporateModifierData(modifierData)
 		for i, modifier in pairs(modifierData) do
