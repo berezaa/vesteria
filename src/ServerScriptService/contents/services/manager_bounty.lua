@@ -7,7 +7,8 @@ local function playerRequest_claimBounty(player, monsterName)
 	end
 	if not player:FindFirstChild("bountyHunter") then
 		return false, "Not a bounty hunter."
-	end
+    end
+    
 	local monster = monsterLookup[monsterName]
 	if monster then
 		local page = monster.monsterBookPage
