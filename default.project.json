@@ -34,11 +34,6 @@
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",
-      "StarterCharacter": {
-        "$className": "Model",
-        "$ignoreUnknownInstances": true,
-        "$path": "src/StarterPlayer/StarterCharacter"
-      },
       "StarterCharacterScripts": {
         "$className": "StarterCharacterScripts",
         "$ignoreUnknownInstances": true,
