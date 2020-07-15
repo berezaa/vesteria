@@ -1,7 +1,6 @@
 local module = {}
 
 local frame = script.Parent.gameUI.bossHealth
-
 function module.init(Modules)
 	
 	local network = Modules.network
