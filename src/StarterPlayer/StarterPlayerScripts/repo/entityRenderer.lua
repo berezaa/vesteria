@@ -1,6 +1,7 @@
 -- Master script that handles entity rendering
 -- Main Author: Polymorphic
 -- Co-Author: berezaa
+--Funny man who is making it not 7k Lines long: lmaginationBurst
 
 local module = {}
 local client = game.Players.LocalPlayer
@@ -18,16 +19,18 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local modules		= require(replicatedStorage:WaitForChild("modules"))
 local network 		= modules.load("network")
 local tween 		= modules.load("tween")
-local detection 	= modules.load("detection")
 local utilities 	= modules.load("utilities")
 local physics 		= modules.load("physics")
-local bow_manager  = require(coreRenderServices:WaitForChild("bow_manager"))
+local bow_manager   = require(coreRenderServices:WaitForChild("bow_manager"))
 local staff_manager = require(coreRenderServices:WaitForChild("staff_manager"))
 local melee_manager = require(coreRenderServices:WaitForChild("melee_manager"))
+local appearance_manager = require(coreRenderServices:WaitForChild("appearence_manager"))
+local ragdoll_manager = require(coreRenderServices:WaitForChild("ragdoll_manager"))
+local item_manager = require(coreRenderServices:WaitForChild("item_manager"))
+
 local placeSetup 	= modules.load("placeSetup")
 local entityManifestCollectionFolder 	= placeSetup.awaitPlaceFolder("entityManifestCollection")
 local entityRenderCollectionFolder 		= placeSetup.awaitPlaceFolder("entityRenderCollection")
-local mapping 		= modules.load("mapping")
 local projectile 	= modules.load("projectile")
 local configuration = modules.load("configuration")
 local events		= modules.load("events")
@@ -46,50 +49,9 @@ local entitiesBeingRendered = {}
 
 
 
-local function isBodyPart(obj)
-	return obj:IsA("BasePart") and replicatedStorage.playerBaseCharacter:FindFirstChild(obj.Name) and replicatedStorage.playerBaseCharacter[obj.Name]:IsA("BasePart")
-end
-
 -- builds a table of whats currently equipped on a renderCharacter,
 -- id rather do this than store what every renderCharacter is wearing and
 -- keep track of it.
-local function getCurrentlyEquippedForRenderCharacter(renderCharacter)
-	local currentlyEquipped = {}
-
-	for i, obj in pairs(renderCharacter:GetChildren()) do
-		if obj:IsA("BasePart") or obj:IsA("Model") then
-			local accessoryType, accessoryId, accessorySlot = string.match(obj.Name, "(%w+)_(%d+)_(%d+)")
-
-			if accessoryType and accessoryId then
-				accessoryId 	= tonumber(accessoryId)
-				accessorySlot 	= tonumber(accessorySlot)
-
-				if accessoryType == "EQUIPMENT" then
-					local equipmentBaseData = itemLookup[tonumber(accessoryId)]
-
-					currentlyEquipped[tostring(accessorySlot)] = {
-						baseData 	= equipmentBaseData;
-						manifest 	= obj;
-					}
-				end
-			end
-		end
-	end
-
-	return currentlyEquipped
-end
-
-local function isCurrentlyEquipped(currentlyEquipped, equipmentSlotData)
-	local equipmentBaseData = itemLookup[equipmentSlotData.id]
-
-	if currentlyEquipped[equipmentBaseData.equipmentSlot] then
-		if equipmentSlotData.id == currentlyEquipped[tostring(equipmentBaseData.equipmentSlot)].baseData.id then
-			return true
-		end
-	end
-
-	return false
-end
 
 local function getInventoryCountLookupTableByItemId()
 	local lookupTable = {}
@@ -108,7 +70,7 @@ end
 
 -- handles updating appearance of renderCharacter (SPECIFICALLY!!)
 -- renderEntityContainer.entity is renderCharacter (renderEntityContainer is also shortened as entityContainer)
-	-- ^^ ONLY IF entityType == "character" ^^
+-- ^^ ONLY IF entityType == "character" ^^
 local function int__updateRenderCharacter(renderCharacter, appearanceData, _entityManifest)
 	local associatePlayer do
 		if _entityManifest then
@@ -121,145 +83,28 @@ local function int__updateRenderCharacter(renderCharacter, appearanceData, _enti
 		appearanceData.accessories 	= appearanceData.accessories or defaultCharacterAppearance.accessories
 
 	-- wipe all previous additions
+	local accessories = {
+		["!! ACCESSORY !!"] = true,
+		["!! EQUIPMENT-UPPER !!"] = true,
+		["!! EQUIPMENT !!"] = true,
+		["!! WEAPON !!"] = true,
+		["!! ARROW !!"] = true,
+	}
+
 	for i, obj in pairs(renderCharacter:GetChildren()) do
-		if obj.Name == "!! ACCESSORY !!" or obj.Name == "!! EQUIPMENT-UPPER !!" or obj.Name == "!! EQUIPMENT !!" or obj.Name == "!! WEAPON !!" or obj.Name == "!! ARROW !!" then
+		if accessories[obj.Name] then
 			obj:Destroy()
 		end
 	end
 
-	-- apply skincolor
-	if appearanceData and appearanceData.accessories.skinColorId then
-		for i, obj in pairs(renderCharacter:GetChildren()) do
-			if obj:IsA("BasePart") and isBodyPart(obj) then
-				obj.Color = accessoryLookup.skinColor:FindFirstChild(tostring(appearanceData.accessories.skinColorId or 1)).Value
-			end
-		end
-	else
-		for i, obj in pairs(renderCharacter:GetChildren()) do
-			if obj:IsA("BasePart") and isBodyPart(obj) then
-				obj.Color = BrickColor.new("Light orange").Color
-			end
-		end
-	end
+	appearance_manager.ApplySkinColor(appearanceData,renderCharacter,accessoryLookup)
 
 	local hatEquipmentData
 	local inventoryCountLookup = getInventoryCountLookupTableByItemId()
 
 	if appearanceData and appearanceData.equipment then
-		for i, equipmentSlotData in pairs(appearanceData.equipment) do
-			if equipmentSlotData.position == mapping.equipmentPosition.upper or equipmentSlotData.position == mapping.equipmentPosition.lower or equipmentSlotData.position == mapping.equipmentPosition.head then
-
-				local dye = equipmentSlotData.dye
-
-				if equipmentSlotData.position == mapping.equipmentPosition.head then
-					hatEquipmentData = equipmentSlotData
-				end
-
-				if itemLookup[equipmentSlotData.id].module:FindFirstChild("container") then
-					for i, accessoryPartContainer in pairs(itemLookup[equipmentSlotData.id].module.container:GetChildren()) do
-						if renderCharacter:FindFirstChild(accessoryPartContainer.Name) then
-
-							if accessoryPartContainer:FindFirstChild("colorOverride") then
-								renderCharacter[accessoryPartContainer.Name].Color = accessoryPartContainer.Color
-							end
-
-							for i, accessoryPart in pairs(accessoryPartContainer:GetChildren()) do
-								if accessoryPart:IsA("BasePart") then
-									local accessory = accessoryPart:Clone()
-										accessory.Anchored 		= false
-										accessory.CanCollide 	= false
-
-									if dye then
-										local v = accessory
-										accessory.Color =  Color3.new(v.Color.r * dye.r/255, v.Color.g * dye.g/255, v.Color.b * dye.b/255)
-									end
-
-									local projectionWeld = Instance.new("Motor6D", accessory)
-										projectionWeld.Name 	= "projectionWeld"
-										projectionWeld.Part0 	= accessory
-										projectionWeld.Part1 	= renderCharacter[accessoryPartContainer.Name]
-										projectionWeld.C0 		= CFrame.new()
-										projectionWeld.C1 		= accessoryPartContainer.CFrame:toObjectSpace(accessoryPart.CFrame)
-
-									accessory.Name 		= "!! EQUIPMENT !!"
-									accessory.Parent 	= renderCharacter
-								end
-							end
-						end
-					end
-				end
-			elseif equipmentSlotData.position == mapping.equipmentPosition.arrow then
-				local isBowEquipped = false do
-					for i, equip in pairs(appearanceData.equipment) do
-						if equip.position == mapping.equipmentPosition.weapon then
-							if itemLookup[equip.id].equipmentType == "bow" then
-								isBowEquipped = true
-							end
-						end
-					end
-				end
-
-				if isBowEquipped then
-					-- arrow is funny hehe
-					-- todo: customize this per bow
-					local strap = game.ReplicatedStorage.entities.ArrowUpperTorso2.strap:Clone()
-						strap.Anchored 		= false
-						strap.CanCollide 	= false
-
-					local strapprojectionWeld = Instance.new("Motor6D", strap)
-						strapprojectionWeld.Name 	= "projectionWeld"
-						strapprojectionWeld.Part0 	= strap
-						strapprojectionWeld.Part1 	= renderCharacter.UpperTorso
-						strapprojectionWeld.C0 		= CFrame.new()
-						strapprojectionWeld.C1 		= game.ReplicatedStorage.entities.ArrowUpperTorso2.CFrame:toObjectSpace(game.ReplicatedStorage.entities.ArrowUpperTorso2.strap.CFrame)
-
-					strap.Name 		= "!! ARROW !!"
-					strap.Parent 	= renderCharacter
-
-					local quiver = game.ReplicatedStorage.entities.ArrowUpperTorso2.quiver:Clone()
-						quiver.Anchored 		= false
-						quiver.CanCollide 	= false
-
-						local quiverprojectionWeld = Instance.new("Motor6D", quiver)
-						quiverprojectionWeld.Name 	= "projectionWeld"
-						quiverprojectionWeld.Part0 	= quiver
-						quiverprojectionWeld.Part1 	= renderCharacter.UpperTorso
-						quiverprojectionWeld.C0 		= CFrame.new()
-						quiverprojectionWeld.C1 		= game.ReplicatedStorage.entities.ArrowUpperTorso2.CFrame:toObjectSpace(game.ReplicatedStorage.entities.ArrowUpperTorso2.quiver.CFrame)
-
-					quiver.Name 		= "!! ARROW !!"
-					quiver.Parent 	= renderCharacter
-
-					-- represent the arrows
-
-					local arrows = inventoryCountLookup[equipmentSlotData.id] or 0
-					local arrowParts 	= math.clamp(math.floor(arrows / configuration.getConfigurationValue("arrowsPerArrowPartVisualization")) + 1, 0, configuration.getConfigurationValue("maxArrowPartsVisualization"))
-
-					for ai = 1, arrowParts do
-						local arrow 		= itemLookup[equipmentSlotData.id].module.manifest:Clone()
-						arrow.CanCollide 	= false
-						arrow.Anchored 		= false
-						arrow.Parent 		= quiver
-
-						local xRan, yRan = math.random() * 2 - 1, math.random() * 2 - 1
-
-						local arrowWeld 	= Instance.new("Motor6D", quiver)
-						arrowWeld.Name 		= "projectionWeld"
-						arrowWeld.Part0 	= quiver
-						arrowWeld.Part1 	= arrow
-						arrowWeld.C0 		= quiver.Attachment.CFrame
-						arrowWeld.C1 		= CFrame.Angles(xRan * math.rad(15), 0, yRan * math.rad(15))
-					end
-				end
-			end
-		end
+		item_manager.iterateThroughappearanceData(appearanceData,renderCharacter,bow_manager,hatEquipmentData,inventoryCountLookup)
 	end
-
-	local rightGrip = renderCharacter["RightHand"]:FindFirstChild("Grip")
-	local leftGrip 	= renderCharacter["LeftHand"]:FindFirstChild("Grip")
-	local backMount = renderCharacter["UpperTorso"]:FindFirstChild("BackMount")
-	local hipMount  = renderCharacter["LowerTorso"]:FindFirstChild("HipMount")
-	local neckMount = renderCharacter["UpperTorso"]:FindFirstChild("BackMount")
 
 --[[
 	playerStoreForCurrentlyEquipped[equipmentData.position] = {
@@ -270,320 +115,13 @@ local function int__updateRenderCharacter(renderCharacter, appearanceData, _enti
 --]]
 
 	-- iterate through equipped on character and actual
-	local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(renderCharacter)
-	for equipmentPosition, equipmentContainerData in pairs(currentlyEquipped) do
-		local isStillEquipped = false
-
-		for i, equipmentSlotData in pairs(appearanceData.equipment) do
-			if isCurrentlyEquipped(currentlyEquipped, equipmentSlotData) then
-				isStillEquipped = true
-			end
-		end
-
-		if not isStillEquipped then
-			if rightGrip.Part1 == equipmentContainerData.manifest then
-				rightGrip.Part1 = nil
-			elseif leftGrip.Part1 == equipmentContainerData.manifest then
-				leftGrip.Part1 = nil
-			elseif backMount.Part1 == equipmentContainerData.manifest then
-				backMount.Part1 = nil
-			elseif hipMount.Part1 == equipmentContainerData.manifest then
-				hipMount.Part1 = nil
-			elseif backMount.Part1 == equipmentContainerData.manifest then
-				backMount.Part1 = nil
-			end
-
-			currentlyEquipped[tostring(equipmentPosition)] = nil
-			equipmentContainerData.manifest:Destroy()
-		end
-	end
+	item_manager.IterateThroughItems(renderCharacter,appearanceData)
 
 	-- equipping new stuff
-	for i, equipmentData in pairs(appearanceData.equipment) do
-		if not isCurrentlyEquipped(currentlyEquipped, equipmentData) then
-			if equipmentData.position == mapping.equipmentPosition.weapon or equipmentData.position == mapping.equipmentPosition["offhand"] then
-				local weaponBaseData = itemLookup[equipmentData.id]
-
-				if weaponBaseData and (weaponBaseData.module:FindFirstChild("manifest") or weaponBaseData.module:FindFirstChild("container")) then
-					local weaponManifest
-					local dye 							= equipmentData.dye
-					local weaponGripType 				= weaponBaseData.gripType or 1
-					local gripContainerOverrideCFrame 	= nil
-
-					-- secondary weapons always left gripped
-					if equipmentData.position == mapping.equipmentPosition["offhand"] then
-						weaponGripType = mapping.gripType.left
-					end
-
-					local container = weaponBaseData.module:FindFirstChild("container")
-					if container then
-						container = container:FindFirstChild("RightHand") or container:FindFirstChild("LeftHand")
-						container = container:Clone()
-
-						local weaponToCopy = container:FindFirstChild("manifest") or container.PrimaryPart
-
-						if weaponToCopy:IsA("BasePart") then
-							for i,v in pairs(container:GetChildren()) do
-								if v ~= weaponToCopy then
-									v.Parent = weaponToCopy
-									if v:IsA("BasePart") then
-										if dye then
-											v.Color =  Color3.new(v.Color.r * dye.r/255, v.Color.g * dye.g/255, v.Color.b * dye.b/255)
-										end
-									end
-								end
-							end
-
-							if dye then
-								-- yes im that lazy
-								local v = weaponToCopy
-								weaponToCopy.Color =  Color3.new(v.Color.r * dye.r/255, v.Color.g * dye.g/255, v.Color.b * dye.b/255)
-							end
-
-							weaponManifest = weaponToCopy
-							gripContainerOverrideCFrame = weaponToCopy.CFrame:toObjectSpace(weaponManifest.Parent.CFrame)
-
---							local attachmentMotor 	= Instance.new("Motor6D")
---							attachmentMotor.Part0 	= weaponManifest
---							attachmentMotor.Part1 	= renderCharacter:FindFirstChild(container.Name)
---							attachmentMotor.C1 		= weaponManifest.CFrame:toObjectSpace(weaponManifest.Parent.CFrame):inverse()
---							attachmentMotor.Parent 	= weaponManifest
-						elseif weaponToCopy:IsA("Model") then
-							-- render bow
-
-							for i,v in pairs(weaponToCopy:GetDescendants()) do
-								if v:IsA("BasePart") then
-									if dye then
-										v.Color = Color3.new(v.Color.r * dye.r/255, v.Color.g * dye.g/255, v.Color.b * dye.b/255)
-									end
-								end
-							end
-
-							weaponManifest 				= weaponToCopy
-							gripContainerOverrideCFrame = weaponToCopy.PrimaryPart.CFrame:toObjectSpace(container.CFrame)
-						end
-					elseif weaponBaseData.module:FindFirstChild("manifest") then
-						weaponManifest = weaponBaseData.module.manifest:Clone()
-						if dye then
-							-- yes im that lazy
-							local v = weaponManifest
-							weaponManifest.Color =  Color3.new(v.Color.r * dye.r/255, v.Color.g * dye.g/255, v.Color.b * dye.b/255)
-						end
-					end
-
-					weaponManifest.Name 		= "EQUIPMENT_" .. weaponBaseData.id .. "_" .. equipmentData.position
-					weaponManifest.Parent 		= renderCharacter
-
-					if weaponManifest:IsA("BasePart") then
-						weaponManifest.Anchored 	= false
-						weaponManifest.CanCollide 	= false
-					elseif weaponManifest:IsA("Model") then
-						for i, obj in pairs(weaponManifest:GetChildren()) do
-							if obj:IsA("BasePart") then
-								obj.Anchored 	= false
-								obj.CanCollide 	= false
-							end
-						end
-					end
-
-					if container then
-						container:Destroy()
-						container = nil
-					end
-
-					-- todo: very important
-					-- only do this for the primary weapon
-					local isMainHand = equipmentData.position == mapping.equipmentPosition.weapon
-					if _entityManifest and isMainHand then
-						local renderEntityData = entitiesBeingRendered[_entityManifest]
-
-						renderEntityData.currentPlayerWeapon 	= weaponManifest
-						renderEntityData.weaponBaseData 		= weaponBaseData
-
-						if weaponBaseData.equipmentType == "bow" then
-							if weaponManifest:FindFirstChild("AnimationController") then
-								local bowTool_Animations = animationInterface:registerAnimationsForAnimationController(weaponManifest.AnimationController, "bowToolAnimations_noChar").bowToolAnimations_noChar
-
-								renderEntityData.currentPlayerWeaponAnimations = bowTool_Animations
-							else
-								renderEntityData.currentPlayerWeaponAnimations = nil
-							end
-						else
-							renderEntityData.currentPlayerWeaponAnimations = nil
-						end
-
-						if associatePlayer == client then
-							network:fire("myClientCharacterWeaponChanged", weaponManifest)
-						end
-					end
-
-					-- attach weaponManifest
-					local isOffhand = equipmentData.position == mapping.equipmentPosition["offhand"]
-					local backMounted = false
-					local hipMounted = false
-					local neckMounted = false
-					if isOffhand then
-						local t = weaponBaseData.equipmentType
-
-						if t == "sword" or t == "shield" then
-							-- do nothing
-
-						elseif t == "dagger" then
-							hipMounted = true
-
-						elseif t == "amulet" then
-							neckMounted = true
-
-						else
-							backMounted = true
-						end
-					end
-
-					local gripCFrame = gripContainerOverrideCFrame or weaponBaseData.gripCFrame or weaponBaseData.attachmentOffset or CFrame.new()
-					gripCFrame = gripCFrame - gripCFrame.Position
-
-					if backMounted then
-						backMount.Part1 = weaponManifest:IsA("Model") and weaponManifest.PrimaryPart or weaponManifest
-						backMount.C0 = CFrame.new(-0.25, 0.25, 0.75) * CFrame.Angles(math.pi / 2, math.pi * 0.75, math.pi / 2)
-						backMount.C1 = gripCFrame
-					elseif hipMounted then
-						hipMount.Part1 = weaponManifest:IsA("Model") and weaponManifest.PrimaryPart or weaponManifest
-						hipMount.C0 = CFrame.new(-1, 0, 0) * CFrame.Angles(math.pi * 0.25, 0, 0)
-						hipMount.C1 = gripCFrame
-					elseif neckMounted then
-						neckMount.Part1 = weaponManifest:IsA("Model") and weaponManifest.PrimaryPart or weaponManifest
-						neckMount.C0 = CFrame.new(0, 0.75, 0)
-						neckMount.C1 = gripCFrame
-					else
-						local gripToAttachTo = weaponGripType == mapping.gripType.right and rightGrip or leftGrip
-
-						gripToAttachTo.Part1 	= weaponManifest:IsA("Model") and weaponManifest.PrimaryPart or weaponManifest
-						gripToAttachTo.C0 		= CFrame.new()
-						gripToAttachTo.C1 		= gripContainerOverrideCFrame or weaponBaseData.gripCFrame or weaponBaseData.attachmentOffset or CFrame.new()
-
-						if weaponManifest:IsA("BasePart") then
-							if weaponBaseData.equipmentType == "dagger" or weaponBaseData.equipmentType == "sword" or weaponBaseData.equipmentType == "staff" or weaponBaseData.equipmentType == "greatsword" then
-								if not weaponManifest:FindFirstChild("topAttachment") then
-									local topAttachment 	= Instance.new("Attachment", gripToAttachTo.Part1)
-									topAttachment.Name 		= "topAttachment"
-
-									local part = gripToAttachTo.Part1
-									local size = part.Size
-									local points = {
-										Vector3.new(size.X / 2, 0, 0),
-										Vector3.new(0, size.Y / 2, 0),
-										Vector3.new(0, 0, size.Z / 2),
-										Vector3.new(-size.X / 2, 0, 0),
-										Vector3.new(0, -size.Y / 2, 0),
-										Vector3.new(0, 0, -size.Z / 2)
-									}
-
-									local gripPoint = (gripToAttachTo.C1 * gripToAttachTo.C0:Inverse()).Position
-
-									local bestPoint = nil
-									local bestDistance = 0
-									for _, point in pairs(points) do
-										local distance = (point - gripPoint).Magnitude
-										if distance > bestDistance then
-											bestPoint = point
-											bestDistance = distance
-										end
-									end
-
-									topAttachment.Position = bestPoint
-
-								end
-
-								if not weaponManifest:FindFirstChild("bottomAttachment") then
-									local projectionPosition 	= detection.projection_Box(gripToAttachTo.Part1.CFrame, gripToAttachTo.Part1.Size, gripToAttachTo.Part0.CFrame.p)
-									local bottomAttachment 		= Instance.new("Attachment", gripToAttachTo.Part1)
-									bottomAttachment.Name 		= "bottomAttachment"
-
-									bottomAttachment.Position 	= gripToAttachTo.Part1.CFrame:pointToObjectSpace(projectionPosition)
-								end
-
-								if not weaponManifest:FindFirstChild("Trail") then
-									local trail 		= assetFolder.Trail:Clone()
-									trail.Parent 		= gripToAttachTo.Part1
-									trail.Attachment0 	= gripToAttachTo.Part1.topAttachment
-									trail.Attachment1 	= gripToAttachTo.Part1.bottomAttachment
-									trail.Enabled 		= false
-								end
-							end
-						end
-					end
-				end
-			end
-		end
-	end
+	item_manager.EquipNewItem(appearanceData,currentlyEquipped,renderCharacter,_entityManifest,entitiesBeingRendered,animationInterface,associatePlayer,client,assetFolder)
 
 	if appearanceData and appearanceData.accessories then
-		-- jesus christ damien this took 5 min-=
-		-- cry me a river
-		local hairColor = accessoryLookup.hairColor:FindFirstChild(tostring(appearanceData.accessories.hairColorId or 1)).Value
-		local shirtColor = accessoryLookup.shirtColor:FindFirstChild(tostring(appearanceData.accessories.shirtColorId or 1)).Value
-
-		for accessoryType, id in pairs(appearanceData.accessories) do
-			if accessoryType == "hair" and hatEquipmentData then
-				local itemBaseData = itemLookup[hatEquipmentData.id]
-
-				if itemBaseData then
-					local equipmentHairType_accessory = itemBaseData.equipmentHairType or 1
-					if equipmentHairType_accessory == mapping.equipmentHairType.partial then
-						id = id .. "_clipped"
-
-					elseif equipmentHairType_accessory == mapping.equipmentHairType.none then
-						-- no hair
-						id = ""
-					end
-				end
-			end
-
-			if replicatedStorage.accessoryLookup:FindFirstChild(accessoryType) then
-				local accessoryToLookIn = replicatedStorage.hairClipped:FindFirstChild(tostring(id)) or replicatedStorage.accessoryLookup[accessoryType]:FindFirstChild(tostring(id))
-
-				if accessoryToLookIn then
-					for i, accessoryPartContainer in pairs(accessoryToLookIn:GetChildren()) do
-						if renderCharacter:FindFirstChild(accessoryPartContainer.Name) then
-
-							if accessoryPartContainer:FindFirstChild("shirtTag") then
-								renderCharacter[accessoryPartContainer.Name].Color = shirtColor
-							elseif accessoryPartContainer:FindFirstChild("colorOverride") then
-								renderCharacter[accessoryPartContainer.Name].Color = accessoryPartContainer.Color
-							end
-
-							for i, accessoryPart in pairs(accessoryPartContainer:GetChildren()) do
-								if accessoryPart:IsA("BasePart") then
-									local accessory = accessoryPart:Clone()
-										accessory.Anchored 		= false
-										accessory.CanCollide 	= false
-
-									if accessory.Name == "hair_Head" then
-										accessory.Color = hairColor
-									end
-
-									if accessory.Name == "shirt" or accessory:FindFirstChild("shirtTag") then
-										accessory.Color = shirtColor
-									end
-
-
-									local projectionWeld = Instance.new("Motor6D", accessory)
-										projectionWeld.Name 	= "projectionWeld"
-										projectionWeld.Part0 	= accessory
-										projectionWeld.Part1 	= renderCharacter[accessoryPartContainer.Name]
-										projectionWeld.C0 		= CFrame.new()
-										projectionWeld.C1 		= accessoryPartContainer.CFrame:toObjectSpace(accessoryPart.CFrame)
-
-									accessory.Name 		= "!! ACCESSORY !!"
-									accessory.Parent 	= renderCharacter
-
-								end
-							end
-						end
-					end
-				end
-			end
-		end
+		appearance_manager.LoadAppearence(accessoryLookup,appearanceData,hatEquipmentData,itemLookup,renderCharacter)
 	end
 
 	if appearanceData and appearanceData.temporaryEquipment then
@@ -1131,60 +669,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 				local entity = renderEntityData.entityContainer and renderEntityData.entityContainer:FindFirstChild("entity")
 				if entity then
-					local ragdoll = entity:Clone()
-					ragdoll.Parent = entity.Parent
-					entity:Destroy()
-
-					local motorNames = {"Root", "Neck", "RightShoulder", "LeftShoulder", "RightElbow", "LeftElbow", "Waist", "RightWrist", "LeftWrist", "RightHip", "LeftHip", "RightKnee", "LeftKnee", "RightAnkle", "LeftAnkle"}
-					for _, motorName in pairs(motorNames) do
-						ragdoll:FindFirstChild(motorName, true):Destroy()
-					end
-
-					local rigAttachmentPairsByName = {}
-					for _, desc in pairs(ragdoll:GetDescendants()) do
-						if desc:IsA("Attachment") and desc.Name:find("RigAttachment") and (not desc.Name:find("Root")) then
-							local name = desc.Name
-							if not rigAttachmentPairsByName[name] then
-								rigAttachmentPairsByName[name] = {}
-							end
-							table.insert(rigAttachmentPairsByName[name], desc)
-						end
-					end
-
-					physics:setWholeCollisionGroup(ragdoll, "passthrough")
-
-					local constraints = Instance.new("Folder")
-					constraints.Name = "constraints"
-					constraints.Parent = ragdoll
-
-					for name, pair in pairs(rigAttachmentPairsByName) do
-						local constraint = Instance.new("BallSocketConstraint")
-						constraint.LimitsEnabled = true
-						constraint.TwistLimitsEnabled = true
-						constraint.Attachment0 = pair[1]
-						constraint.Attachment1 = pair[2]
-						constraint.Parent = constraints
-
-						pair[1].Parent.CanCollide = true
-						pair[2].Parent.CanCollide = true
-					end
-
-					local hitbox = renderEntityData.entityContainer:FindFirstChild("hitbox")
-					if hitbox then
-						local bp = Instance.new("BodyPosition")
-						bp.MaxForce = Vector3.new(1e6, 0, 1e6)
-						bp.Parent = ragdoll.LowerTorso
-
-						local connection
-						local function onHeartbeat()
-							if not bp.Parent then
-								connection:Disconnect()
-								return
-							end
-							bp.Position = hitbox.Position
-						end
-						connection = game:GetService("RunService").Heartbeat:Connect(onHeartbeat)
-					end
+					ragdoll_manager.RagDollCharacter(entity,renderEntityData)
 				end
 			end
 		elseif newState == "gettingUp" and entityManifest.entityType.Value == "character" then
@@ -1256,20 +741,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 					end
 				end
 			elseif entityManifest.entityType.Value == "character" then
-				local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(renderEntityData.entityContainer.entity)
-				local weaponStateAppendment = "" do
-					if currentlyEquipped["1"] and currentlyEquipped["1"].baseData.equipmentType then
-						-- weaponState weapons should never overlap with dual wielding (BOW IN PARTICULAR)
-						if renderEntityData.weaponState then
-							weaponStateAppendment = "_" .. renderEntityData.weaponState
-						elseif currentlyEquipped["1"] and currentlyEquipped["11"] then
-							if currentlyEquipped["11"].baseData.equipmentType == "sword" then
-								weaponStateAppendment = "_dual"
-							elseif currentlyEquipped["11"].baseData.equipmentType == "shield" then
-								weaponStateAppendment = "AndShield"
-							end
-						end
-					end
+				local weaponStateAppendment = item_manager.GetWeaponStateAppendment(currentlyEquipped,renderEntityData)
 				end
 
 				local animationNameToLookFor = newState do
@@ -2039,13 +1511,9 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 		renderEntityData.weaponState = weaponState
 
 		-- force a refresh of the state animations
-		if entityManifest.entityType.Value == "character" then
-			local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(renderEntityData.entityContainer.entity)
-			if currentlyEquipped["1"] then
-				if weaponType == currentlyEquipped["1"].baseData.equipmentType then
-					onEntityStateChanged(entityManifest.state.Value)
-				end
-			end
+		local needStateChange = item_manager.RefreshStateAnimation()
+		if needStateChange then
+			onEntityStateChanged(entityManifest.state.Value)
 		end
 	end
 
@@ -3312,42 +2780,9 @@ local function main()
 		return entitiesBeingRendered[client.Character.PrimaryPart].entityContainer
 	end)
 
-	network:create("getCurrentlyEquippedForRenderCharacter", "BindableFunction", "OnInvoke", function(renderCharacter)
-		return getCurrentlyEquippedForRenderCharacter(renderCharacter)
-	end)
+	--run manager connections
+	item_manager.createNetworkConnections(client,entitiesBeingRendered)
 
-	network:create("hideWeapons", "BindableFunction", "OnInvoke", function(entity)
-		local equipment = getCurrentlyEquippedForRenderCharacter(entity)
-		local partData = {}
-
-		local checks = {
-			equipment["1"] and equipment["1"].manifest,
-			equipment["11"] and equipment["11"].manifest
-		}
-
-		local function hidePart(part)
-			table.insert(partData, {part = part, transparency = part.Transparency})
-			part.Transparency = 1
-		end
-
-		for _, check in pairs(checks) do
-			if check:IsA("BasePart") then
-				hidePart(check)
-			end
-
-			for _, desc in pairs(check:GetDescendants()) do
-				if desc:IsA("BasePart") then
-					hidePart(desc)
-				end
-			end
-		end
-
-		return function()
-			for _, partDatum in pairs(partData) do
-				partDatum.part.Transparency = partDatum.transparency
-			end
-		end
-	end)
 
 	network:connect("playerAppliedScroll", "OnClientEvent", onPlayerAppliedScroll)
 	network:create("myClientCharacterContainerChanged", "BindableEvent")
@@ -3372,28 +2807,8 @@ local function main()
 	end)
 
 	network:create("myClientCharacterDied", "BindableEvent")
-	network:create("getRenderPlayerWeaponManifestEquipped", "BindableFunction", "OnInvoke", function(player)
-		local entityManifest = player.Character and player.Character.PrimaryPart
-
-		if entityManifest and entitiesBeingRendered[entityManifest] then
-			local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(entitiesBeingRendered[entityManifest].entityContainer.entity)
-
-			return currentlyEquipped["1"] and currentlyEquipped["1"].manifest
-		end
-	end)
 
 	network:create("myClientCharacterWeaponChanged", "BindableEvent")
-
-	-- todo: switch this to getMyClientCharacterCurrentWeaponManifest
-	network:create("getCurrentWeaponManifest", "BindableFunction", "OnInvoke", function(entityManifest)
-		entityManifest = entityManifest or (client.Character and client.Character.PrimaryPart)
-
-		if entityManifest and entitiesBeingRendered[entityManifest] then
-			local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(entitiesBeingRendered[entityManifest].entityContainer.entity)
-
-			return currentlyEquipped["1"] and currentlyEquipped["1"].manifest
-		end
-	end)
 
 	network:create("assembleEntityByManifest", "BindableFunction", "OnInvoke", function(entityManifest)
 		if entityManifest.entityType.Value == "character" then

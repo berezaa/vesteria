@@ -11,16 +11,16 @@ funnction staff_manager.PlayAnimation(animationToBePlayed,extraData,configuratio
         magicBullet.Parent 		= workspace.CurrentCamera
     --						magicBullet.CFrame 		= entityManifest.CFrame * CFrame.new(0, 0, -1.5)
         magicBullet.CFrame		= CFrame.new(renderEntityData.currentPlayerWeapon.magic.WorldPosition)
-        
+
         local unitDirection, adjusted_targetPosition = projectile.getUnitVelocityToImpact_predictiveByAbilityExecutionData(
             magicBullet.Position,
             renderEntityData.weaponBaseData.projectileSpeed or 50, -- act as if you were shooting at full
             extraData,
             0.05
         )
-        
+
         utilities.playSound("magicAttack", renderEntityData.currentPlayerWeapon)
-        
+
         projectile.createProjectile(
             magicBullet.Position,
             unitDirection,
@@ -34,7 +34,7 @@ funnction staff_manager.PlayAnimation(animationToBePlayed,extraData,configuratio
                     end
                 end
                 game.Debris:AddItem(magicBullet, 0.5)
-                
+
                 -- for damien: todo: hitPart is nil
                 if associatePlayer == client and hitPart then
                     local canDamageTarget, trueTarget = damage.canPlayerDamageTarget(game.Players.LocalPlayer, hitPart)
@@ -44,23 +44,23 @@ funnction staff_manager.PlayAnimation(animationToBePlayed,extraData,configuratio
                     end
                 end
             end,
-            
+
             nil,
-            
+
             -- ignore list
             {entityManifest; renderEntityData.entityContainer},
-            
+
             -- points to next position
             true,
-            
+
             0.01,
-            
+
             0.8
         )
-        
+
         if renderEntityData.currentPlayerWeapon and renderEntityData.currentPlayerWeapon:FindFirstChild("magic") and renderEntityData.currentPlayerWeapon.magic:FindFirstChild("castEffect") then
             renderEntityData.currentPlayerWeapon.magic.castEffect:Emit(1)
-        end	
+        end
 
     end
 end
