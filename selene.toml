@@ -1,4 +1,4 @@
 std = "roblox"
 
 [config]
-comments_count = true
+empty_if = { comments_count = true }
