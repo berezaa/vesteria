@@ -363,7 +363,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			physics:setWholeCollisionGroup(renderEntityData.entityContainer.entity, "monstersLocal")
 
 
-			for i, animation in pairs(renderEntityData.entityContainer.entity.animations:GetChildren()) do
+			for _, animation in pairs(renderEntityData.entityContainer.entity.animations:GetChildren()) do
 				local animationTrack 				= renderEntityData.entityContainer.entity.AnimationController:LoadAnimation(animation)
 				local animPriority = "Idle"
 				if animation.Name == "attacking" or animation.Name == "death" then
