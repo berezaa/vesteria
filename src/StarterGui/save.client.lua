@@ -1,31 +1,33 @@
-script.Parent.Enabled = false
-script.Parent.saveMe.Visible = false
+local resetUI = script.Parent.resetUI
+
+resetUI.Enabled = false
+resetUI.saveMe.Visible = false
 game.Players.LocalPlayer:WaitForChild("DataLoaded", 60)
 
 wait(5)
-if (not script.Parent.Parent.gameUI.Enabled) and (not script.Parent.Parent.customize.Enabled) then
-	script.Parent.Enabled = true
-	script.Parent.saveMe.Visible = true
-	
-	
+if (not resetUI.Parent.gameUI.Enabled) and (not resetUI.Parent.customize.Enabled) then
+	resetUI.Enabled = true
+	resetUI.saveMe.Visible = true
+
+
 	local function showReport()
-		local text = "" 
-		for i,entry in pairs(game.LogService:GetLogHistory()) do
-			text = text .. "  [["..entry.message.."]]  " 
-		end 
-		script.Parent.incident.contents.Text = text
-		script.Parent.incident.Visible = true 
+		local text = ""
+		for _, entry in pairs(game.LogService:GetLogHistory()) do
+			text = text .. "  [["..entry.message.."]]  "
+		end
+		resetUI.incident.contents.Text = text
+		resetUI.incident.Visible = true
 	end
-	
-	script.Parent.incident.continue.Activated:connect(function()
+
+	resetUI.incident.continue.Activated:connect(function()
 		local modules = require(game.ReplicatedStorage:WaitForChild("modules"))
 		local network = modules.load("network")
 		network:invokeServer("playerRequest_returnToMainMenu")
-		script.Parent.incident.continue:Destroy()
+		resetUI.incident.continue:Destroy()
 	end)
-	
-	script.Parent.saveMe.Activated:connect(function()
-		script.Parent.saveMe.Visible = false
+
+	resetUI.saveMe.Activated:connect(function()
+		resetUI.saveMe.Visible = false
 		showReport()
 	end)
 end

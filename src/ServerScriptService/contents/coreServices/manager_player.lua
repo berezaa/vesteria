@@ -921,34 +921,6 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 	return completePlayerStats
 end
 
-local function isPlayerInPVPZone(pvpZone, player)
-	if not player or not player.Character or not player.Character.PrimaryPart then return false end
-
-	local isInPVPZone
-
-	local points = pvpZone:GetChildren()
-	for i = 1, #points do
-		local point1 		= pvpZone[tostring(i)]
-		local point2 		= pvpZone[tostring(i == #points and 1 or i + 1)]
-		local isInsideFace 	= (point2.Position - point1.Position):Cross(player.Character.PrimaryPart.Position - point1.Position).Y < 0
-
-		if isInPVPZone ~= nil and isInsideFace ~= isInPVPZone then
-			return false
-		end
-
-		isInPVPZone = isInsideFace
-	end
-
-	if isInPVPZone then
-		local characterY 	= player.Character.PrimaryPart.Position.Y
-		local upperYBound 	= points[1].Position.Y + points[1].Size.Y / 2
-		local lowerYBound 	= points[1].Position.Y - points[1].Size.Y / 2
-
-		return characterY >= lowerYBound and characterY <= upperYBound
-	end
-
-	return isInPVPZone
-end
 
 network:create("playerCharacterLoaded", "BindableEvent")
 
@@ -2938,13 +2910,6 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 			table.sort(playerData[index], function(a, b)
 				return a.position > b.position
 			end)
-		elseif index == "quests" then
-			for i, playerQuestData in pairs(playerData.quests.active) do
-				-- update objective data to
-				if getPlayerQuestState(player, playerQuestData.id) == mapping.questState.handing then
-
-				end
-			end
 		elseif index == "level" then
 --			playerData.statistics.pointsUnassigned = playerData.statistics.pointsUnassigned + STAT_POINTS_GAINED_PER_LEVEL
 			--playerData.nonSerializeData.playerDataChanged:Fire("statistics")
@@ -3019,7 +2984,9 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 
 		local characterPrimaryPart = character.PrimaryPart
 
-		pcall(function() characterPrimaryPart:SetNetworkOwner(player) end)
+		pcall(function()
+			characterPrimaryPart:SetNetworkOwner(player)
+		end)
 
 		local lastCharacterPostion do
 			if player:FindFirstChild("lastPhysicalPosition") then
@@ -3040,8 +3007,8 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 				end
 
 				if spawnPoint then
-					local cf 			= spawnPoint.Value
-					local goalCFrame 	= characterPrimaryPart.CFrame - characterPrimaryPart.CFrame.p + cf.p + cf.lookVector * 30 + Vector3.new(math.random() * 3, 4, math.random() * 3)
+					local cf = spawnPoint.Value
+					local goalCFrame = characterPrimaryPart.CFrame - characterPrimaryPart.CFrame.p + cf.p + cf.lookVector * 30 + Vector3.new(math.random() * 3, 4, math.random() * 3)
 
 					-- shift randomly if this isn't a load barrier
 					-- local isLoadBarrier = (teleportData and (teleportData.spawnLocation == nil)) and spawnPoint.Name ~= "default"
@@ -3055,8 +3022,8 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 					warn(">> spawn point missing!",	teleportData and teleportData.arrivingFrom or "no default found")
 					warn(">> using first spawnPoint")
 
-					local cf 			= replicatedStorage.spawnPoints:GetChildren()[1].Value
-					local goalCFrame 	= characterPrimaryPart.CFrame - characterPrimaryPart.CFrame.p + cf.p + cf.lookVector * 30 + Vector3.new(math.random() * 3, 4, math.random() * 3)
+					local cf = replicatedStorage.spawnPoints:GetChildren()[1].Value
+					local goalCFrame = characterPrimaryPart.CFrame - characterPrimaryPart.CFrame.p + cf.p + cf.lookVector * 30 + Vector3.new(math.random() * 3, 4, math.random() * 3)
 
 					targetCharacterSpawnPosition = goalCFrame
 				else
@@ -3074,14 +3041,14 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 		end
 
 		if targetCharacterSpawnPosition then
-			local ray 				= Ray.new(targetCharacterSpawnPosition.p + Vector3.new(0, 2, 0), Vector3.new(0, -999, 0))
-			local hitPart, hitPos 	= projectile.raycast(ray, {character; entityManifestCollectionFolder})
+			local ray = Ray.new(targetCharacterSpawnPosition.p + Vector3.new(0, 2, 0), Vector3.new(0, -999, 0))
+			local hitPart = projectile.raycast(ray, {character; entityManifestCollectionFolder})
 
 			if hitPart then
 				wait(0.1)
 
 --				while (characterPrimaryPart.Position - targetCharacterSpawnPosition.p).magnitude > 3 do
-				for i = 1, 8 do
+				for _ = 1, 8 do
 					network:invoke("teleportPlayerCFrame_server", player, targetCharacterSpawnPosition)
 
 					wait(0.2)
@@ -3095,7 +3062,9 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	end
 
 	if player.Character then
-		spawn(function() onCharacterSpawn(player.Character) end)
+		spawn(function()
+			onCharacterSpawn(player.Character)
+		end)
 	end
 
 	player.CharacterAdded:connect(onCharacterSpawn)
@@ -3108,17 +3077,9 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	-- assign inventory slots that aren't assigned positions
 	updateInventorySlots(player)
 
-	-- check quests
-	checkForOutdatedQuests(player)
-
 	local success, rank = pcall(function()
 		return player:GetRankInGroup(4238824)
 	end)
-
-	if (runService:IsStudio() or (success and type(rank) == "number" and rank >= 254)) and not playerData.abilityBooks.admin then
-		warn("GRANTING ADMIN BOOK TO", player)
-		grantPlayerAbilityBook(player, "admin")
-	end
 
 	-- push player data to client
 	onClientRequestFlushPropogationCache(player)
@@ -3138,15 +3099,15 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 		end
 
 		local previousValue = playerData[index]
-		playerData[index] 	= previousValue + increment
+		playerData[index] = previousValue + increment
 
 		-- signal to script something changed
 		playerData.nonSerializeData.playerDataChanged:Fire(index, previousValue, playerData[index])
 
 		-- analytics for gold
 		if index == "gold" then
-			local currency 	= index
-			local amount 	= increment
+			local currency = index
+			local amount = increment
 
 			if amount ~= 0 and source then
 				network:invoke("reportCurrency", player, currency, amount, source)
@@ -3161,7 +3122,9 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	-- end easy functions --
 
 	if player.Character and player.Character.PrimaryPart then
-		spawn(function() onCharacterAdded(player, player.Character) end)
+		spawn(function()
+			onCharacterAdded(player, player.Character)
+		end)
 	end
 
 	player.CharacterAdded:connect(function(character)
@@ -3420,34 +3383,9 @@ game:BindToClose(function()
 			end
 		end)
 	end
+
 	repeat wait(0.1) until playerCount <= 0
 end)
-
-
---[[
-	TELEPORTATION
---]]
-
-local teleportService = game:GetService("TeleportService")
-
--- TODO: tie into teleport manager
-local function saveDataForTeleport(player)
-	if not player:FindFirstChild("teleporting") then
-		local tag = Instance.new("BoolValue")
-		tag.Name = "teleporting"
-		tag.Parent = player
-
-		network:invoke("reportAnalyticsEvent",player,"teleport:attempt")
-		local TimeStamp = onPlayerRemoving(player)
-		if TimeStamp then
-			return TimeStamp
-		end
-	end
-end
-
-network:create("signal_teleport", "RemoteEvent")
-
-
 
 -- note: category can be factored out because items of same itemId share same category
 local function getInventorySlotByItemId(player, itemId, ignoreSlotsThatAreStacked)
@@ -3486,8 +3424,8 @@ local function int__tradeItemsBetweenPlayerAndNPC(player, inventoryTransferDataC
 	local playerData = playerDataContainer[player]
 
 	if player and playerData and inventoryTransferDataCollection_player and inventoryTransferData_intermediateCollection_NPC then
-		local inventoryTransferData_intermediateCollection_player, wasInventoryTransferDataModified_player 	= int__getInventoryTransferData_intermediateCollectionFromInventoryTransferDataCollection(player, inventoryTransferDataCollection_player)
-		local player_hasInventorySpace 																		= int__doesPlayerHaveInventorySpaceForTrade(player, inventoryTransferData_intermediateCollection_player, inventoryTransferData_intermediateCollection_NPC)
+		local inventoryTransferData_intermediateCollection_player, wasInventoryTransferDataModified_player = int__getInventoryTransferData_intermediateCollectionFromInventoryTransferDataCollection(player, inventoryTransferDataCollection_player)
+		local player_hasInventorySpace = int__doesPlayerHaveInventorySpaceForTrade(player, inventoryTransferData_intermediateCollection_player, inventoryTransferData_intermediateCollection_NPC)
 
 		if not wasInventoryTransferDataModified_player and player_hasInventorySpace then
 			if not gold_player or playerData.gold >= gold_player then
@@ -3616,11 +3554,6 @@ local function onTradeRequestReceived(player1, inventoryTransferDataCollection_p
 		if not wasInventoryTransferDataModified_player1 then
 			if not wasInventoryTransferDataModified_player2 then
 				local success, reason = int__tradeItemsBetweenPlayers(player1, inventoryTransferData_intermediateCollection_player1, gold_player1, player2, inventoryTransferData_intermediateCollection_player2, gold_player2)
-
-				if success then
-
-				end
-
 				return success, reason
 			else
 				return false, player2.Name .. " has invalid data"
@@ -3657,9 +3590,6 @@ end
 
 -- todo: handle 'swapping' and 'stack breaking/making' as one function based on the items involved
 -- or something like that. it'll be a big function though, but they cross over too much to keep it separate
-local function onRequestModifyInventorySlots()
-
-end
 
 local function onRequestSplitInventorySlotDataStack(player, category, inventorySlotPosition, targetInventorySlotPosition, splitAmount)
 	splitAmount = splitAmount or 1
@@ -3726,8 +3656,6 @@ local function onRequestSplitInventorySlotDataStack(player, category, inventoryS
 				end
 			end
 		end
-	else
-		addSuspicion(player, 100)
 	end
 
 	return false
@@ -3738,11 +3666,9 @@ local function onRequestAddItemToInventoryReceived(player, itemId, stacks, metad
 	-- default to one stack!
 	stacks = stacks or 1
 
-
 	if playerDataContainer[player] and itemLookup[itemId] then
 		local itemBaseData = itemLookup[itemId]
 		if itemBaseData then
-
 			-- todo, probably use a copy of inventory to prevent tampering?
 			if itemBaseData.canStack then
 				while stacks > 0 do
@@ -3765,7 +3691,6 @@ local function onRequestAddItemToInventoryReceived(player, itemId, stacks, metad
 
 				-- update the inventory slots to assign this new slot a position value
 				updateInventorySlots(player)
-
 				-- force an inventory refresh
 				onClientRequestPropogateCacheData(player, "inventory")
 
@@ -3888,7 +3813,6 @@ local function onTransferInventoryToEquipment(player, category, inventorySlotPos
 							return false, "not high enough level"
 						end
 					end
-				else
 				end
 			end
 
@@ -4216,7 +4140,7 @@ local function playerRequestSetKeyAction(player,key,action)
 		local preferences = playerData.userSettings.keybinds or {}
 
 		-- remove old keybinds
-		for key,existingAction in pairs(preferences) do
+		for key, existingAction in pairs(preferences) do
 			if existingAction == action then
 				preferences[key] = nil
 			end
@@ -4326,7 +4250,6 @@ local function onRemovePlayerInventorySlotData(player, inventorySlotData, stacks
 					if canRemoveStacksRequested then
 						if trueInventorySlotData.stacks then
 							trueInventorySlotData.stacks = trueInventorySlotData.stacks
-						else
 						end
 					else
 						return false
@@ -4393,7 +4316,7 @@ end
 
 -- let the player be authoritative in this regard, it's their personal data anyway.
 local function onRegisterHotbarSlotData(player, dataType, id, position)
-	if not playerDataContainer[player] then end
+	if not playerDataContainer[player] then return end
 
 	if not id or not dataType then
 		if position then
@@ -4432,7 +4355,7 @@ end
 local seatsTaken = {}
 
 local function isSeatTaken(seat)
-	for i,otherSeat in pairs(seatsTaken) do
+	for i, otherSeat in pairs(seatsTaken) do
 		if otherSeat == seat then
 			return true
 		end
@@ -4450,8 +4373,8 @@ local function onReplicateClientStateChanged(player, state, stateVariant, otherD
 	if player.Character and player.Character.PrimaryPart and (player.Character.PrimaryPart.state.Value ~= state or player.Character.PrimaryPart.state.variant.Value ~= stateVariant) and player.Character.PrimaryPart.state.Value ~= "dead" then
 		local previousState = player.Character.PrimaryPart.state.Value
 
-		player.Character.PrimaryPart.state.variant.Value 	= stateVariant or ""
-		player.Character.PrimaryPart.state.Value 			= state
+		player.Character.PrimaryPart.state.variant.Value = stateVariant or ""
+		player.Character.PrimaryPart.state.Value = state
 
 		-- handle sitting/unsitting
 		if state == "sitting" and otherData then
@@ -4470,16 +4393,16 @@ local function onReplicateClientStateChanged(player, state, stateVariant, otherD
 				return false
 			else
 				player.Character.PrimaryPart:SetNetworkOwner(nil)
-				player.Character.PrimaryPart.Anchored 	= true
-				seatsTaken[player.Name] 				= otherData
+				player.Character.PrimaryPart.Anchored = true
+				seatsTaken[player.Name] = otherData
 				game.CollectionService:RemoveTag(otherData, "interact")
 			end
 
 			if seatsTaken[player.Name] == otherData then
-				player.Character.PrimaryPart.grounder.Position 			= otherData.CFrame.p + Vector3.new(0, 0.5, 0)
-				player.Character.PrimaryPart.hitboxVelocity.Velocity 	= Vector3.new()
-				player.Character.PrimaryPart.hitboxGyro.CFrame 			= CFrame.new(otherData.CFrame.p + Vector3.new(0, 0.5, 0), otherData.CFrame.p + Vector3.new(0, 0.5, 0) + otherData.CFrame.lookVector)
-				player.Character.PrimaryPart.CFrame 					= otherData.CFrame + Vector3.new(0, 0.5, 0)
+				player.Character.PrimaryPart.grounder.Position = otherData.CFrame.p + Vector3.new(0, 0.5, 0)
+				player.Character.PrimaryPart.hitboxVelocity.Velocity = Vector3.new()
+				player.Character.PrimaryPart.hitboxGyro.CFrame = CFrame.new(otherData.CFrame.p + Vector3.new(0, 0.5, 0), otherData.CFrame.p + Vector3.new(0, 0.5, 0) + otherData.CFrame.lookVector)
+				player.Character.PrimaryPart.CFrame = otherData.CFrame + Vector3.new(0, 0.5, 0)
 			end
 		elseif previousState == "sitting" then
 			if otherData and otherData == "override" then
@@ -4616,70 +4539,40 @@ local function playerRequest_transferStorageToInventory(player, storageSlotData)
 end
 
 local function main()
-	network:create("confirmPlayerDeath", "RemoteEvent", "OnServerEvent", onPlayerConfirmDeath)
-
 	-- data manipulation
 	network:create("loadPlayerData", "RemoteFunction", "OnServerInvoke", onPlayerAdded)
 	network:create("playerRequest_setupPlayerData", "RemoteFunction", "OnServerInvoke", onPlayerAdded)
-
 	network:create("switchInventorySlotData", "RemoteFunction", "OnServerInvoke", onSwitchInventorySlotDataRequestReceived)
 	network:create("playerRequest_switchInventorySlotData", "RemoteFunction", "OnServerInvoke", onSwitchInventorySlotDataRequestReceived)
-
-	network:create("playerRequest_primeArrow", "RemoteFunction", "OnServerInvoke", playerRequest_primeArrow)
-
 	network:create("transferInventoryToEquipment", "RemoteFunction", "OnServerInvoke", onTransferInventoryToEquipment)
 	network:create("playerRequest_transferInventoryToEquipment", "RemoteFunction", "OnServerInvoke", onTransferInventoryToEquipment)
-
 	network:create("playerRequest_transferInventoryToStorage", "RemoteFunction", "OnServerInvoke", playerRequest_transferInventoryToStorage)
 	network:create("playerRequest_transferStorageToInventory", "RemoteFunction", "OnServerInvoke", playerRequest_transferStorageToInventory)
-
 	network:create("saveDataForTeleportation", "RemoteFunction", "OnServerInvoke", saveDataForTeleport)
 	network:create("playerRequest_savePlayerDataForTeleportation", "RemoteFunction", "OnServerInvoke", saveDataForTeleport)
-
 	network:create("requestAddItemToInventory", "BindableFunction", "OnInvoke", onRequestAddItemToInventoryReceived)
-
-	network:create("playerRequest_grantQuestToPlayer", "RemoteFunction", "OnServerInvoke", grantQuestToPlayer)
-
+	network:create("onPlayerRemoving", "BindableFunction", "OnInvoke", onPlayerRemoving)
 	network:create("teleportPlayerCFrame_server", "BindableFunction", "OnInvoke", function(player, targetCFrame)
 		if playerPositionDataContainer[player] and player.Character and player.Character.PrimaryPart then
-			playerPositionDataContainer[player].positions 	= {{position = targetCFrame.p; velocity = Vector3.new()}}
-			player.Character.PrimaryPart.CFrame 			= targetCFrame
+			playerPositionDataContainer[player].positions = {{position = targetCFrame.p; velocity = Vector3.new()}}
+			player.Character.PrimaryPart.CFrame = targetCFrame
 		end
 	end)
-
-	network:create("dataRecoveryRequested", "RemoteEvent", "OnServerEvent", onDataRecoveryRequested)
-	network:create("dataRecoveryGetVersion", "RemoteFunction", "OnServerInvoke", function(player, slot, version)
-		local success, playerData, message = datastoreInterface:getPlayerSaveFileData(player, slot, version)
-
-		if not success then
-			return false, nil, message
-		else
-			return true, playerData, ""
-		end
-	end)
-	network:create("dataRecoveryRejected", "RemoteEvent", "OnServerEvent", onDataRecoveryRejected)
 
 	-- data interfacing with client
 	network:create("getPropogationCacheLookupTable", "RemoteFunction", "OnServerInvoke", getPropogationCacheLookupTable)
-
 	network:create("propogateCacheDataRequest", "RemoteEvent", "OnServerEvent", onClientRequestPropogateCacheData)
-
 	network:create("clientFlushPropogationCache", "RemoteEvent", "OnServerEvent", onClientRequestFlushPropogationCache)
-
 	network:create("getPlayerEquipment", "RemoteFunction", "OnServerInvoke", onGetPlayerEquipment)
 	network:create("playerRequest_getPlayerEquipmentData", "RemoteFunction", "OnServerInvoke", onGetPlayerEquipment)
-
 	network:create("playerEquipmentChanged", "RemoteEvent")
 
 	network:create("requestSplitInventorySlotDataStack", "RemoteFunction", "OnServerInvoke", onRequestSplitInventorySlotDataStack)
 	network:create("playerRequest_splitInventorySlotDataStack", "RemoteFunction", "OnServerInvoke", onRequestSplitInventorySlotDataStack)
-
 	network:create("registerHotbarSlotData", "RemoteFunction", "OnServerInvoke", onRegisterHotbarSlotData)
 	network:create("playerRequest_getHotbarSlotData", "RemoteFunction", "OnServerInvoke", onRegisterHotbarSlotData)
-
 	network:create("replicateClientStateChanged", "RemoteEvent", "OnServerEvent", onReplicateClientStateChanged)
 	network:create("replicateClientWeaponStateChanged", "RemoteEvent", "OnServerEvent", onReplicateClientWeaponStateChanged)
-
 	network:create("playerRequest_equipTemporaryEquipment", "RemoteFunction", "OnServerInvoke", onPlayerRequest_equipTemporaryEquipment)
 
 	-- data interfacing with server
@@ -4688,9 +4581,6 @@ local function main()
 	network:create("getPlayerEquipmentDataByEquipmentPosition", "BindableFunction", "OnInvoke", onGetPlayerEquipmentDataByEquipmentPosition)
 	network:create("getPlayerInventorySlotDataByInventorySlotPosition", "BindableFunction", "OnInvoke", onGetPlayerInventorySlotDataByInventorySlotPosition)
 	network:create("removePlayerInventorySlotData", "BindableFunction", "OnInvoke", onRemovePlayerInventorySlotData)
-	network:create("questTriggerOccurred", "BindableEvent", "Event", onQuestTriggerOccured)
-
-	network:create("grantAbilityBook", "BindableFunction", "OnInvoke", grantPlayerAbilityBook)
 	network:create("playerEquipmentChanged_server", "BindableEvent")
 	network:create("doesPlayerHaveInventorySpaceForTrade", "BindableFunction", "OnInvoke", int__doesPlayerHaveInventorySpaceForTrade)
 
@@ -4699,43 +4589,31 @@ local function main()
 
 	-- events
 	network:create("playerCharacterDied", "BindableEvent")
-
-	network:create("playerRequest_submitQuest", "RemoteFunction", "OnServerInvoke", submitQuest)
-
 	network:create("alertPlayerNotification","RemoteEvent")
-
 	network:create("playerRequest_incrementPlayerStatPointsByStatName", "RemoteFunction", "OnServerInvoke", incrementPlayerStatPointsByStatName)
 	network:create("playerStatisticsChanged", "RemoteEvent")
-
 	network:create("playerRequest_respawnMyCharacter", "RemoteFunction", "OnServerInvoke", onPlayerRequest_respawnMyCharacter)
 	network:create("playerRequest_returnToMainMenu", "RemoteFunction", "OnServerInvoke", onPlayerRequest_returnToMainMenu)
-
 	network:create("requestTradeBetweenPlayers", "BindableFunction", "OnInvoke", onTradeRequestReceived)
 
 	-- todo: probably tighten this
 	network:create("tradeItemsBetweenPlayerAndNPC", "BindableFunction", "OnInvoke", int__tradeItemsBetweenPlayerAndNPC)
-
 	network:create("playerAnimationReplicated", "BindableEvent")
-
 	network:create("setStamina", "RemoteEvent")
+
 
 	-- random teleport crap
 	network:create("externalTeleport", "RemoteEvent")
-
 	network:create("signal_alertChatMessage", "RemoteEvent")
-
 	network:create("openLoreBookFromServer", "RemoteEvent")
-
 	network:create("playerInventoryChanged_server", "BindableEvent")
-
 	network:create("playerWasExhausted", "RemoteEvent", "OnServerEvent", function()
 
 	end)
 
-	game.Players.PlayerRemoving:connect(onPlayerRemoving)
 
-	spawn(int__tickForPVP)
-	spawn(init__exploitBlock)
+
+	game.Players.PlayerRemoving:connect(onPlayerRemoving)
 end
 
 spawn(main)
