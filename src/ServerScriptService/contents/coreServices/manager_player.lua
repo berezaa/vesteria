@@ -81,37 +81,37 @@ end
 
 network:create("getPlayerGlobalData", "BindableFunction", "OnInvoke", function(player)
 	local success, data, status = datastoreInterface:getPlayerGlobalSaveFileData(player)
-	
+
 	if not success then
 		local reportingSuccess, reportingError = pcall(function()
 			network:invoke("reportError", player, "error", "getPlayerGlobalData failed: "..status)
 			network:invoke("reportAnalyticsEvent",player,"data:fail:save")
 		end)
-		
+
 		if not reportingSuccess then
 			warn("Failed to report data error: "..reportingError)
-		end		
-	end	
-	
+		end
+	end
+
 	return success, data, status
 end)
 
 network:create("setPlayerGlobalData", "BindableFunction", "OnInvoke", function(player, GlobalData)
 	local playerId = player.userId
 
-	local success, status, version = datastoreInterface:updatePlayerGlobalSaveFileData(playerId, GlobalData)	
-	
+	local success, status, version = datastoreInterface:updatePlayerGlobalSaveFileData(playerId, GlobalData)
+
 	if not success then
 		local reportingSuccess, reportingError = pcall(function()
 			network:invoke("reportError", player, "error", "setPlayerGlobalData failed: "..status)
 			network:invoke("reportAnalyticsEvent",player,"data:fail:save")
 		end)
-		
+
 		if not reportingSuccess then
 			warn("Failed to report data error: "..reportingError)
-		end		
+		end
 	end
-	
+
 	return success, status, version
 end)
 
@@ -119,37 +119,37 @@ local function respawnPlayer__NORMAL(player)
 	if player.Character then
 		player.Character:Destroy()
 	end
-	
+
 	player:LoadCharacter()
-	
+
 	local start = tick()
-	
+
 	repeat
 		wait(0.1)
 	until player.Character and player.Character.PrimaryPart or (tick() - start >= 10)
-	
+
 	if player.Character and player.Character.PrimaryPart then
-	 	player.Character.PrimaryPart.mana.Value 	= math.ceil(player.Character.PrimaryPart.maxMana.Value * 0.5)
-		player.Character.PrimaryPart.health.Value 	= math.ceil(player.Character.PrimaryPart.maxHealth.Value * 0.5)
+		player.Character.PrimaryPart.mana.Value = math.ceil(player.Character.PrimaryPart.maxMana.Value * 0.5)
+		player.Character.PrimaryPart.health.Value = math.ceil(player.Character.PrimaryPart.maxHealth.Value * 0.5)
 	end
 end
 
 local function isPlayerOfClass(player, class)
 	class = class:lower()
-	
+
 	if class == "adventurer" then
 		return true
 	end
-	
+
 	local playerData = playerDataContainer[player]
 	if not playerData then
 		return false
 	end
-	
+
 	if playerData.class:lower() == class then
 		return true
 	end
-	
+
 	-- conflating the name of an ability book with a class seems spookarook
 	-- but here we go anyways, Davidii taking responsibility for this
 	return playerData.abilityBooks[class] ~= nil
@@ -160,15 +160,15 @@ network:create("getIsPlayerOfClass_server", "BindableFunction", "OnInvoke", isPl
 local function getPlayerDefaultHomePlaceId(player)
 	if isPlayerOfClass(player, "warrior") then
 		return 2470481225 -- warrior stronghold
-	
+
 	elseif isPlayerOfClass(player, "mage") then
 		return 3112029149 -- tree of life
-	
+
 	elseif isPlayerOfClass(player, "hunter") then
 		return 2546689567
-	
+
 	else
-		
+
 		return 2064647391
 	end
 end
@@ -176,28 +176,28 @@ end
 local function onDeathGuiAccepted(player)
 	local playerData = playerDataContainer[player]
 	if not playerData then return end
-	
+
 	local tagName = "acceptedDeathConsequences"
 	local tag = player:FindFirstChild(tagName)
 	if tag then return end
-	
+
 	local source = "game:death"
 
 	playerData.nonSerializeData.incrementPlayerData("gold", -(playerData.gold*0.1), source)
 	local expForNextLevel = levels.getEXPToNextLevel(playerData.level)
 	local newExp = math.clamp(playerData.exp - expForNextLevel * 0.2, 0, expForNextLevel)
 	playerData.nonSerializeData.setPlayerData("exp", newExp)
-	
+
 	local nearestCity = game.ReplicatedStorage:FindFirstChild("nearestCityId") and game.ReplicatedStorage.nearestCityId.Value
 	local returnDestination = nearestCity or playerData.homePlaceId or getPlayerDefaultHomePlaceId(player)
 	returnDestination = utilities.placeIdForGame(returnDestination)
 	playerData.lastLocationDeathOverride = returnDestination
-	
+
 	tag = Instance.new("BoolValue")
 	tag.Name = tagName
 	tag.Value = true
 	tag.Parent = player
-	
+
 	-- set health and mana to 1
 	local character = player.Character
 	if character then
@@ -211,12 +211,12 @@ local function onDeathGuiAccepted(player)
 			end
 		end
 	end
-		
+
 	if game.PlaceId == 2103419922 then
 	--	game:GetService("TeleportService"):Teleport(2103419922, player)
 		player:Kick("You are dead.")
 		return
-	end	
+	end
 
 	network:invoke("teleportPlayer", player, playerData.lastLocationDeathOverride, "default", nil, "death")
 end
@@ -230,19 +230,19 @@ local function respawnPlayer__DANGEROUS(player)
 		local tag = Instance.new("BoolValue")
 		tag.Name = "awaitingDeathGuiResponse"
 		tag.Value = true
-		tag.Parent = player	
+		tag.Parent = player
 	end
 	network:fireClient("deathGuiRequested", player)
 	local timer = 70
 	while timer > 0 do
 		timer = timer - wait(1)
-		
+
 		-- did the player get revived some other way?
 		if player.Character then
 			return
 		end
 	end
-	
+
 	-- made it to the end of the timer and they still haven't accepted
 	-- kill 'em (but dont really that is really mean :( )
 	onDeathGuiAccepted(player)
@@ -254,17 +254,17 @@ local function performDeathCheck(player, isPlayerLeavingGame)
 		if not isPlayerLeavingGame then
 			respawnPlayer__NORMAL(player)
 		end
-		
+
 		return true
 	end
-	
+
 	-- we gotta lose cash cash money y'all
 	if not isPlayerLeavingGame then
 		respawnPlayer__DANGEROUS(player)
-		
+
 		return true
 	end
-	
+
 	local playerData = playerDataContainer[player]
 	if playerData then
 		if replicatedStorage:FindFirstChild("isGlobalUnsafeZone") or (playerData.nonSerializeData.isInPVPZone and playerData.nonSerializeData.isPVPZoneUnsafe) then
@@ -272,18 +272,18 @@ local function performDeathCheck(player, isPlayerLeavingGame)
 			if player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart:FindFirstChild("health") and player.Character.PrimaryPart.health:FindFirstChild("killingBlow") then
 				if player.Character.PrimaryPart.health.killingBlow.Value == "damage" then
 					-- bye bye data
-					
+
 					error("Data wiping has been disabled")
-					
+
 					datastoreInterface:wipePlayerSaveFileData(player, playerData)
-					
+
 					return
 				end
 			end
 		else
 			-- safe zone
 			respawnPlayer__NORMAL(player)
-			
+
 			return
 		end
 	end
@@ -295,27 +295,28 @@ end
 
 local function onPlayerRemoving(player)
 	local playerId = player.userId
-	
+
 	if not player:FindFirstChild("teleporting") then
-		if player:FindFirstChild("awaitingDeathGuiResponse") or player:FindFirstChild("acceptedDeathConsequences") or (player:FindFirstChild("isPlayerSpawning") and player.isPlayerSpawning.Value) then
+		if player:FindFirstChild("awaitingDeathGuiResponse") or player:FindFirstChild("acceptedDeathConsequences") or
+			(player:FindFirstChild("isPlayerSpawning") and player.isPlayerSpawning.Value) then
 			network:fireAllClients("signal_alertChatMessage", {
-				Text = player.Name .. " rage quit."; 
-				Font = Enum.Font.SourceSansBold; 
+				Text = player.Name .. " rage quit.";
+				Font = Enum.Font.SourceSansBold;
 				Color = Color3.fromRGB(45, 87, 255)
-			}) 			
+			})
 		else
 			network:fireAllClients("signal_alertChatMessage", {
-				Text = player.Name .. " disconnected."; 
-				Font = Enum.Font.SourceSansBold; 
+				Text = player.Name .. " disconnected.";
+				Font = Enum.Font.SourceSansBold;
 				Color = Color3.fromRGB(45, 87, 255)
-			}) 					
+			})
 		end
-		
+
 		local tag = Instance.new("BoolValue")
 		tag.Name = "disconnected"
-		tag.Parent = player		
+		tag.Parent = player
 	end
-		
+
 	playerPositionDataContainer[player] = nil
 
 	if playerDataContainer[player] then
@@ -336,21 +337,21 @@ local function onPlayerRemoving(player)
 				end
 			end
 		end
-		
+
 		local deathTag = player:FindFirstChild("awaitingDeathGuiResponse")
 		if deathTag ~= nil then
 			deathTag:Destroy()
 			onDeathGuiAccepted(player)
 		end
-		
+
 		if player:FindFirstChild("entityGUID") then
 			local statusEffects = network:invoke("playerRemovingPackageStatusEffects", player)
-			
+
 			if statusEffects then
 				playerDataContainer[player].packagedStatusEffects = statusEffects
 			end
 		end
-		
+
 		local char = player.Character
 		if char then
 			local manifest = char.PrimaryPart
@@ -418,23 +419,24 @@ function playerRequest_changeAccessories(player, desiredAccessories, dialogueSou
 			if dialogueData and dialogueData.characterCustomization then
 				local details = dialogueData.characterCustomization
 				local cost = details.cost or 50000
-				
+
 				if #desiredAccessories > 0 and playerData.gold >= cost then
 					local playerAccessoryData = utilities.copyTable(playerData.accessories)
-					
-					
+
 					for i,desiredAccessory in pairs(desiredAccessories) do
-						local category = game.ReplicatedStorage.accessoryLookup:FindFirstChild(desiredAccessory.accessory) or game.ReplicatedStorage.accessoryLookup:FindFirstChild(string.gsub(desiredAccessory.accessory, "Id", ""))
+						local category = game.ReplicatedStorage.accessoryLookup:FindFirstChild(desiredAccessory.accessory) or
+							game.ReplicatedStorage.accessoryLookup:FindFirstChild(string.gsub(desiredAccessory.accessory, "Id", ""))
 						if category and category:FindFirstChild(tostring(desiredAccessory.value)) then
 							playerAccessoryData[desiredAccessory.accessory] = desiredAccessory.value
 						else
 							return false, "Invalid accessory request"
 						end
 					end
+
 					playerData.nonSerializeData.setPlayerData("accessories", playerAccessoryData)
 					playerData.nonSerializeData.incrementPlayerData("gold", -50000)
-						
-					return true				
+
+					return true
 				end
 				return false, "Not enough money or no accessory choice"
 			end
@@ -466,7 +468,7 @@ local function onGetPlayerEquipment(client, playerToGetEquipmentOf)
 				wait(0.1)
 			end
 		end
-		
+
 		return playerDataContainer[playerToGetEquipmentOf].equipment
 	end
 end
@@ -476,76 +478,76 @@ network:create("promptPlayerDeathScreen","RemoteEvent")
 local function performDeathToRenderCharacter(player)
 	local previousCharacter = player.Character
 	local serverHitbox = previousCharacter.PrimaryPart
-	
+
 	if serverHitbox.state.Value ~= "dead" then
 		player.isPlayerSpawning.Value = true
 		player.playerSpawnTime.Value = os.time()
-		
+
 		serverHitbox.state.Value = "dead"
-			
-		local killer	
+
+		local killer
 		if serverHitbox:FindFirstChild("killingBlow") and serverHitbox.killingBlow:FindFirstChild("source") then
 			killer = serverHitbox.killingBlow.source.Value
-		end	
-					
+		end
+
 		network:fire("playerCharacterDied", player, previousCharacter, killer)
 		events:fireEventLocal("entityManifestDied", serverHitbox)
-		
+
 		if serverHitbox.health.Value <= serverHitbox.maxHealth.Value * -3 then
 			utilities.playSound("DEATH", serverHitbox)
 		else
 			utilities.playSound("kill", serverHitbox)
 		end
-		
+
 		local respawnTime = 7
-		
+
 		if game.ReplicatedStorage:FindFirstChild("respawnTime") then
 			respawnTime = game.ReplicatedStorage.respawnTime.Value
 		end
-		
+
 		local respawnType do
 			local replicatedStorage = game:GetService("ReplicatedStorage")
-			
+
 			if replicatedStorage:FindFirstChild("safeZone") or (game.PlaceId == 2061558182) then
 				respawnType = "normal"
-				
+
 			elseif replicatedStorage:FindFirstChild("overrideDeathBehavior") then
 				respawnType = "custom"
-				
+
 			else
 				respawnType = "dangerous"
 			end
 		end
-		
+
 		local tombstoneDuration = 300
-		
+
 		if not replicatedStorage:FindFirstChild("safeZone") then
 			delay(3, function()
 				if true then return end
 				-- do not spawn tombstones in safe areas
-	
+
 				local tombstoneTag = player:FindFirstChild("tombstone")
 				if tombstoneTag == nil then
 					tombstoneTag = Instance.new("ObjectValue")
 					tombstoneTag.Name = "tombstone"
 					tombstoneTag.Parent = player
-				end			
+				end
 				if tombstoneTag.Value then
 					tombstoneTag.Value:Destroy()
 				end
-				
+
 				local tombstone 	= script.tombstone:Clone()
 				tombstone.CanCollide = false
-	
-				
+
+
 				local targetPosition = (previousCharacter.PrimaryPart.CFrame - Vector3.new(0, previousCharacter.PrimaryPart.Size.Y / 2, 0)).Position
-				
+
 				local rayDown = Ray.new(previousCharacter.PrimaryPart.Position, Vector3.new(0,-50,0))
 				local hitPart, hitPosition = workspace:FindPartOnRayWithIgnoreList(rayDown, {workspace.placeFolders, workspace.CurrentCamera}, false, true)
 				if hitPart and hitPosition then
 					targetPosition = hitPosition + Vector3.new(0, tombstone.Size.Y / 2.1, 0)
 				end
-				
+
 				tombstone.CFrame 	= previousCharacter.PrimaryPart.CFrame - previousCharacter.PrimaryPart.Position + targetPosition
 				local entityHitbox = network:invoke("spawnMonster", "Hitbox", tombstone.Position - Vector3.new(0,4,0), nil, {
 					isPassive 		= true;
@@ -553,35 +555,35 @@ local function performDeathToRenderCharacter(player)
 					isTargetImmune 	= true;
 					specialName 	= player.Name .. "'s Tombstone"
 				})
-				
+
 				if entityHitbox.manifest then
 					entityHitbox.manifest.CanCollide = false
 					entityHitbox.manifest.Anchored = true
 					game.Debris:AddItem(entityHitbox.manifest, tombstoneDuration)
 					tombstone.Parent = entityHitbox.manifest
-					
+
 					tombstoneTag.Value = entityHitbox.manifest
-					
+
 				else
 					tombstone:Destroy()
 					return false, "Failed to spawn tombstone."
 				end
 			end)
 		end
-		
+
 		if respawnType == "dangerous" then
 			network:fireClient("deathGuiRequested", player)
-			
+
 			local tag = Instance.new("BoolValue")
 			tag.Name = "awaitingDeathGuiResponse"
 			tag.Value = true
 			tag.Parent = player	
-			
+
 			local playerStillDead = true
 			local timer = 70
 			while timer > 0 do
 				timer = timer - wait(1)
-				
+
 				-- if player is alive, stop this killswitch
 				local character = player.Character
 				if character then
@@ -590,23 +592,22 @@ local function performDeathToRenderCharacter(player)
 						local state = manifest:FindFirstChild("state")
 						if state and state.Value ~= "dead" then
 							playerStillDead = false
-							
+
 							break
 						end
 					end
 				end
 			end
-			
+
 			if player and player.Parent then
-				
 				tag:Destroy()
-				
+
 				if playerStillDead then
 					onDeathGuiAccepted(player)
 				end
 			end
 		end
-		
+
 		if respawnType == "normal" then
 			delay(respawnTime, function()
 				if player then
@@ -620,11 +621,11 @@ local function performDeathToRenderCharacter(player)
 								return
 							end
 						end
-						
+
 						-- otherwise we should go on
 						player.Character:Destroy()
 					end
-					
+
 					player:LoadCharacter()
 				end
 			end)
@@ -633,8 +634,8 @@ local function performDeathToRenderCharacter(player)
 end
 
 local function getItemCountByItemId(player, itemId)
-    local playerData     = playerDataContainer[player]
-    local count         = 0
+    local playerData = playerDataContainer[player]
+    local count = 0
     if playerData then
         for i, inventorySlotData in pairs(playerData.inventory) do
             if inventorySlotData.id == itemId then 
@@ -654,31 +655,31 @@ end
 
 local function applyMaxHealth(player, dontHeal)
 	local playerData = playerDataContainer[player]
-	
+
 	if playerData and player.Character and player.Character.PrimaryPart then
 		local stats = playerData.nonSerializeData.statistics_final
-		
+
 		local oldMaxHealth = player.Character.PrimaryPart.maxHealth.Value
 		local oldMaxMana = player.Character.PrimaryPart.maxMana.Value
-		
+
 		--[[
 		player.Character.PrimaryPart.maxMana.Value 	= 15 + (3 * playerData.level) + (5 * stats.int)
-		player.Character.PrimaryPart.maxHealth.Value 	= 75 + (25 * playerData.level) + (10 * stats.vit)		
-		]]		
-		
+		player.Character.PrimaryPart.maxHealth.Value 	= 75 + (25 * playerData.level) + (10 * stats.vit)
+		]]
+
 		player.Character.PrimaryPart.maxMana.Value 		= stats.maxMana
 		player.Character.PrimaryPart.maxHealth.Value 	= stats.maxHealth
-			
+
 		local newHealth = player.Character.PrimaryPart.maxHealth.Value
 		local newMana = player.Character.PrimaryPart.maxMana.Value
-		
+
 		if dontHeal then
 			newHealth = player.Character.PrimaryPart.health.Value + (newHealth - oldMaxHealth)
 			newMana = player.Character.PrimaryPart.mana.Value + (newMana - oldMaxMana)
 		end
-		
+
 		player.Character.PrimaryPart.maxStamina.Value = stats.stamina or 0
-		
+
 		player.Character.PrimaryPart.health.Value = math.clamp(newHealth, 0, player.Character.PrimaryPart.maxHealth.Value)
 		player.Character.PrimaryPart.mana.Value = math.clamp(newMana, 0, player.Character.PrimaryPart.maxMana.Value)
 	end
@@ -692,7 +693,7 @@ local function onPlayerRequest_respawnMyCharacter(player)
 	if player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart:FindFirstChild("health") then
 		if player.Character.PrimaryPart.health.Value > 0 and player.Character.PrimaryPart.state.Value ~= "dead" then
 			if not game.ReplicatedStorage:FindFirstChild("safeZone") then
-				
+
 				local isNight = game.Lighting.ClockTime < 5.9 or game.Lighting.ClockTime > 18.6
 				local messages = {
 					"got themselves into a sticky situation";
@@ -710,16 +711,16 @@ local function onPlayerRequest_respawnMyCharacter(player)
 					"suddenly stopped being alive";
 					"pressed the wrong button";
 					isNight and "stared directly at the moon" or "stared directly into the sun"
-				}				
-				
+				}
+
 				local message = messages[math.random(1,#messages)]
 				local text = "☠ " .. player.Name .. " " .. message .. " ☠"
 				network:fireAllClients("signal_alertChatMessage", {
 					Text = text,
 					Font = Enum.Font.SourceSansBold,
 					Color = Color3.fromRGB(255, 130, 100),
-				})		
-			end	
+				})
+			end
 			player.Character.PrimaryPart.health.Value = 0
 		end
 	else
@@ -732,18 +733,18 @@ end
 local statsToProcessWithFormula = {"dex"; "int"; "str"; "vit"}
 local function generatecompletePlayerStats(player, isInitializing, playerData)
 	if not isInitializing and (not player or not playerDataContainer[player]) then return nil end
-	
+
 	local playerData = playerData or playerDataContainer[player]
-	
+
 	local baseStats = {}
 	local baseStatsAdditive = {}
 	local baseStatsMultiplicative = {}
 	local totalStatsAdditive = {}
 	local totalStatsMultiplicative = {}
-	
+
 	local equipmentDefense = 0
 	local equipmentDamage = 0
-	
+
 	local function incorporateModifierData(modifierData)
 		for i, modifier in pairs(modifierData) do
 			for stat, statValue in pairs(modifier) do
@@ -756,7 +757,7 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 				end
 			end
 		end
-		
+
 		--[[
 		for ii, stat in pairs(statsToProcessWithFormula) do
 			if modifierData[stat] then
@@ -771,17 +772,17 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 				totalStatsMultiplicative[stat] = totalStatsMultiplicative[stat] + modifierData[stat .. "_totalMultiplicative"]
 			end
 		end
-			
+
 		if modifierData.defense then
 			equipmentDefense = equipmentDefense + modifierData.defense
 		end
-			
+
 		if modifierData.baseDamage or modifierData.damage then
 			equipmentDamage = equipmentDamage + (modifierData.baseDamage or modifierData.damage)
 		end
 		]]
 	end
-	
+
 	-- set defaults for each stat
 	for i, stat in pairs(statsToProcessWithFormula) do
 		baseStats[stat] = 0
@@ -790,44 +791,42 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 		totalStatsAdditive[stat] = 0
 		totalStatsMultiplicative[stat] = 1
 	end
-	
+
 	-- apply the stats
 	local completePlayerStats = {}
 	for i, stat in pairs(statsToProcessWithFormula) do
 		-- fetch the base stat in the player data container file
 		baseStats[stat] 				= playerData.statistics[stat] or 0
-		
 		baseStatsAdditive[stat] 		= baseStatsAdditive[stat] or 0
 		baseStatsMultiplicative[stat] 	= baseStatsMultiplicative[stat] or 1
-		
 		totalStatsAdditive[stat] 		= baseStatsAdditive[stat] or 0
 		totalStatsMultiplicative[stat] 	= totalStatsMultiplicative[stat] or 1
 	end
-	
+
 	-- statusEffectsV2
 	local activeStatusEffects = network:invoke("getStatusEffectsOnEntityManifestByEntityGUID", player.entityGUID.Value)
 	for i, activeStatusEffectData in pairs(activeStatusEffects) do
 		if activeStatusEffectData.statusEffectModifier and activeStatusEffectData.statusEffectModifier.modifierData then
 			local modifierData = activeStatusEffectData.statusEffectModifier.modifierData
-			
+
 			incorporateModifierData({modifierData})
 		end
 	end
-	
+
 	local equipAttackSpeed = 3
 
 	-- calculate from what the player is currently wearing
 	local mainhandWeaponData, offhandWeaponData
-	
+
 	for i, equipmentSlotData in pairs(playerData.equipment) do
 		local itemBaseData = itemLookup[equipmentSlotData.id]
-		
+
 		-- add in base data
 		if itemBaseData then
 			if itemBaseData.modifierData then
 				incorporateModifierData(itemBaseData.modifierData)
 			end
-			
+
 			local slot = equipmentSlotData.position
 			local isWeapon = false
 			if slot == 1 then
@@ -840,23 +839,23 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 			elseif slot == 11 and itemBaseData.equipmentType == "sword" then
 				offhandWeaponData = itemBaseData
 				isWeapon = true
-			
+
 			-- ignore bows and daggers in the offhand too
 			-- but don't save their data because we aren't
 			-- averaging the bows and daggers together
 			elseif slot == 11 and (itemBaseData.equipmentType == "bow" or itemBaseData.equipmentType == "dagger") then
 				isWeapon = true
-			
+
 			-- ignore fishing rods? why are these considered weapons
 			elseif slot == 11 and itemBaseData.equipmentType == "fishing-rod" then
 				isWeapon = true
 			end
-			
+
 			-- we'll calculate weapon damage later because dual wielding is wacky
 			if (not isWeapon) and (itemBaseData.baseDamage or itemBaseData.damage) then
 				equipmentDamage = equipmentDamage + (itemBaseData.baseDamage or itemBaseData.damage)
 			end
-		
+
 			-- enchantments! :P
 			local statUpgrade = 0
 			if equipmentSlotData.enchantments then
@@ -1658,29 +1657,29 @@ end
 -- items stipulated
 local function int__getInventoryTransferData_intermediateCollectionFromInventoryTransferDataCollection(player, inventoryTransferDataCollection)
 	local playerData = playerDataContainer[player]
-	
+
 	if playerData then
 		local inventoryTransferData_intermediateCollection 	= {}
 		local wasInventoryTransferDataModified 				= false
 		local isDataMalformed 								= false
 		local successful_conversions 						= 0
-		
+
 		local inventoryTransferDataCollection_list = utilities.copyTable(inventoryTransferDataCollection)
-		
+
 		for i, inventoryTransferData in pairs(inventoryTransferDataCollection_list) do
 			local itemBaseData = itemLookup[inventoryTransferData.id]
-			
+
 			if itemBaseData and (inventoryTransferData.stacks or 1) > 0 then
 				for trueInventorySlotPosition, inventorySlotData in pairs(playerData.inventory) do
 					if inventorySlotData.id == inventoryTransferData.id then
 						if itemBaseData.canStack then
 							if inventoryTransferData.stacks > 0 then
 								local stacksToRemove = math.clamp(inventoryTransferData.stacks, 1, inventorySlotData.stacks or 1)
-								
+
 								local inventoryTransferData_intermediate = {}
 									inventoryTransferData_intermediate.id 		= inventoryTransferData.id
 									inventoryTransferData_intermediate.position = inventorySlotData.position
-								
+
 								-- copy over the item metadata
 								for metadataName, metadataValue in pairs(inventorySlotData) do
 									if not inventoryTransferData_intermediate[metadataName] then
@@ -1691,14 +1690,14 @@ local function int__getInventoryTransferData_intermediateCollectionFromInventory
 										end
 									end
 								end
-								
+
 								inventoryTransferData_intermediate.stacks = stacksToRemove
-								
+
 								-- flag this as taken!
 								inventoryTransferData.stacks = inventoryTransferData.stacks - stacksToRemove
-									
+
 								table.insert(inventoryTransferData_intermediateCollection, inventoryTransferData_intermediate)
-								
+
 								if inventoryTransferData.stacks == 0 then
 									break
 								end
@@ -1708,7 +1707,7 @@ local function int__getInventoryTransferData_intermediateCollectionFromInventory
 								local inventoryTransferData_intermediate = {}
 									inventoryTransferData_intermediate.id 		= inventoryTransferData.id
 									inventoryTransferData_intermediate.position = inventoryTransferData.position
-								
+
 								-- copy over the item metadata
 								for metadataName, metadataValue in pairs(inventorySlotData) do
 									if not inventoryTransferData_intermediate[metadataName] then
@@ -1719,18 +1718,18 @@ local function int__getInventoryTransferData_intermediateCollectionFromInventory
 										end
 									end
 								end
-								
+
 								table.insert(inventoryTransferData_intermediateCollection, inventoryTransferData_intermediate)
-								
+
 								-- flag this as taken!
 								inventoryTransferData.stacks = 0
-								
+
 								break
 							end
 						end
 					end
 				end
-				
+
 				--  [{"position":2,"stacks":1,"id":3}, {"position":1,"stacks":1,"id":8}, {"position":1,"stacks":1,"id":3}]
 				if inventoryTransferData.stacks == 0 then
 					-- pop it from the table, its all good
@@ -1744,19 +1743,19 @@ local function int__getInventoryTransferData_intermediateCollectionFromInventory
 				break
 			end
 		end
-		
+
 		local isGood = true
 		for i, v in pairs(inventoryTransferDataCollection_list) do
 			if (v.stacks or 1) > 0 then
 				isGood = false
 			end
 		end
-				
+
 		-- if everything went well, #inventoryTransferDataCollection_list == 0
 		-- this function returns true in arg#2 if there was an error
 		return inventoryTransferData_intermediateCollection, not isGood--#inventoryTransferDataCollection_list > 0 --successful_conversions ~= #inventoryTransferDataCollection or isDataMalformed or wasInventoryTransferDataModified
 	end
-	
+
 	return nil, true
 end
 
@@ -1774,7 +1773,7 @@ local function int__doesPlayerHaveInventorySpaceForTrade(player, inventoryTransf
 	if playerData then
 		for trueInventorySlotDataPosition, inventorySlotData in pairs(playerData.inventory) do
 			local itemBaseData = itemLookup[inventorySlotData.id]
-		
+
 			if itemBaseData then
 				availableSlots[itemBaseData.category] = availableSlots[itemBaseData.category] - 1
 			else
@@ -1782,80 +1781,79 @@ local function int__doesPlayerHaveInventorySpaceForTrade(player, inventoryTransf
 			end
 		end
 	end
-	
+
 	for i, inventoryTransferData_intermediate in pairs(inventoryTransferData_intermediateCollection_losing) do
 		local itemBaseData = itemLookup[inventoryTransferData_intermediate.id]
-		
+
 		if itemBaseData then
 			availableSlots[itemBaseData.category] = availableSlots[itemBaseData.category] + 1
 		else
 			return false
 		end
 	end
-	
+
 	local representation_inventoryTransferData_intermediateCollection_gaining = utilities.copyTable(inventoryTransferData_intermediateCollection_gaining)
 	local playerInventoryClone = utilities.copyTable(playerData.inventory)
-	
+
 	while true do
 		local madeChange = false
-		
+
 		for i, inventoryTransferData_intermediate in pairs(representation_inventoryTransferData_intermediateCollection_gaining) do
 			local itemBaseData = itemLookup[inventoryTransferData_intermediate.id]
-			
+
 			if not inventoryTransferData_intermediate.stacks then
 				inventoryTransferData_intermediate.stacks = 1
 			end
-			
+
 			if itemBaseData then
 				if itemBaseData.canStack then
 					for _, playerInventorySlotData in pairs(playerInventoryClone) do
 						if playerInventorySlotData.id == inventoryTransferData_intermediate.id and playerInventorySlotData.stacks <= (itemBaseData.stackSize or MAX_COUNT_PER_STACK) then
 							local stacksToAdd = math.clamp(inventoryTransferData_intermediate.stacks, 0, (itemBaseData.stackSize or MAX_COUNT_PER_STACK) - playerInventorySlotData.stacks)
-							
+
 							inventoryTransferData_intermediate.stacks 	= inventoryTransferData_intermediate.stacks - stacksToAdd
 							playerInventorySlotData.stacks 				= playerInventorySlotData.stacks + stacksToAdd
-							
+
 							if inventoryTransferData_intermediate.stacks == 0 then
 								table.remove(representation_inventoryTransferData_intermediateCollection_gaining, i)
-								
+
 								madeChange = true
-								
+
 								break
 							end
 						end
 					end
 				end
 			end
-			
+
 			if madeChange then
 				break
 			end
 		end
-		
+
 		if not madeChange then
 			break
 		end
 	end
-	
+
 	for i, inventoryTransferData_intermediate in pairs(representation_inventoryTransferData_intermediateCollection_gaining) do
 		local itemBaseData = itemLookup[inventoryTransferData_intermediate.id]
-		
+
 		if itemBaseData then
 			if itemBaseData.canStack then
 				availableSlots[itemBaseData.category] = availableSlots[itemBaseData.category] - 1
 			else
 				availableSlots[itemBaseData.category] = availableSlots[itemBaseData.category] - inventoryTransferData_intermediate.stacks
 			end
-			
+
 			necessarySlots[itemBaseData.category] = true
 		else
 			return false
 		end
 	end
-	
+
 	-- check if player can do the trade based on their slots!
 	for category, _ in pairs(necessarySlots) do
-		
 		-- NOTE: we are not doing <= 0 because if we do, it doesn't
 		-- acount for the scenario where we are at 24 slots available
 		-- and gaining 1 item. if we have all items full, and only gain 1
@@ -1871,45 +1869,44 @@ end
 -- todo: merge into already present stacks!
 local function grantPlayerItemsByInventoryTranferData_intermediateCollection(player, inventoryTransferDataCollection_g)
 	local playerData = playerDataContainer[player]
-	
 	local inventoryTransferDataCollection = utilities.copyTable(inventoryTransferDataCollection_g)
 
 	if playerData then
 		local hasInventoryChanged = false
-				
+
 		for i, inventoryTransferData in pairs(inventoryTransferDataCollection) do
 			local itemBaseData = itemLookup[inventoryTransferData.id]
-			
+
 			-- set this for the lazy
 			if not inventoryTransferData.stacks then
 				inventoryTransferData.stacks = 1
 			end
-			
+
 			if itemBaseData and itemBaseData.canStack then
 				for trueInventorySlotDataPosition, inventorySlotData in pairs(playerData.inventory) do
 					if inventorySlotData.id == inventoryTransferData.id then
 						if (inventorySlotData.stacks + inventoryTransferData.stacks) <= (itemBaseData.stackSize or MAX_COUNT_PER_STACK) then
 							inventorySlotData.stacks = inventorySlotData.stacks + inventoryTransferData.stacks
-							
+
 							network:fire("questTriggerOccurred", player, "item-collected", {id = itemBaseData.id; amount = 1}) -- amount is irrelevant to the check 
 							-- flag as finished item
 							inventoryTransferData.stacks = 0
-														
+
 							-- flag as changed!
 							hasInventoryChanged = true
-							
+
 							-- move to next item!
 							break
 						elseif inventorySlotData.stacks < (itemBaseData.stackSize or MAX_COUNT_PER_STACK) then
 							local diff = (itemBaseData.stackSize or MAX_COUNT_PER_STACK) - inventorySlotData.stacks
-							
+
 							if inventoryTransferData.stacks >= diff then
 								inventorySlotData.stacks 		= inventorySlotData.stacks + diff
 								inventoryTransferData.stacks 	= inventoryTransferData.stacks - diff
-								
-								
+
+
 								hasInventoryChanged = true
-								
+
 								if inventoryTransferData.stacks == 0 then
 									network:fire("questTriggerOccurred", player, "item-collected", {id = itemBaseData.id; amount = 1})
 									break
@@ -1920,42 +1917,38 @@ local function grantPlayerItemsByInventoryTranferData_intermediateCollection(pla
 				end
 			end
 		end
-		
+
 		for _, inventoryTransferData in pairs(inventoryTransferDataCollection) do
 			if inventoryTransferData.stacks > 0 then
 				-- grant the item
 				local itemBaseData = itemLookup[inventoryTransferData.id]
-					
+
 				if itemBaseData then
 					-- make sure the id is the integer id, not the string id
 					inventoryTransferData.id = itemBaseData.id
-					
-					
+
+
 					if itemBaseData.canStack then
 						local itemStackSize = itemBaseData.stackSize or 99
 						local stacksNeeded 	= inventoryTransferData.stacks
-						
+
 						while stacksNeeded > 0 do
 							if stacksNeeded >= itemStackSize then
 								local itemToAdd 	= utilities.copyTable(inventoryTransferData)
 								itemToAdd.stacks 	= itemStackSize
 								stacksNeeded 		= stacksNeeded - itemStackSize
-								
+
 								table.insert(playerData.inventory, itemToAdd)
-								
 							else
 								local itemToAdd 	= utilities.copyTable(inventoryTransferData)
 								itemToAdd.stacks 	= stacksNeeded
 								stacksNeeded 		= 0
-								
 								table.insert(playerData.inventory, itemToAdd)
-								
 							end
-							
 						end
-						
+
 						inventoryTransferData.stacks = 0
-						
+
 						network:fire("questTriggerOccurred", player, "item-collected", {id = itemBaseData.id; amount = 1})		
 						-- flip flag
 						hasInventoryChanged = true
@@ -1967,7 +1960,7 @@ local function grantPlayerItemsByInventoryTranferData_intermediateCollection(pla
 								stacks 			= 1;
 								modifierData 	= inventoryTransferData.modifierData;
 							}
-							
+
 							for i, v in pairs(inventoryTransferData) do
 								if not newInventorySlotData[i] then
 									if type(v) == "table" then
@@ -1977,7 +1970,7 @@ local function grantPlayerItemsByInventoryTranferData_intermediateCollection(pla
 									end
 								end
 							end
-							
+
 							table.insert(playerData.inventory, newInventorySlotData)
 							network:fire("questTriggerOccurred", player, "item-collected", {id = itemBaseData.id; amount = 1})		
 							-- flip flag
@@ -1987,14 +1980,14 @@ local function grantPlayerItemsByInventoryTranferData_intermediateCollection(pla
 				end
 			end
 		end
-		
+
 		if hasInventoryChanged then
 			playerData.nonSerializeData.playerDataChanged:Fire("inventory")
 		end
-		
+
 		return true
 	end
-	
+
 	return false
 end
 
@@ -2002,24 +1995,23 @@ end
 -- they're pretty much identical.
 local function revokePlayerItemsByInventoryTransferDataCollection(player, inventoryTransferDataCollection_r)
 	local playerData = playerDataContainer[player]
-	
 	local inventoryTransferDataCollection = utilities.copyTable(inventoryTransferDataCollection_r)
-	
+
 	if playerData then
 		local hasInventoryChanged = false
-		
+
 		for _, inventoryTransferData in pairs(inventoryTransferDataCollection) do			
 			local itemBaseData = itemLookup[inventoryTransferData.id]
-			
+
 			-- set this for the lazy
 			if not inventoryTransferData.stacks then
 				inventoryTransferData.stacks = 1
 			end
-			
+
 			if itemBaseData and itemBaseData.canStack then
 				while inventoryTransferData.stacks > 0 do
 					local tookStacksThisCycle = false
-					
+
 					for trueInventorySlotPosition, inventorySlotData in pairs(playerData.inventory) do
 						if inventorySlotData.id == inventoryTransferData.id then
 							-- drop the item
@@ -2028,18 +2020,18 @@ local function revokePlayerItemsByInventoryTransferDataCollection(player, invent
 								inventoryTransferData.stacks 	= 0
 							else
 								inventoryTransferData.stacks = inventoryTransferData.stacks - inventorySlotData.stacks
-								
+
 								table.remove(playerData.inventory, trueInventorySlotPosition)
 							end
-							
+
 							-- flip flag
 							hasInventoryChanged = true
 							tookStacksThisCycle = true
-							
+
 							break
 						end
 					end
-					
+
 					if not tookStacksThisCycle then
 						break
 					end
@@ -2047,41 +2039,41 @@ local function revokePlayerItemsByInventoryTransferDataCollection(player, invent
 			else
 				-- non-stackable item revoke, only one stack (entire item)
 				inventoryTransferData.stacks = 1
-				
+
 				for trueInventorySlotPosition, inventorySlotData in pairs(playerData.inventory) do
 					if inventorySlotData.position == inventoryTransferData.position and inventorySlotData.id == inventoryTransferData.id then
 						-- revoke item
 						table.remove(playerData.inventory, trueInventorySlotPosition)
-						
+
 						-- flag is taken
 						inventoryTransferData.stacks = 0
-						
+
 						-- mark as changed
 						hasInventoryChanged = true
-						
+
 						-- move to next item
 						break
 					end
 				end
 			end
 		end
-		
+
 		if hasInventoryChanged then
 			playerData.nonSerializeData.playerDataChanged:Fire("inventory")
 		end
-		
+
 		return true
 	end
-	
+
 	return false
 end
 
 local function int__transferInventoryToStorage(player, inventorySlotData)
 	local playerData = playerDataContainer[player]
-	
+
 	if playerData then
 		local inventoryTransferData_intermediateCollection_player, wasInventoryTransferDataModified_player 	= int__getInventoryTransferData_intermediateCollectionFromInventoryTransferDataCollection(player, {inventorySlotData}) 
-		
+
 		if not wasInventoryTransferDataModified_player then
 			for i, inventoryTransferData in pairs(inventoryTransferData_intermediateCollection_player) do
 				local itemBaseData = itemLookup[inventoryTransferData.id]
@@ -2089,24 +2081,24 @@ local function int__transferInventoryToStorage(player, inventorySlotData)
 					return false, "Item is quest bound"
 				end
 			end
-			
+
 			revokePlayerItemsByInventoryTransferDataCollection(player, inventoryTransferData_intermediateCollection_player)
-			
+
 			local copy_inventoryTransferData_intermediateCollection_player = utilities.copyTable(inventoryTransferData_intermediateCollection_player)
-			
+
 			-- merge itemStorage stacks if possible
 			while true do
 				local hasChanged = false
 				for i, inventoryTransferData in pairs(copy_inventoryTransferData_intermediateCollection_player) do
 					local itemBaseData = itemLookup[inventoryTransferData.id]
-					
+
 					if itemBaseData.canStack then
 						for ii, itemStorageSlotData in pairs(playerData.globalData.itemStorage) do
 							local maxStackSizeForItem = itemBaseData.stackSize or MAX_COUNT_PER_STACK
-							
+
 							if inventoryTransferData.id == itemStorageSlotData.id and itemStorageSlotData.stacks < maxStackSizeForItem then
 								local amountFromMaxStacks = (itemStorageSlotData.stacks + inventoryTransferData.stacks) - maxStackSizeForItem
-								
+
 								if amountFromMaxStacks > 0 then
 									-- this is all overflow
 									itemStorageSlotData.stacks 		= amountFromMaxStacks
@@ -2115,49 +2107,49 @@ local function int__transferInventoryToStorage(player, inventorySlotData)
 									-- this is all underflow, so it merged completely.
 									itemStorageSlotData.stacks 		= itemStorageSlotData.stacks + inventoryTransferData.stacks
 									inventoryTransferData.stacks 	= 0
-									
+
 									table.remove(copy_inventoryTransferData_intermediateCollection_player, i)
-									
+
 									hasChanged = true
-									
+
 									break
 								end
 							end
 						end
 					end
-					
+
 					if hasChanged then
 						break
 					end
 				end
-				
+
 				if not hasChanged then
 					break
 				end
 			end
-			
+
 			for i, itemSlotData in pairs(copy_inventoryTransferData_intermediateCollection_player) do
 				table.insert(playerData.globalData.itemStorage, itemSlotData)
 			end
-			
+
 			playerData.nonSerializeData.playerDataChanged:Fire("inventory")
 			playerData.nonSerializeData.playerDataChanged:Fire("globalData")
-			
+
 			return true, "Successfully transfered to storage."
 		else
 			return false, "Failed find item."
 		end
 	end
-	
+
 	return false, "PlayerData not found."
 end
 
 local function int__transferStorageToInventory(player, storageSlotData)
 	local playerData = playerDataContainer[player]
-	
+
 	if playerData then
 		local player_hasInventorySpace = int__doesPlayerHaveInventorySpaceForTrade(player, {}, {storageSlotData})
-		
+
 		if player_hasInventorySpace then
 			local wasStorageSlotDataRemoved, removeSlotData = false, nil do
 				for i, storageSlot in pairs(playerData.globalData.itemStorage) do
@@ -2167,10 +2159,10 @@ local function int__transferStorageToInventory(player, storageSlotData)
 					end
 				end
 			end
-			
+
 			if wasStorageSlotDataRemoved then
 				table.insert(playerData.inventory, removeSlotData)
-				
+
 				playerData.nonSerializeData.playerDataChanged:Fire("inventory")
 				playerData.nonSerializeData.playerDataChanged:Fire("globalData")
 				
@@ -3509,6 +3501,7 @@ end
 local DATA_RECOVERY_FLAG_NAMES = {
 	"dataRecovery11_14",
 }
+
 function onDataRecoveryRejected(player, flagName)
 	-- is this a legal flag?
 	local legalFlag = false
@@ -3529,6 +3522,7 @@ function onDataRecoveryRejected(player, flagName)
 		wait(1)
 	until network:invoke("teleportPlayer", player, playerData.dataRecoveryReturnPlaceId)
 end
+
 function onDataRecoveryRequested(player, slot, version, flagName)
 	-- only in data recovery place!
 	if game.PlaceId ~= 4409709778 then return end
@@ -4451,8 +4445,6 @@ local megaphoneConnection
 
 local isMessagingEnabled, messagingError = pcall(function()
 	megaphoneConnection = game:GetService("MessagingService"):SubscribeAsync("megaphone", function(message)
-
-		
 		network:fireAllClients("signal_alertChatMessage", {Text = message.Data; Font = Enum.Font.SourceSansBold; Color = Color3.fromRGB(196, 209, 216)} )		
 	end)
 end)
@@ -4492,8 +4484,8 @@ end
 -- removes _stacks[=1] stacks from inventorySlotData at position `inventorySlotPosition`
 local function onRemovePlayerInventorySlotData(player, inventorySlotData, stacksToRemove)
 	if not player or not playerDataContainer[player] or not inventorySlotData then return nil end
-	local itemBaseData 	= itemLookup[inventorySlotData.id]
-	stacksToRemove 		= math.clamp(stacksToRemove or 1, 1, (itemBaseData.stackSize or MAX_COUNT_PER_STACK))
+	local itemBaseData = itemLookup[inventorySlotData.id]
+	stacksToRemove = math.clamp(stacksToRemove or 1, 1, (itemBaseData.stackSize or MAX_COUNT_PER_STACK))
 	
 	local playerData = playerDataContainer[player]
 	
