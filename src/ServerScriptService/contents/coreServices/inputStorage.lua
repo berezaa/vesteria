@@ -4,8 +4,8 @@
 local module = {}
 
 local replicatedStorage = game:GetService("ReplicatedStorage")
-	local modules = require(replicatedStorage.modules)
-		local network 		= modules.load("network")
+local modules = require(replicatedStorage.modules)
+local network = modules.load("network")
 
 
 

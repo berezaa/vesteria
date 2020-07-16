@@ -6,9 +6,7 @@ local Tween = Modules.load("tween")
 local PlaceSetup = Modules.load("placeSetup")
 
 --Ability Assets
-local abilitySounds = script.Sounds
-local abilityAnims = script.Animations
-local abilityEffects = script.Effects
+
 
 --Ability Base Data
 local abilityData = {
