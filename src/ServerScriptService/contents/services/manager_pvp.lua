@@ -2,12 +2,49 @@ local module = {}
 
 -- from Player Manager, needs to be set up
 
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local modules = require(replicatedStorage:WaitForChild("modules"))
+local network = modules.load("network")
+
+-- TODO: give this a value LOL
+local pvpZoneCollectionFolder
+
+local function isPlayerInPVPZone(pvpZone, player)
+	if not player or not player.Character or not player.Character.PrimaryPart then return false end
+
+	local isInPVPZone
+
+	local points = pvpZone:GetChildren()
+	for i = 1, #points do
+		local point1 		= pvpZone[tostring(i)]
+		local point2 		= pvpZone[tostring(i == #points and 1 or i + 1)]
+		local isInsideFace 	= (point2.Position - point1.Position):Cross(player.Character.PrimaryPart.Position - point1.Position).Y < 0
+
+		if isInPVPZone ~= nil and isInsideFace ~= isInPVPZone then
+			return false
+		end
+
+		isInPVPZone = isInsideFace
+	end
+
+	if isInPVPZone then
+		local characterY 	= player.Character.PrimaryPart.Position.Y
+		local upperYBound 	= points[1].Position.Y + points[1].Size.Y / 2
+		local lowerYBound 	= points[1].Position.Y - points[1].Size.Y / 2
+
+		return characterY >= lowerYBound and characterY <= upperYBound
+	end
+
+	return isInPVPZone
+end
+
 local function int__tickForPVP()
 	if #pvpZoneCollectionFolder:GetChildren() == 0 and not replicatedStorage:FindFirstChild("isPVPGloballyEnabled") then return end
 
 	while not shuttingDown do
-		for player, playerData in pairs(network:invoke("getPlayerData",  do
-		)local currentPVPValue = playerData.nonSerializeData.isGlobalPVPEnabled
+		for _, player in pairs(game.Players:GetPlayers()) do
+			local playerData = network:invoke("getPlayerData", player)
+			local currentPVPValue = playerData.nonSerializeData.isGlobalPVPEnabled
 
 			if replicatedStorage:FindFirstChild("isPVPGloballyEnabled") and replicatedStorage.isPVPGloballyEnabled.Value then
 				if currentPVPValue == false then

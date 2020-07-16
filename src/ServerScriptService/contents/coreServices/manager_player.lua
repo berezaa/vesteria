@@ -921,34 +921,6 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 	return completePlayerStats
 end
 
-local function isPlayerInPVPZone(pvpZone, player)
-	if not player or not player.Character or not player.Character.PrimaryPart then return false end
-
-	local isInPVPZone
-
-	local points = pvpZone:GetChildren()
-	for i = 1, #points do
-		local point1 		= pvpZone[tostring(i)]
-		local point2 		= pvpZone[tostring(i == #points and 1 or i + 1)]
-		local isInsideFace 	= (point2.Position - point1.Position):Cross(player.Character.PrimaryPart.Position - point1.Position).Y < 0
-
-		if isInPVPZone ~= nil and isInsideFace ~= isInPVPZone then
-			return false
-		end
-
-		isInPVPZone = isInsideFace
-	end
-
-	if isInPVPZone then
-		local characterY 	= player.Character.PrimaryPart.Position.Y
-		local upperYBound 	= points[1].Position.Y + points[1].Size.Y / 2
-		local lowerYBound 	= points[1].Position.Y - points[1].Size.Y / 2
-
-		return characterY >= lowerYBound and characterY <= upperYBound
-	end
-
-	return isInPVPZone
-end
 
 network:create("playerCharacterLoaded", "BindableEvent")
 
