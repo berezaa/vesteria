@@ -11,7 +11,6 @@ local datastoreInterface = require(script.datastoreInterface)
 local shuttingDown = false
 local runService = game:GetService("RunService")
 
-local teleportService = game:GetService("TeleportService")
 local collectionService = game:GetService("CollectionService")
 local httpService = game:GetService("HttpService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
@@ -22,52 +21,26 @@ local physics = modules.load("physics")
 local levels = modules.load("levels")
 local mapping = modules.load("mapping")
 local configuration = modules.load("configuration")
-local ability_utilities = modules.load("ability_utilities")
 local placeSetup = modules.load("placeSetup")
-local enchantment = modules.load("enchantment")
 local events = modules.load("events")
 local detection = modules.load("detection")
 
 -- todo: phase out
-local playerManifestCollectionFolder = placeSetup.getPlaceFolder("playerManifestCollection")
-local playerRenderCollectionFolder = placeSetup.getPlaceFolder("playerRenderCollection")
-local monsterManifestCollectionFolder = placeSetup.getPlaceFolder("monsterManifestCollection")
 local entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
-local entityRenderCollectionFolder = placeSetup.getPlaceFolder("entityRenderCollection")
-local pvpZoneCollectionFolder = placeSetup.getPlaceFolder("pvpZoneCollection")
 local temporaryEquipmentFolder = placeSetup.getPlaceFolder("temporaryEquipment")
 
 local itemLookup = require(replicatedStorage.itemData)
 local itemAttributes = require(replicatedStorage.itemAttributes)
 local perkLookup = require(replicatedStorage.perkLookup)
-local monsterLookup = require(replicatedStorage.monsterLookup)
-local questLookup = require(replicatedStorage.questLookup)
-local abilityBookLookup = require(replicatedStorage.abilityBookLookup)
-local abilityLookup = require(replicatedStorage.abilityLookup)
-local blessingLookup = require(replicatedStorage.blessingLookup)
-local statusEffectLookup = require(replicatedStorage.statusEffectLookup)
-local professionLookup = require(replicatedStorage.professionLookup)
 
 -- has to load here due to requirements on stuff above
 local projectile = modules.load("projectile")
-local ticksPerSecond = 3
 local PLAYER_LEVEL_CAP = 49
 
 -- free weekend has no level cap
 if game.gameId == 712031239 or game.PlaceId == 2103419922 then
 	PLAYER_LEVEL_CAP = 999999999
 end
-
--- todo: purge spawnChance and itemName (and also futureproof)
--- from inventorySlotData due to item drops metadata being lootDrop based!
-local INVENTORY_SLOTS_DATA_INDEXES = {
-	id = true;
-	stacks = true;
-	modifierData = true;
-	position = true;
-	successfulUpgrades = true;
-	upgrades = true;
-}
 
 local function getPlayerData(player)
 	return playerDataContainer[player]
@@ -78,7 +51,6 @@ local function getPlayerData_remote(callingPlayer, ...)
 end
 
 -- GLOBAL DATA HOOKUP
-
 network:create("getPlayerGlobalData", "BindableFunction", "OnInvoke", function(player)
 	local success, data, status = datastoreInterface:getPlayerGlobalSaveFileData(player)
 
@@ -114,25 +86,6 @@ network:create("setPlayerGlobalData", "BindableFunction", "OnInvoke", function(p
 
 	return success, status, version
 end)
-
-local function respawnPlayer__NORMAL(player)
-	if player.Character then
-		player.Character:Destroy()
-	end
-
-	player:LoadCharacter()
-
-	local start = tick()
-
-	repeat
-		wait(0.1)
-	until player.Character and player.Character.PrimaryPart or (tick() - start >= 10)
-
-	if player.Character and player.Character.PrimaryPart then
-		player.Character.PrimaryPart.mana.Value = math.ceil(player.Character.PrimaryPart.maxMana.Value * 0.5)
-		player.Character.PrimaryPart.health.Value = math.ceil(player.Character.PrimaryPart.maxHealth.Value * 0.5)
-	end
-end
 
 local function isPlayerOfClass(player, class)
 	class = class:lower()
@@ -187,8 +140,8 @@ local function onDeathGuiAccepted(player)
 	local expForNextLevel = levels.getEXPToNextLevel(playerData.level)
 	local newExp = math.clamp(playerData.exp - expForNextLevel * 0.2, 0, expForNextLevel)
 	playerData.nonSerializeData.setPlayerData("exp", newExp)
-
-	local nearestCity = game.ReplicatedStorage:FindFirstChild("nearestCityId") and game.ReplicatedStorage.nearestCityId.Value
+	local nearestCity = game.ReplicatedStorage:FindFirstChild("nearestCityId")
+	nearestCity = nearestCity and nearestCity.Value
 	local returnDestination = nearestCity or playerData.homePlaceId or getPlayerDefaultHomePlaceId(player)
 	returnDestination = utilities.placeIdForGame(returnDestination)
 	playerData.lastLocationDeathOverride = returnDestination
@@ -222,80 +175,11 @@ local function onDeathGuiAccepted(player)
 end
 network:create("deathGuiAccepted", "RemoteEvent", "OnServerEvent", onDeathGuiAccepted)
 
-local function respawnPlayer__DANGEROUS(player)
-	if player.Character then
-		player.Character:Destroy()
-	end
-	if player:FindFirstChild("awaitingDeathGuiResponse") == nil then
-		local tag = Instance.new("BoolValue")
-		tag.Name = "awaitingDeathGuiResponse"
-		tag.Value = true
-		tag.Parent = player
-	end
-	network:fireClient("deathGuiRequested", player)
-	local timer = 70
-	while timer > 0 do
-		timer = timer - wait(1)
-
-		-- did the player get revived some other way?
-		if player.Character then
-			return
-		end
-	end
-
-	-- made it to the end of the timer and they still haven't accepted
-	-- kill 'em (but dont really that is really mean :( )
-	onDeathGuiAccepted(player)
-end
 network:create("deathGuiRequested", "RemoteEvent")
 
-local function performDeathCheck(player, isPlayerLeavingGame)
-	if replicatedStorage:FindFirstChild("isGlobalSafeZone") then
-		if not isPlayerLeavingGame then
-			respawnPlayer__NORMAL(player)
-		end
-
-		return true
-	end
-
-	-- we gotta lose cash cash money y'all
-	if not isPlayerLeavingGame then
-		respawnPlayer__DANGEROUS(player)
-
-		return true
-	end
-
-	local playerData = playerDataContainer[player]
-	if playerData then
-		if replicatedStorage:FindFirstChild("isGlobalUnsafeZone") or (playerData.nonSerializeData.isInPVPZone and playerData.nonSerializeData.isPVPZoneUnsafe) then
-			-- player died in pvp zone, unsafe. figure out what killed them
-			if player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart:FindFirstChild("health") and player.Character.PrimaryPart.health:FindFirstChild("killingBlow") then
-				if player.Character.PrimaryPart.health.killingBlow.Value == "damage" then
-					-- bye bye data
-
-					error("Data wiping has been disabled")
-
-					datastoreInterface:wipePlayerSaveFileData(player, playerData)
-
-					return
-				end
-			end
-		else
-			-- safe zone
-			respawnPlayer__NORMAL(player)
-
-			return
-		end
-	end
-end
-
-local function onPlayerConfirmDeath(player)
---	return performDeathCheck(player)
-end
-
 local function onPlayerRemoving(player)
-	local playerId = player.userId
 
+	local playerId = player.userId
 	if not player:FindFirstChild("teleporting") then
 		if player:FindFirstChild("awaitingDeathGuiResponse") or player:FindFirstChild("acceptedDeathConsequences") or
 			(player:FindFirstChild("isPlayerSpawning") and player.isPlayerSpawning.Value) then
@@ -371,7 +255,7 @@ local function onPlayerRemoving(player)
 		playerDataContainer[player] = nil
 
 		-- attempt to retry up to 5 times on failure
-		for i = 1, 5 do
+		for _ = 1, 5 do
 			local Success, Error, TimeStamp = datastoreInterface:updatePlayerSaveFileData(playerId, playerDataBackup)
 			if not Success then
 				warn(player.Name,"'s data failed to save.",Error)
@@ -411,7 +295,7 @@ end
 	PLAYER APPEARANCE CHANGE
 --]]
 
-function playerRequest_changeAccessories(player, desiredAccessories, dialogueSource)
+local function playerRequest_changeAccessories(player, desiredAccessories, dialogueSource)
 	local playerData = playerDataContainer[player]
 	if playerData then
 		if dialogueSource:IsA("ModuleScript") then
@@ -423,7 +307,7 @@ function playerRequest_changeAccessories(player, desiredAccessories, dialogueSou
 				if #desiredAccessories > 0 and playerData.gold >= cost then
 					local playerAccessoryData = utilities.copyTable(playerData.accessories)
 
-					for i,desiredAccessory in pairs(desiredAccessories) do
+					for _, desiredAccessory in pairs(desiredAccessories) do
 						local category = game.ReplicatedStorage.accessoryLookup:FindFirstChild(desiredAccessory.accessory) or
 							game.ReplicatedStorage.accessoryLookup:FindFirstChild(string.gsub(desiredAccessory.accessory, "Id", ""))
 						if category and category:FindFirstChild(tostring(desiredAccessory.value)) then
@@ -458,18 +342,16 @@ local MAX_NUMBER_SLOTS_PER_CATEGORY = 20
 local MAX_COUNT_PER_STACK = 99
 local MAX_STORAGE_COUNT = 20
 
-local itemDropStacksLookup = {}
-
-local function onGetPlayerEquipment(client, playerToGetEquipmentOf)
-	if playerToGetEquipmentOf and typeof(playerToGetEquipmentOf) == "Instance" and playerToGetEquipmentOf:IsA("Player") then
+local function onGetPlayerEquipment(client, player)
+	if player and typeof(player) == "Instance" and player:IsA("Player") then
 		-- this is important, yield for it if the data isn't there.
-		if not playerDataContainer[playerToGetEquipmentOf] then
-			while not playerDataContainer[playerToGetEquipmentOf] do
+		if not playerDataContainer[player] then
+			while not playerDataContainer[player] do
 				wait(0.1)
 			end
 		end
 
-		return playerDataContainer[playerToGetEquipmentOf].equipment
+		return playerDataContainer[player].equipment
 	end
 end
 
@@ -506,14 +388,10 @@ local function performDeathToRenderCharacter(player)
 		end
 
 		local respawnType do
-			local replicatedStorage = game:GetService("ReplicatedStorage")
-
 			if replicatedStorage:FindFirstChild("safeZone") or (game.PlaceId == 2061558182) then
 				respawnType = "normal"
-
 			elseif replicatedStorage:FindFirstChild("overrideDeathBehavior") then
 				respawnType = "custom"
-
 			else
 				respawnType = "dangerous"
 			end
@@ -523,9 +401,6 @@ local function performDeathToRenderCharacter(player)
 
 		if not replicatedStorage:FindFirstChild("safeZone") then
 			delay(3, function()
-				if true then return end
-				-- do not spawn tombstones in safe areas
-
 				local tombstoneTag = player:FindFirstChild("tombstone")
 				if tombstoneTag == nil then
 					tombstoneTag = Instance.new("ObjectValue")
@@ -539,35 +414,19 @@ local function performDeathToRenderCharacter(player)
 				local tombstone 	= script.tombstone:Clone()
 				tombstone.CanCollide = false
 
-
-				local targetPosition = (previousCharacter.PrimaryPart.CFrame - Vector3.new(0, previousCharacter.PrimaryPart.Size.Y / 2, 0)).Position
+				local offset = Vector3.new(0, previousCharacter.PrimaryPart.Size.Y / 2, 0)
+				local targetPosition = (previousCharacter.PrimaryPart.CFrame - offset).Position
 
 				local rayDown = Ray.new(previousCharacter.PrimaryPart.Position, Vector3.new(0,-50,0))
-				local hitPart, hitPosition = workspace:FindPartOnRayWithIgnoreList(rayDown, {workspace.placeFolders, workspace.CurrentCamera}, false, true)
+				local hitPart, hitPosition = workspace:FindPartOnRayWithIgnoreList(rayDown, {
+					workspace.placeFolders, workspace.CurrentCamera
+				}, false, true)
 				if hitPart and hitPosition then
 					targetPosition = hitPosition + Vector3.new(0, tombstone.Size.Y / 2.1, 0)
 				end
 
-				tombstone.CFrame 	= previousCharacter.PrimaryPart.CFrame - previousCharacter.PrimaryPart.Position + targetPosition
-				local entityHitbox = network:invoke("spawnMonster", "Hitbox", tombstone.Position - Vector3.new(0,4,0), nil, {
-					isPassive 		= true;
-					isDamageImmune 	= true;
-					isTargetImmune 	= true;
-					specialName 	= player.Name .. "'s Tombstone"
-				})
-
-				if entityHitbox.manifest then
-					entityHitbox.manifest.CanCollide = false
-					entityHitbox.manifest.Anchored = true
-					game.Debris:AddItem(entityHitbox.manifest, tombstoneDuration)
-					tombstone.Parent = entityHitbox.manifest
-
-					tombstoneTag.Value = entityHitbox.manifest
-
-				else
-					tombstone:Destroy()
-					return false, "Failed to spawn tombstone."
-				end
+				tombstone.CFrame = previousCharacter.PrimaryPart.CFrame - previousCharacter.PrimaryPart.Position + targetPosition
+				game.Debris:AddItem(tombstone, tombstoneDuration)
 			end)
 		end
 
@@ -633,20 +492,6 @@ local function performDeathToRenderCharacter(player)
 	end
 end
 
-local function getItemCountByItemId(player, itemId)
-    local playerData = playerDataContainer[player]
-    local count = 0
-    if playerData then
-        for i, inventorySlotData in pairs(playerData.inventory) do
-            if inventorySlotData.id == itemId then
-                count = count + inventorySlotData.stacks or 1
-            end
-        end
-    end
-
-    return count
-end
-
 local function onCharacterHealthChanged(player, healthValue)
 	if healthValue <= 0 then
 		performDeathToRenderCharacter(player)
@@ -686,7 +531,9 @@ local function applyMaxHealth(player, dontHeal)
 end
 
 local function onPlayerRequest_returnToMainMenu(player)
-	game:GetService("TeleportService"):Teleport(2376885433, player, {teleportReason = "Heading back to the main menu..."}, game.ReplicatedStorage.returnToLobby)
+	game:GetService("TeleportService"):Teleport(2376885433, player, {
+		teleportReason = "Heading back to the main menu..."
+	}, game.ReplicatedStorage.returnToLobby)
 end
 
 local function onPlayerRequest_respawnMyCharacter(player)
@@ -734,19 +581,18 @@ local statsToProcessWithFormula = {"dex"; "int"; "str"; "vit"}
 local function generatecompletePlayerStats(player, isInitializing, playerData)
 	if not isInitializing and (not player or not playerDataContainer[player]) then return nil end
 
-	local playerData = playerData or playerDataContainer[player]
+	playerData = playerData or playerDataContainer[player]
 
 	local baseStats = {}
 	local baseStatsAdditive = {}
 	local baseStatsMultiplicative = {}
-	local totalStatsAdditive = {}
 	local totalStatsMultiplicative = {}
 
 	local equipmentDefense = 0
 	local equipmentDamage = 0
 
 	local function incorporateModifierData(modifierData)
-		for i, modifier in pairs(modifierData) do
+		for _, modifier in pairs(modifierData) do
 			for stat, statValue in pairs(modifier) do
 				if stat == "defense" then
 					equipmentDefense = equipmentDefense + statValue
@@ -784,11 +630,10 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 	end
 
 	-- set defaults for each stat
-	for i, stat in pairs(statsToProcessWithFormula) do
+	for _, stat in pairs(statsToProcessWithFormula) do
 		baseStats[stat] = 0
 		baseStatsAdditive[stat] = 0
 		baseStatsMultiplicative[stat] = 1
-		totalStatsAdditive[stat] = 0
 		totalStatsMultiplicative[stat] = 1
 	end
 
@@ -799,13 +644,12 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 		baseStats[stat] 				= playerData.statistics[stat] or 0
 		baseStatsAdditive[stat] 		= baseStatsAdditive[stat] or 0
 		baseStatsMultiplicative[stat] 	= baseStatsMultiplicative[stat] or 1
-		totalStatsAdditive[stat] 		= baseStatsAdditive[stat] or 0
 		totalStatsMultiplicative[stat] 	= totalStatsMultiplicative[stat] or 1
 	end
 
 	-- statusEffectsV2
 	local activeStatusEffects = network:invoke("getStatusEffectsOnEntityManifestByEntityGUID", player.entityGUID.Value)
-	for i, activeStatusEffectData in pairs(activeStatusEffects) do
+	for _, activeStatusEffectData in pairs(activeStatusEffects) do
 		if activeStatusEffectData.statusEffectModifier and activeStatusEffectData.statusEffectModifier.modifierData then
 			local modifierData = activeStatusEffectData.statusEffectModifier.modifierData
 
@@ -818,7 +662,7 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 	-- calculate from what the player is currently wearing
 	local mainhandWeaponData, offhandWeaponData
 
-	for i, equipmentSlotData in pairs(playerData.equipment) do
+	for _, equipmentSlotData in pairs(playerData.equipment) do
 		local itemBaseData = itemLookup[equipmentSlotData.id]
 
 		-- add in base data
@@ -859,7 +703,7 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 			-- enchantments! :P
 			local statUpgrade = 0
 			if equipmentSlotData.enchantments then
-				for ii, enchantmentData in pairs(equipmentSlotData.enchantments) do
+				for _, enchantmentData in pairs(equipmentSlotData.enchantments) do
 					local enchantmentBaseData = itemLookup[enchantmentData.id]
 					if enchantmentBaseData.enchantments then
 						local enchantmentState = enchantmentBaseData.enchantments[enchantmentData.state]
@@ -945,7 +789,6 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 	local level = playerData.level
 	local vit = completePlayerStats.vit
 	local int = completePlayerStats.int
-	local class = playerData.class
 
 	-- health
 	local HP = 15 + (5 * level)
@@ -981,42 +824,32 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 	completePlayerStats.attackSpeed = 0 + (equipAttackSpeed - 3)/3.5
 	completePlayerStats.woodcutting = math.max(baseStats.woodcutting or 1, 1)
 	completePlayerStats.mining = math.max(baseStats.mining or 1, 1)
-
 --	completePlayerStats.attackSpeed 			= ((2 / 100) / 3) * completePlayerStats.dex + (baseStats.attackSpeed or 0)
 	completePlayerStats.criticalStrikeChance 	= ((0.5 / 100) / 3) * completePlayerStats.dex + (baseStats.criticalStrikeChance or 0)
 	completePlayerStats.blockChance 			= math.clamp(0.20 * (completePlayerStats.dex / (3 * playerData.level)), 0, 1) + (baseStats.blockChance or 0)
 	-- how much damage critical strikes do (decimal multiplier)
 	--  2 means 200%, not just "2".
 	completePlayerStats.criticalStrikeDamage = 2 + (baseStats.criticalStrikeDamage or 0)
-
 	-- how much more gold you get (this is a multipler, so 1 is just 100% of the
 	-- regular value you'd get, anything higher is considered an increase)
 	completePlayerStats.greed = 1 + (baseStats.greed or 0)
-
 	-- how much more exp you get (this is a multipler, so 1 is just 100% of the
 	-- regular value you'd get, anything higher is considered an increase)
 	completePlayerStats.wisdom = 1 + (baseStats.wisdom or 0)
-
 	-- increases chance of soulbound items being given to you
 	completePlayerStats.luck 				= baseStats.luck or 0
 	completePlayerStats.luckEffectiveness 	= 1.5 + (baseStats.luckEffectiveness or 0)
-
 	-- flat movement speed of player
 	completePlayerStats.walkspeed = 18 + (baseStats.walkspeed or 0)
-
 	-- merchantCostReduction (1 = 100% reduction (1 gold minimum))
 	completePlayerStats.merchantCostReduction = 0
-
 	-- ability cool down reduction (1 = 100% reduction)
 	completePlayerStats.abilityCDR = 0
-
 	-- additive bonus (1 + attackRangeIncrease, therefore 1 = 200% increase)
 	completePlayerStats.attackRangeIncrease = 0
-
 	-- additive bonus (1 + consumableHealthIncrease, therefore 1 = 200% increase)
 	completePlayerStats.consumableHealthIncrease 	= 0
 	completePlayerStats.consumableManaIncrease 		= 0
-
 	-- apply multiplicative bonuses?
 	for stat, value in pairs(completePlayerStats) do
 		local multiplicative = baseStats[stat.."_totalMultiplicative"]
@@ -2262,7 +2095,6 @@ local function updateInventorySlots(player)
 			if a.position and b.position then
 				return a.position > b.position
 			end
-
 			-- default
 			return false
 		end)
@@ -2272,8 +2104,6 @@ end
 -- true 	= its completed
 -- false 	= its being worked on
 -- nil 		= not assigned
-
-local STAT_POINTS_GAINED_PER_LEVEL = 2
 
 local function autoSavePlayerData(player)
 	if player.Parent ~= game.Players or player:FindFirstChild("DataLoaded") == nil or player:FindFirstChild("teleporting") or playerDataContainer[player] == nil then
@@ -2305,7 +2135,10 @@ local function autoSavePlayerData(player)
 			tag.Name = "DataSaveFailed"
 			tag.Parent = player
 		end
-		network:fireClient("alertPlayerNotification", player, {text = "Failed to save data: "..Error; textColor3 = Color3.fromRGB(255, 57, 60)})
+		network:fireClient("alertPlayerNotification", player, {
+			text = "Failed to save data: "..Error;
+			textColor3 = Color3.fromRGB(255, 57, 60)
+		})
 	end
 
 	-- get rid of packagedstatuseffects
@@ -3166,32 +2999,15 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	replicatePlayerCharacterAppearance(player, playerData)
 
 	local function onCharacterSpawn(character)
---		if isPlayerSpawningTag.Value and not isFirstTimeSpawning.Value then warn("not going to spawn player", isPlayerSpawningTag.Value, not isFirstTimeSpawning.Value) return false end
-
 		isPlayerSpawningTag.Value = true
 		playerSpawnTimeTag.Value = os.time()
---		isFirstTimeSpawning.Value = false
-
-		if player.Character ~= character then
---			warn("player character is not character?")
-		end
 
 		if character.Parent == nil then
---			warn("character Parent nil, overriding")
 			character.Parent = entityManifestCollectionFolder
 		end
 
 		if character.PrimaryPart == nil then
 			repeat wait(0.1) until character.PrimaryPart or character:FindFirstChild("hitbox") or character.Parent == nil
-		end
-
-		if character.Parent == nil then
-			if player.Character == character then
-				character.Parent = entityManifestCollectionFolder
-			else
-				character:Destroy()
-				return
-			end
 		end
 
 		if character:FindFirstChild("hitbox") and character.PrimaryPart ~= character.hitbox then
@@ -3258,15 +3074,16 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 		end
 
 		if targetCharacterSpawnPosition then
-			local ray = Ray.new(targetCharacterSpawnPosition.p + Vector3.new(0, 2, 0), Vector3.new(0, -999, 0))
-			local hitPart, hitPos = projectile.raycast(ray, {character; entityManifestCollectionFolder})
+			local ray 				= Ray.new(targetCharacterSpawnPosition.p + Vector3.new(0, 2, 0), Vector3.new(0, -999, 0))
+			local hitPart, hitPos 	= projectile.raycast(ray, {character; entityManifestCollectionFolder})
 
 			if hitPart then
 				wait(0.1)
 
-				--while (characterPrimaryPart.Position - targetCharacterSpawnPosition.p).magnitude > 3 do
+--				while (characterPrimaryPart.Position - targetCharacterSpawnPosition.p).magnitude > 3 do
 				for i = 1, 8 do
 					network:invoke("teleportPlayerCFrame_server", player, targetCharacterSpawnPosition)
+
 					wait(0.2)
 				end
 			end
@@ -3291,13 +3108,16 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	-- assign inventory slots that aren't assigned positions
 	updateInventorySlots(player)
 
+	-- check quests
+	checkForOutdatedQuests(player)
+
 	local success, rank = pcall(function()
 		return player:GetRankInGroup(4238824)
 	end)
 
 	if (runService:IsStudio() or (success and type(rank) == "number" and rank >= 254)) and not playerData.abilityBooks.admin then
 		warn("GRANTING ADMIN BOOK TO", player)
-		--grantPlayerAbilityBook(player, "admin")
+		grantPlayerAbilityBook(player, "admin")
 	end
 
 	-- push player data to client
@@ -4805,6 +4625,8 @@ local function main()
 	network:create("switchInventorySlotData", "RemoteFunction", "OnServerInvoke", onSwitchInventorySlotDataRequestReceived)
 	network:create("playerRequest_switchInventorySlotData", "RemoteFunction", "OnServerInvoke", onSwitchInventorySlotDataRequestReceived)
 
+	network:create("playerRequest_primeArrow", "RemoteFunction", "OnServerInvoke", playerRequest_primeArrow)
+
 	network:create("transferInventoryToEquipment", "RemoteFunction", "OnServerInvoke", onTransferInventoryToEquipment)
 	network:create("playerRequest_transferInventoryToEquipment", "RemoteFunction", "OnServerInvoke", onTransferInventoryToEquipment)
 
@@ -4816,10 +4638,12 @@ local function main()
 
 	network:create("requestAddItemToInventory", "BindableFunction", "OnInvoke", onRequestAddItemToInventoryReceived)
 
+	network:create("playerRequest_grantQuestToPlayer", "RemoteFunction", "OnServerInvoke", grantQuestToPlayer)
+
 	network:create("teleportPlayerCFrame_server", "BindableFunction", "OnInvoke", function(player, targetCFrame)
 		if playerPositionDataContainer[player] and player.Character and player.Character.PrimaryPart then
-			playerPositionDataContainer[player].positions = {{position = targetCFrame.p; velocity = Vector3.new()}}
-			player.Character.PrimaryPart.CFrame = targetCFrame
+			playerPositionDataContainer[player].positions 	= {{position = targetCFrame.p; velocity = Vector3.new()}}
+			player.Character.PrimaryPart.CFrame 			= targetCFrame
 		end
 	end)
 
@@ -4864,6 +4688,9 @@ local function main()
 	network:create("getPlayerEquipmentDataByEquipmentPosition", "BindableFunction", "OnInvoke", onGetPlayerEquipmentDataByEquipmentPosition)
 	network:create("getPlayerInventorySlotDataByInventorySlotPosition", "BindableFunction", "OnInvoke", onGetPlayerInventorySlotDataByInventorySlotPosition)
 	network:create("removePlayerInventorySlotData", "BindableFunction", "OnInvoke", onRemovePlayerInventorySlotData)
+	network:create("questTriggerOccurred", "BindableEvent", "Event", onQuestTriggerOccured)
+
+	network:create("grantAbilityBook", "BindableFunction", "OnInvoke", grantPlayerAbilityBook)
 	network:create("playerEquipmentChanged_server", "BindableEvent")
 	network:create("doesPlayerHaveInventorySpaceForTrade", "BindableFunction", "OnInvoke", int__doesPlayerHaveInventorySpaceForTrade)
 
@@ -4872,6 +4699,9 @@ local function main()
 
 	-- events
 	network:create("playerCharacterDied", "BindableEvent")
+
+	network:create("playerRequest_submitQuest", "RemoteFunction", "OnServerInvoke", submitQuest)
+
 	network:create("alertPlayerNotification","RemoteEvent")
 
 	network:create("playerRequest_incrementPlayerStatPointsByStatName", "RemoteFunction", "OnServerInvoke", incrementPlayerStatPointsByStatName)
@@ -4903,8 +4733,6 @@ local function main()
 	end)
 
 	game.Players.PlayerRemoving:connect(onPlayerRemoving)
-
-	game.Players.PlayerAdded:Connect()
 
 	spawn(int__tickForPVP)
 	spawn(init__exploitBlock)

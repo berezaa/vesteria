@@ -22,7 +22,7 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local mods = require(replicatedStorage.modules)
 
 local Libs = {
-	"network", "utilities","levels","tween","ability_utilities", "mapping", 
+	"network", "utilities","levels","tween","ability_utilities", "mapping",
 	"placeSetup", "projectile", "configuration", "economy", "events", "enchantment",
 	"localization"
 }
@@ -41,15 +41,15 @@ end
 
 local function AddModule(Ins)
 	local Success, Error = pcall(function()
-		
+
 		Modules[Ins.Name] = require(Ins)
 	end)
 	if not Success then
-		
+
 		printError("Error requiring module "..Ins.Name.."! Module failed to load")
 
 		printError(Error)
-	end	
+	end
 end
 
 local function scan(Ins)
@@ -68,46 +68,36 @@ end
 
 local function Init()
 	currentProcess = "requiring"
-	local StartTime = tick()
 	Modules.HasFinished = false
 	scan(script.Parent)
-	
-	for i,lib in pairs(Libs) do
+
+	for _, lib in pairs(Libs) do
 		Modules[lib] = mods.load(lib)
 		Ignore[lib] = true
 	end
-	
+
 	local postInits = {}
-	
-	StartTime = tick()
+
 	for Name,Module in pairs(Modules) do
 		if Module and Ignore[Name] == nil and Module["init"] then
-
 			currentProcess = "init"
-			local strt = tick()
 			currentModule = Name
 			local Success, Error = pcall(Module.init,Modules) -- Pass a table of all modules to each module
-			if Success then
-				local del = tick() - strt
-				if del > 0.1 then
-				end
-			else
+			if not Success then
 				printError(Name.." Error: ".. Error)
 			end
-		
 		end
 		if Module and Ignore[Name] == nil and Module["postInit"] then
 			postInits[Name] = Module["postInit"]
 		end
 	end
-	
+
 	for moduleName,postInit in pairs(postInits) do
 		currentProcess = "postinit"
-		local strt = tick()
-		currentModule = moduleName		
+		currentModule = moduleName
 		postInit(Modules)
 	end
-	
+
 	Modules.HasFinished = true
 
 	print("------------------------------------------------------------")

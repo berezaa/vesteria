@@ -1,28 +1,12 @@
-local httpService 		= game:GetService("HttpService")
+local httpService = game:GetService("HttpService")
 local teleportService = game:GetService("TeleportService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
-	local modules 			= require(replicatedStorage.modules)
-		local network 			= modules.load("network")
-		local utilities 		= modules.load("utilities")
-		local configuration 	= modules.load("configuration")
+local modules = require(replicatedStorage.modules)
+local network = modules.load("network")
+
 
 local module = {}
 
---[[
-  _____ _    _ _____ _      _____   _____
- / ____| |  | |_   _| |    |  __ \ / ____|
-| |  __| |  | | | | | |    | |  | | (___
-| | |_ | |  | | | | | |    | |  | |\___ \
-| |__| | |__| |_| |_| |____| |__| |____) |
- \_____|\____/|_____|______|_____/|_____/
-
-7/25 - Guild Mandate Introduced. Create guilds functionally added -ber,prs
-7/26 - MessagingService subscription manager. Guild chat -ber
-7/28 - Implemented DataStore/Messaging Data Sync -ber
-7/29 - Invite players to guild; UI -ber
-7/31 - Exile & promote players in your guild -ber
-8/10 - Converted Exile/Promote/Leave/Invite messages to short commands -ber
-]]
 
 local guildRankValues = {
     member = 1;
