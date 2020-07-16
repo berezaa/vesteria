@@ -492,15 +492,6 @@ local function int__updateRenderCharacter(renderCharacter, appearanceData, _enti
 
 									topAttachment.Position = bestPoint
 
---									local biggestDimension = math.max(gripToAttachTo.Part1.Size.X, gripToAttachTo.Part1.Size.Y, gripToAttachTo.Part1.Size.Z)
---
---									if biggestDimension == gripToAttachTo.Part1.Size.X then
---										topAttachment.Position 	= Vector3.new(gripToAttachTo.Part1.Size.X / 2, 0, 0)
---									elseif biggestDimension == gripToAttachTo.Part1.Size.Y then
---										topAttachment.Position 	= Vector3.new(0, gripToAttachTo.Part1.Size.Y / 2, 0)
---									elseif biggestDimension == gripToAttachTo.Part1.Size.Z then
---										topAttachment.Position 	= Vector3.new(0, 0, gripToAttachTo.Part1.Size.Z / 2)
---									end
 								end
 
 								if not weaponManifest:FindFirstChild("bottomAttachment") then
@@ -519,13 +510,9 @@ local function int__updateRenderCharacter(renderCharacter, appearanceData, _enti
 									trail.Enabled 		= false
 								end
 							end
-						elseif weaponManifest:IsA("Model") then
-
 						end
 					end
 				end
-			elseif equipmentData.position == mapping.equipmentPosition.head then
-
 			end
 		end
 	end
@@ -620,7 +607,6 @@ end
 
 local function int__assembleRenderCharacter(manifest)
 	local entityContainer 	= Instance.new("Model")
-	local _associatePlayer 	= game.Players:GetPlayerFromCharacter(manifest.Parent)
 
 	local clientPlayerHitbox = manifest:Clone()
 		clientPlayerHitbox.BrickColor 	= BrickColor.new("Hot pink")
@@ -640,10 +626,7 @@ local function int__assembleRenderCharacter(manifest)
 	entityContainer.PrimaryPart = clientPlayerHitbox
 	clientPlayerHitbox.Parent 	= entityContainer
 
-	-- todo: edit this?
-	if _associatePlayer ~= client then
---		game.CollectionService:AddTag(clientPlayerHitbox, "interact")
-	end
+
 
 	local characterBaseModel = replicatedStorage.playerBaseCharacter:Clone()
 		characterBaseModel.Name 	= "entity"
@@ -679,47 +662,6 @@ local function dissassembleRenderEntityByManifest(entityManifest)
 	end
 end
 
-local function displayTextOverHead(entityContainer, textObject)
-	if entityContainer.PrimaryPart then
-		local damageIndicator = entityContainer:FindFirstChild("damageIndicator") or replicatedStorage.entities.damageIndicator:Clone()
-
-	--	damageIndicator.StudsOffset = Vector3.new(0, entityContainer.PrimaryPart.Size.Y / 2 + 1, 0)
-
-		local thickness = math.max((entityContainer.PrimaryPart.Size.X + entityContainer.PrimaryPart.Size.Z) / 2, 3)
-
-		damageIndicator.Size = UDim2.new(thickness, 50, 6, 75)
-
-		damageIndicator.Parent 	= entityContainer
-		damageIndicator.Enabled = true
-
-		local template 					= damageIndicator.template:Clone()
-		local offset 					= 0.5 - (math.random() - 0.5) * 0.7
-		template.Text 					= textObject.Text
-		template.TextColor3 			= textObject.TextColor3
-		template.TextStrokeColor3 		= textObject.TextStrokeColor3 or Color3.new(0, 0, 0)
-		template.Font 					= textObject.Font or template.Font
-		template.TextTransparency 		= 1
-		template.TextStrokeTransparency = 1
-		template.Position 				= UDim2.new(offset, 0, 0.8, 0)
-		template.Parent 				= damageIndicator
-		template.Size 					= UDim2.new(0.7, 0, 0.1, 0)
-		template.Visible 				= true
-		game.Debris:AddItem(template, 3)
-		local ZIndex = math.floor(10 - (textObject.TextTransparency or 0) * 10)
-		template.ZIndex = ZIndex
-
-		tween(template, {"Position"}, UDim2.new(offset, 0, 0, 0.3), 1.5)
-		tween(template, {"TextTransparency", "TextStrokeTransparency", "Size"}, {textObject.TextTransparency or 0, textObject.TextStrokeTransparency or textObject.TextTransparency or 0, UDim2.new(0.7, 0, 0.3, 0)}, 0.75)
-
-		spawn(function()
-			wait(0.5)
-
-			tween(template,{"TextTransparency","TextStrokeTransparency","Size"},{1,1,UDim2.new(0.7,0,0.1,0)},0.75)
-		end)
-
-
-	end
-end
 
 -- Chat part setup
 
@@ -745,92 +687,14 @@ local function setPrimaryChatBubble(chatBubble)
 		local size = chatBubble.Size
 		if chatBubble.titleFrame.title.Text ~= "" then
 			chatBubble.titleFrame.Visible = true
-			chatBubble.Size = chatBubble.Size + UDim2.new(0, 0, 0, 10)
+			chatBubble.Size = size + UDim2.new(0, 0, 0, 10)
 			chatBubble.contents.Position = chatBubble.contents.Position + UDim2.new(0, 0, 0, 5)
 			local dif = (chatBubble.titleFrame.AbsoluteSize.X + 20) - chatBubble.AbsoluteSize.X
 			if dif > 0 then
-				chatBubble.Size = chatBubble.Size + UDim2.new(0, dif, 0, 0 )
+				chatBubble.Size = size + UDim2.new(0, dif, 0, 0 )
 			end
 		end
 
-	end
-end
-
-
-local chatTags = {}
-
--- deprecated
-local function updateChatRender()
-
-	local displayRange = 35
-	local chatPreviewDisplayRange = 60
-
-	for i,chatTagPart in pairs(game.CollectionService:GetTagged("chatTag")) do
-
-		local entityManifest = chatTagPart.Parent
-
-		if entityManifest == nil then
-			if chatTagPart then
-				local chatTag = chatTagPart:FindFirstChild("SurfaceGui")
-				if chatTag then
-					chatTag.Enabled = false
-				end
-			end
-
-			return false
-		end
-
-		local distanceAway = utilities.magnitude(entityManifest.Position - workspace.CurrentCamera.CFrame.p)
-
-		if chatTagPart then
-			local chatTag = chatTagPart:FindFirstChild("SurfaceGui")
-
-			local effectiveDisplayRange = displayRange * (chatTagPart:FindFirstChild("rangeMulti") and chatTagPart.rangeMulti.Value or 1)
-			local effectiveChatPreviewDisplayRange = chatPreviewDisplayRange * (chatTagPart:FindFirstChild("rangeMulti") and chatTagPart.rangeMulti.Value or 1)
-
-			if chatTag and chatTag:FindFirstChild("chat") then
-				if distanceAway > effectiveChatPreviewDisplayRange then
-					chatTag.Enabled = false
-				elseif #chatTag.chat:GetChildren() <= 1 then
-					chatTag.Enabled = false
-				elseif entityManifest:FindFirstChild("isStealthed") then
-					chatTag.Enabled = false
-				else
-					local position 		= Vector3.new(entityManifest.Position.X, entityManifest.Position.Y + (4.5 + entityManifest.Size.Y / 2), entityManifest.Position.Z) + (chatTagPart:FindFirstChild("offset") and chatTagPart.offset.Value or Vector3.new())
-					local centerCf 		= (workspace.CurrentCamera.CFrame - workspace.CurrentCamera.CFrame.p) + position
-					local bottomCf 		= centerCf * CFrame.new(0, -chatTagPart.Size.Y/2, 0)
-					local difference 	= bottomCf.p - position
-					chatTagPart.CFrame 	= centerCf - Vector3.new(difference.X, 0, difference.Z)
-
-					if distanceAway > effectiveChatPreviewDisplayRange - 35 then
-						chatTag.chat.Visible 	= false
-						chatTag.distant.Visible = true
-
-						local dif do
-							if distanceAway >= effectiveChatPreviewDisplayRange - 10 then
-								dif = (distanceAway - effectiveChatPreviewDisplayRange + 10) / 10
-							else
-								dif = 0
-							end
-						end
-
-						local x = distanceAway
-						local y = math.abs(workspace.CurrentCamera.CFrame.p.Y - position.Y)
-
-						local angle = math.atan2(y,x)
-						dif 		= dif + math.clamp(angle - 0.3,0,0.5) / 0.5
-
-						chatTag.distant.chatFrame.contents.inner.TextTransparency = dif
-						chatTag.distant.chatFrame.ImageTransparency = dif
-					else
-						chatTag.chat.Visible = true
-						chatTag.distant.Visible = false
-					end
-
-					chatTag.Enabled = true
-				end
-			end
-		end
 	end
 end
 
@@ -1061,11 +925,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				game.Debris:AddItem(newSound,1.5)
 			end
 
---			local footstep_sound = renderEntityData.entityContainer:FindFirstChild("footstep_sound", true)
---			if footstep_sound and not footstep_sound.Playing then
---				footstep_sound.Looped = true
---				footstep_sound:Play()
---			end
 		end
 	end
 
@@ -1089,7 +948,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				currentPlayingStateAnimation = nil
 			end
 		elseif entityManifest.entityType.Value == "monster" or entityManifest.entityType.Value == "pet" then
-			local isMonsterPet 	= not not entityManifest:FindFirstChild("pet")
 
 			if renderEntityData.entityContainer:FindFirstChild("entity") and renderEntityData.entityContainer.entity.PrimaryPart:FindFirstChild("walking") then
 
@@ -1196,10 +1054,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				animationTrack:Stop()
 			end
 
-			-- dead af, so make it not collidable
-			-- Davidii did this. Non-colliding player characters would make them
-			-- fall through the ground and that sucks. No more! If this breaks
-			-- something else, as these kinds of changes often do, let me know
 			if entityManifest.entityType.Value ~= "character" then
 				entityManifest.CanCollide = false
 			end
@@ -1274,23 +1128,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 					end
 				end)
 			elseif entityManifest.entityType.Value == "character" then
-				-- function to fire when player dies
---				local onDeadAnimationStoppedConnection
---				local function onDeadAnimationStopped()
---					onDeadAnimationStoppedConnection:disconnect()
---
---					deathEffect(2)
---					if renderEntityData.entityContainer and renderEntityData.entityContainer:FindFirstChild("entity") then
---						renderEntityData.entityContainer.entity:Destroy()
---					end
---
---				end
---
---				-- setup the death animation
---				characterEntityAnimationTracks.movementAnimations.dead.Looped 		= false
---				characterEntityAnimationTracks.movementAnimations.dead_loop.Looped 	= true
---				onDeadAnimationStoppedConnection 									= characterEntityAnimationTracks.movementAnimations.dead.Stopped:connect(onDeadAnimationStopped)
---				characterEntityAnimationTracks.movementAnimations.dead:Play()
 
 				local entity = renderEntityData.entityContainer and renderEntityData.entityContainer:FindFirstChild("entity")
 				if entity then
@@ -1416,7 +1253,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						spawn(function()
 							stateData.execute(client, targetAnimation, entityBaseData, renderEntityData.entityContainer)
 						end)
-					else
 					end
 				end
 			elseif entityManifest.entityType.Value == "character" then
@@ -1516,18 +1352,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 		previousState = newState
 	end
 
-	local function onBowStrechingAnimationStopped()
-		if renderEntityData.currentPlayerWeaponAnimations and renderEntityData.currentPlayerWeaponAnimations.stretchHold then
-			renderEntityData.currentPlayerWeaponAnimations.stretchHold.Looped = true
-			renderEntityData.currentPlayerWeaponAnimations.stretchHold:Play()
-		end
-
-		if renderEntityData.bowStrechAnimationStopped then
-			renderEntityData.bowStrechAnimationStopped:disconnect()
-			renderEntityData.bowStrechAnimationStopped = nil
-		end
-	end
-
 	function renderEntityData:playAnimation(animationSequenceName, animationName, extraData)
 		if characterEntityAnimationTracks[animationSequenceName] and characterEntityAnimationTracks[animationSequenceName][animationName] then
 			-- stop all emotes
@@ -1535,19 +1359,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 			local associatePlayer = game.Players:GetPlayerFromCharacter(entityManifest.Parent)
 
-			local strValue = associatePlayer:FindFirstChild("str")
-			local intValue = associatePlayer:FindFirstChild("int")
-			local dexValue = associatePlayer:FindFirstChild("dex")
-			local vitValue = associatePlayer:FindFirstChild("vit")
 
-			local playerStats = {
-				str = strValue.Value,
-				int = intValue.Value,
-				dex = dexValue.Value,
-				vit = vitValue.Value,
-			}
-
-			local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(renderEntityData.entityContainer.entity)
 
 			if animationName == "consume_consumable" and extraData and extraData.id then
 				local itemBaseData 					= itemLookup[extraData.id]
@@ -1592,31 +1404,9 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 							end
 						end
 						characterEntityAnimationTracks[animationSequenceName]["consume_loop"]:Play()
-						--characterEntityAnimationTracks[animationSequenceName][animationName]:Play(0.1, 1, characterEntityAnimationTracks[animationSequenceName][animationName].Length / (extraData.ANIMATION_DESIRED_LENGTH or characterEntityAnimationTracks[animationSequenceName][animationName].Length))
 
 						local connection
 						connection = characterEntityAnimationTracks[animationSequenceName]["consume_loop"].Stopped:connect(function()
---							if consumableGrip.Part1 == consumableManifest then
---								consumableGrip.Part1 = nil
---							end
---
---							if currentEquippedManifest then
---								if currentEquippedManifest:IsA("BasePart") then
---									currentEquippedManifest.Transparency = 0
---								end
---								for i,part in pairs(currentEquippedManifest:GetDescendants()) do
---									if part:isA("BasePart") then
---										part.Transparency = part.Transparency - 1
---									end
---								end
---							end
---
---							if consumableManifest then
---								consumableManifest:Destroy()
---								consumableManifest = nil
---							end
---
---							connection:disconnect()
 						end)
 
 						if itemBaseData.useSound and game.ReplicatedStorage:FindFirstChild("sounds") and consumableManifest then
@@ -1674,21 +1464,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 							characterEntityAnimationTracks[animationSequenceName]["consume_loop"]:Stop()
 						end)
-
-						-- delay(0.55, function()
-						-- 	if consumableManifest then
-						-- 		if consumableManifest:FindFirstChild("consumed") then
-						-- 			consumableManifest.consumed.Transparency = 1
-						-- 		elseif itemBaseData.useSound == "eat_food" then
-						-- 			consumableManifest.Transparency = 1
-						-- 			for i,part in pairs(consumableManifest:GetChildren()) do
-						-- 				if part:IsA("BasePart") then
-						-- 					part.Transparency = 1
-						-- 				end
-						-- 			end
-						-- 		end
-						-- 	end
-						-- end)
 					end
 				end
 			elseif animationName == "cast-line" and extraData and extraData.targetPosition then
@@ -1732,10 +1507,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 								network:fire("fishingBobHit", true)
 							end
 
-							--[[
-							renderData.fishingBob.Anchored 		= false
-							renderData.fishingBob.CanCollide 	= true
-							]]
 							if renderEntityData.fishingBob and renderEntityData.fishingBob:FindFirstChild("splash") then
 								renderEntityData.fishingBob.splash:Emit(20)
 							end
@@ -1778,16 +1549,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						local _, fishModel, fishVelocityGiven = network:invokeServer("playerRequest_reelFishingRod", renderEntityData.fishingBob.Position)
 							fish = fishModel
 							fishVelocity = fishVelocityGiven
-
-						if currentWeaponManifest then
-		--					spawn(function()
-		--						while fishingPoleManifest.line.Length > 3.5 do
-		--							fishingPoleManifest.line.Length = fishingPoleManifest.line.Length - 7 / 30
-		--
-		--							wait()
-		--						end
-		--					end)
-						end
 					end
 
 					if currentWeaponManifest and not fish then
@@ -1912,12 +1673,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 	local function onEntityTypeChanged(newEntityType)
 		dissassembleRenderEntityByManifest(entityManifest)
 
---		if newEntityType == "monster" then
---			assembleMonsterRenderEntity(entityManifest)
---		elseif newEntityType == "character" then
---			assembleCharacterRenderEntity(entityManifest)
---		end
-
 		-- ugly hack since the building function requires this function
 		-- EPIC CIRCULAR REQUIREMENTS!
 		network:invoke("assembleEntityByManifest", entityManifest)
@@ -1953,7 +1708,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			if not monsterScaled then
 				if entityManifest.monsterScale.Value > 1.3 then
 					monsterScaled 					= true
---					monsterNameUIPart.Size 			= monsterNameUIPart.Size * (1 + (entityManifest.monsterScale.Value - 1) / 1.5)
 					monsterNameTag.skull.Visible 	= true
 				end
 			end
@@ -2029,10 +1783,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 	end
 
 	local function cleanupMonsterDisplayUI()
---		local monsterNameUIPart = renderEntityData.entityContainer:FindFirstChild("MonsterHealthTag")
---		if monsterNameUIPart then
---			monsterNameUIPart:Destroy()
---		end
 
 		local monsterNamePart = renderEntityData.entityContainer:FindFirstChild("MonsterEnemyTag")
 		if monsterNamePart then
@@ -2053,18 +1803,13 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			playerXpTagPairing[associatePlayer] = xpTag
 		end
 
- 		local chatTag = createChatTagPart(renderEntityData.entityContainer)
 
---		local monsterNameUIPart 	= renderEntityData.entityContainer:FindFirstChild("MonsterHealthTag") or assetFolder.MonsterHealthTag:Clone()
---		monsterNameUIPart.Parent 	= renderEntityData.entityContainer
 
 		monsterNameUI = assetFolder.monsterHealth:Clone()
 		monsterNameUI.Parent = renderEntityData.entityContainer
 		monsterNameUI.Adornee = renderEntityData.entityContainer
 
---		monsterNameUI				= monsterNameUIPart.SurfaceGui
 		monsterNameUI.Enabled 		= false
---		monsterNameUIPart.Parent 	= renderEntityData.entityContainer
 
 		if associatePlayer and nameTag then
 			local function updateNameTagForCharacter()
@@ -2169,7 +1914,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 	local currentHealth = entityManifest.health.Value
 	local isShowingDamageAnimation = false
 	local function onEntityHealthChanged(newHealth)
-		-- check if monsterNameUI is drawn (damage was done to it by the client, gets created elsewhere!)
 		if not monsterNameUI then
 			if renderEntityData.entityContainer.PrimaryPart:FindFirstChild("monsterNameUI") then
 				monsterNameUI = renderEntityData.entityContainer.PrimaryPart.monsterNameUI
@@ -2182,20 +1926,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			end
 		end
 
---		if associatePlayer then
---			local deltaHealth = newHealth - currentHealth
---
---			if deltaHealth > 0 then
---				local tickHealAmount = levels.getPlayerTickHealing(associatePlayer)
---
---				if deltaHealth > tickHealAmount + 1 then
---					displayTextOverHead(renderEntityData.entityContainer, {
---						Text 		= tostring(math.floor(deltaHealth));
---						TextColor3 	= Color3.fromRGB(0, 255, 213);
---					})
---				end
---			end
---		end
 
 		if monsterNameTag and renderEntityData.entityContainer.Name ~= "Chicken" then
 			monsterNameTag.Enabled = true
@@ -2233,7 +1963,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 			fill.healthLag.ImageColor3 = Color3.fromRGB(255, 23, 23)
 
-			local difference = fill.currentHealthFill.Size.X.Scale - goal.X.Scale
 			fill.currentHealthFill.Size = goal
 
 			spawn(function()
@@ -2506,8 +2235,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 							statusEffectData.__clientApplyTransitionEffectOnCharacter(renderEntityData.entityContainer)
 						elseif state == 1 and statusEffectData.__clientApplyStatusEffectOnCharacter then
 							statusEffectData.__clientApplyStatusEffectOnCharacter(renderEntityData.entityContainer)
-						elseif state == 0 then
-							-- do nuffin
 						elseif state == -1 and statusEffectData.__clientRemoveStatusEffectOnCharacter then
 							statusEffectData.__clientRemoveStatusEffectOnCharacter(renderEntityData.entityContainer)
 						end
@@ -2652,10 +2379,6 @@ game.ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents").OnMessageDone
 	end
 end)
 
-local function int__createNameTag()
-
-end
-
 local function int__updateMonsterNameTag(renderData)
 	local entityContainer = renderData.entityContainer
 
@@ -2682,24 +2405,12 @@ local function int__updateMonsterNameTag(renderData)
 				nameTag.Enabled = true
 
 				local position = Vector3.new(entityContainer.PrimaryPart.Position.X, entityContainer.PrimaryPart.Position.Y - (1 + entityContainer.PrimaryPart.Size.Y / 2), entityContainer.PrimaryPart.Position.Z)
-				--local lookAt = Vector3.new(workspace.CurrentCamera.CFrame.p.X, position.Y, workspace.CurrentCamera.CFrame.p.Z)
-
-				--nameTagPart.CFrame = CFrame.new(position, workspace.CurrentCamera.CFrame.p)
-				--nameTagPart.CFrame = CFrame.new(position) * (workspace.CurrentCamera.CFrame - workspace.CurrentCamera.CFrame.p)
 				nameTagPart.CFrame = (workspace.CurrentCamera.CFrame - workspace.CurrentCamera.CFrame.p) + position
 
 
 				local healthTag = entityContainer:FindFirstChild("monsterHealth")
---				local healthTagPart = entityContainer:FindFirstChild("MonsterHealthTag")
-				if not renderData.disableHealthBarUI and healthTag then--healthTagPart then
---					local healthPos = Vector3.new(entityContainer.PrimaryPart.Position.X, entityContainer.PrimaryPart.Position.Y + (1 + entityContainer.PrimaryPart.Size.Y / 2), entityContainer.PrimaryPart.Position.Z)
---					healthTag.StudsOffsetWorldSpace = Vector3.new(0, entityContainer.PrimaryPart.Size.Y / 2, 0)
-					--healthTagPart.CFrame = CFrame.new(healthPos, workspace.CurrentCamera.CFrame.p)
---					healthTagPart.CFrame = (workspace.CurrentCamera.CFrame - workspace.CurrentCamera.CFrame.p) + healthPos
---					if healthTagPart:FindFirstChild("SurfaceGui") then
 
-
-						-- andrew 7/25/2019 health bars only appear after monster is damaged
+				if not renderData.disableHealthBarUI and healthTag then
 
 						healthTag.Enabled = damagedByPlayer
 --					end
@@ -2720,7 +2431,6 @@ local function int__updateMonsterNameTag(renderData)
 
 				if distanceAway >= fullDisplayCutoff then
 					dif = (distanceAway - fullDisplayCutoff) / (displayDistance - fullDisplayCutoff)
-					-- andrew 7/25/19 changed fancy camera angle transparency to only display after 10 studs
 
 				else
 					dif = 0
@@ -2735,12 +2445,12 @@ local function int__updateMonsterNameTag(renderData)
 				if nameTag:FindFirstChild("monster") then
 					nameTag.monster.TextTransparency 				= dif
 					nameTag.monster.TextStrokeTransparency 			= dif * 1.1
-					nameTag.monster.curve.ImageTransparency 		= dif --0.5 + dif/2
-					nameTag.monster.curve.shadow.ImageTransparency 	= dif --0.5 + (dif/2) * 1.1
+					nameTag.monster.curve.ImageTransparency 		= dif
+					nameTag.monster.curve.shadow.ImageTransparency 	= dif
 
 					if nameTag.nickname.Text ~= "" then
 						nameTag.nickname.TextTransparency 		= dif
-						nameTag.nickname.BackgroundTransparency = dif --0.5 + dif / 2
+						nameTag.nickname.BackgroundTransparency = dif
 					end
 				end
 
@@ -2749,13 +2459,6 @@ local function int__updateMonsterNameTag(renderData)
 				end
 			else
 				nameTag.Enabled = false
-
---				local healthTagPart = entityContainer:FindFirstChild("MonsterHealthTag")
---				if healthTagPart then
---					if healthTagPart:FindFirstChild("SurfaceGui") then
---						healthTagPart.SurfaceGui.Enabled = false
---					end
---				end
 
 				local healthTag = entityContainer:FindFirstChild("monsterHealth")
 				if healthTag then
@@ -2786,20 +2489,10 @@ local function int__updateCharacterNameTag(renderEntityData)
 	local entityManifest 	= renderEntityData.entityManifest
 
 	local displayRange = 35
-	local chatPreviewDisplayRange = 60
 
---	local chatTagPart = renderEntityData.entityContainer.PrimaryPart:FindFirstChild("ChatTag")
 	local nameTagPart = renderEntityData.entityContainer.PrimaryPart:FindFirstChild("PlayerTag")
 
 	if entityManifest == nil then
-		--[[
-		if chatTagPart then
-			local chatTag = chatTagPart:FindFirstChild("SurfaceGui")
-			if chatTag then
-				chatTag.Enabled = false
-			end
-		end
-		]]
 
 		if nameTagPart then
 			local nameTag = nameTagPart:FindFirstChild("SurfaceGui")
@@ -2811,57 +2504,9 @@ local function int__updateCharacterNameTag(renderEntityData)
 		return false
 	end
 
---	local focus = client.Character and client.Character.PrimaryPart or workspace.CurrentCamera
 	local focus = workspace.CurrentCamera
 	local distanceAway = utilities.magnitude(entityContainer.PrimaryPart.Position - focus.CFrame.p)
-	--[[
-	if chatTagPart then
-		local chatTag = chatTagPart:FindFirstChild("SurfaceGui")
 
-		if chatTag and chatTag:FindFirstChild("chat") then
-			if distanceAway > chatPreviewDisplayRange then
-				chatTag.Enabled = false
-			elseif #chatTag.chat:GetChildren() <= 1 then
-				chatTag.Enabled = false
-			elseif entityManifest:FindFirstChild("isStealthed") then
-				chatTag.Enabled = false
-			else
-				local position 		= Vector3.new(entityManifest.Position.X, entityManifest.Position.Y + (4.5 + entityManifest.Size.Y / 2), entityManifest.Position.Z)
-				local centerCf 		= (workspace.CurrentCamera.CFrame - workspace.CurrentCamera.CFrame.p) + position
-				local bottomCf 		= centerCf * CFrame.new(0, -chatTagPart.Size.Y/2, 0)
-				local difference 	= bottomCf.p - position
-				chatTagPart.CFrame 	= centerCf - Vector3.new(difference.X, 0, difference.Z)
-
-				if distanceAway > chatPreviewDisplayRange - 35 then
-					chatTag.chat.Visible 	= false
-					chatTag.distant.Visible = true
-
-					local dif do
-						if distanceAway >= chatPreviewDisplayRange - 10 then
-							dif = (distanceAway - chatPreviewDisplayRange + 10) / 10
-						else
-							dif = 0
-						end
-					end
-
-					local x = distanceAway
-					local y = math.abs(workspace.CurrentCamera.CFrame.p.Y - position.Y)
-
-					local angle = math.atan2(y,x)
-					dif 		= dif + math.clamp(angle - 0.3,0,0.5) / 0.5
-
-					chatTag.distant.chatFrame.contents.inner.TextTransparency = dif
-					chatTag.distant.chatFrame.ImageTransparency = dif
-				else
-					chatTag.chat.Visible = true
-					chatTag.distant.Visible = false
-				end
-
-				chatTag.Enabled = true
-			end
-		end
-	end
-	]]
 	if nameTagPart then
 		local nameTag = nameTagPart:FindFirstChild("SurfaceGui")
 
@@ -2882,11 +2527,9 @@ local function int__updateCharacterNameTag(renderEntityData)
 
 
 				local healthTag = entityContainer:FindFirstChild("monsterHealth")
---				local healthTagPart = entityContainer:FindFirstChild("MonsterHealthTag")
-				if healthTag then --healthTagPart then
---					local healthPos 		= Vector3.new(entityManifest.Position.X, entityManifest.Position.Y + (1 + entityManifest.Size.Y / 2), entityManifest.Position.Z)
---					healthTagPart.CFrame 	= (workspace.CurrentCamera.CFrame - workspace.CurrentCamera.CFrame.p) + healthPos
---					healthTag.StudsOffsetWorldSpace = Vector3.new(0, entityContainer.PrimaryPart.Size.Y / 2, 0)
+
+				if healthTag then
+
 
 					if entityManifest.health.Value / entityManifest.maxHealth.Value < 1 and (not associatePlayer or (associatePlayer:FindFirstChild("isInPVP") and associatePlayer.isInPVP.Value)) then
 						healthTag.Enabled = true
@@ -2916,18 +2559,8 @@ local function int__updateCharacterNameTag(renderEntityData)
 				end
 
 				local position = Vector3.new(entityManifest.Position.X, entityManifest.Position.Y - (1.9 + entityManifest.Size.Y / 2), entityManifest.Position.Z)
-				--local lookAt = Vector3.new(workspace.CurrentCamera.CFrame.p.X, position.Y, workspace.CurrentCamera.CFrame.p.Z)
 
-				--nameTagPart.CFrame = CFrame.new(position, workspace.CurrentCamera.CFrame.p)
-				--nameTagPart.CFrame = CFrame.new(position) * (workspace.CurrentCamera.CFrame - workspace.CurrentCamera.CFrame.p)
 				nameTagPart.CFrame = (workspace.CurrentCamera.CFrame - workspace.CurrentCamera.CFrame.p) + position
-				--[[
-				local dif = 0 do
-					if distanceAway >= displayRange - 10 then
-						dif = (distanceAway - displayRange + 10) / 10
-					end
-				end
-				]]
 
 
 
@@ -2940,47 +2573,41 @@ local function int__updateCharacterNameTag(renderEntityData)
 					dif = 0
 				end
 
-				--[[
-				local x = distanceAway
-				local y = math.abs(workspace.CurrentCamera.CFrame.p.Y - position.Y)
 
-				local angle = math.atan2(y, x)
-				dif = dif + math.clamp(angle - 0.3, 0, 0.5) / 0.5
-				]]
 				nameTag.curve.ImageTransparency = dif
 
 				if nameTag.top:FindFirstChild("level") then
 					nameTag.top.level.TextTransparency = dif
-			--		nameTag.top.level.BackgroundTransparency = dif
+
 					nameTag.top.level.TextColor3 = nameTagColor
 				end
 
 				if nameTag.top:FindFirstChild("player") then
 					nameTag.top.player.TextTransparency = dif
-			--		nameTag.top.player.BackgroundTransparency = dif
+
 					nameTag.top.player.TextColor3 = nameTagColor
 				end
 
 				if nameTag.top:FindFirstChild("class") then
 					nameTag.top.class.ImageTransparency = dif
-			--		nameTag.top.class.BackgroundTransparency = dif
+
 					nameTag.top.class.ImageColor3 = nameTagColor
 				end
 
 				if nameTag.bottom:FindFirstChild("guild") then
 					nameTag.bottom.guild.TextTransparency = dif
 					nameTag.bottom.guild.BackgroundTransparency = dif
---					nameTag.bottom.guild.TextColor3 = nameTagColor
+
 				end
 
 				if nameTag.top:FindFirstChild("party") then
 					nameTag.top.party.image.ImageTransparency = dif
-			--		nameTag.top.party.BackgroundTransparency = dif
+
 					nameTag.top.party.image.ImageColor3 = nameTagColor
 				end
 
 				if nameTag.top:FindFirstChild("input") then
-			--		nameTag.top.input.BackgroundTransparency = dif
+
 					for i,object in pairs(nameTag.top.input:GetChildren()) do
 						if object:IsA("ImageLabel") then
 							object.ImageColor3 = nameTagColor
@@ -2991,18 +2618,13 @@ local function int__updateCharacterNameTag(renderEntityData)
 
 				if nameTag.top:FindFirstChild("dev") then
 					nameTag.top.dev.TextTransparency = dif
-			--		nameTag.top.dev.BackgroundTransparency = dif
+
 					nameTag.top.dev.TextColor3 = nameTagColor
 				end
 			else
 				nameTag.Enabled = false
 
---				local healthTagPart = entityContainer:FindFirstChild("MonsterHealthTag")
---				if healthTagPart then
---					if healthTagPart:FindFirstChild("SurfaceGui") then
---						healthTagPart.SurfaceGui.Enabled = false
---					end
---				end
+
 
 				local healthTag = entityContainer:FindFirstChild("monsterHealth")
 				if healthTag then
@@ -3191,12 +2813,7 @@ local function updateEntitiesBeingRendered(entitiesToRender)
 			-- update display stuff
 			if manifest.entityType.Value == "character" then
 				int__updateCharacterNameTag(renderData)
-				--[[
-				local otherPlayer = game.Players:GetPlayerFromCharacter(renderData.entityContainer)
-				if otherPlayer and true then
-					int__updateMonsterNameTag(renderData)
-				end
-				]]
+
 			elseif manifest.entityType.Value == "monster" or manifest.entityType.Value == "pet" then
 				int__updateMonsterNameTag(renderData)
 			end
@@ -3243,7 +2860,7 @@ local function int__updateNearbyEntities()
 		end
 
 		if client.Character and client.Character.PrimaryPart then
---			local clientPosition 	= client.Character.PrimaryPart.Position
+
 			local clientPosition    = workspace.CurrentCamera.CFrame.Position
 			local entities 			= utilities.getEntities()
 
@@ -3449,7 +3066,6 @@ network:connect("signal_damage", "OnClientEvent", function(entityManifest, damag
 
 		local container =  renderEntityData.entityContainer
 		local damageIndicator = container:FindFirstChild("damageIndicator")
-	--				damageIndicator.StudsOffset = Vector3.new(0, container.PrimaryPart.Size.Y / 2 + 1, 0)
 
 		if damageIndicator == nil then
 			damageIndicator = replicatedStorage.entities.damageIndicator:Clone()
@@ -3558,6 +3174,8 @@ network:connect("signal_damage", "OnClientEvent", function(entityManifest, damag
 end)
 
 local function onEntityManifestCollectionFolderChildAdded(entityManifest)
+	--assuming Damiens up to some mischief in here for monster rework
+
 	--[[
 	if entityManifest:FindFirstChild("monsterScale") then
 		giantEnemyAdded(entityManifest)
@@ -3850,7 +3468,6 @@ local function main()
 	end)
 
 	-- todo: replication
-	--network:connect("replicateWeaponStateChanged", "")
 	network:create("replicateClientCharacterWeaponStateChanged", "BindableEvent", "Event", function(weaponType, weaponState)
 		local entityManifest = client.Character and client.Character.PrimaryPart
 
@@ -3906,8 +3523,6 @@ local function main()
 	end)
 
 
---	runService.Heartbeat:connect(updateEntitiesBeingRendered)
---	runService:BindToRenderStep("updateChatRendering", 191, updateChatRender)
 
 
 --	-- giant message stuff
