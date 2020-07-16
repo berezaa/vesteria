@@ -1,13 +1,14 @@
 return function()
 
-local replicatedStorage 	= game:GetService("ReplicatedStorage")
-	local modules = require(replicatedStorage:WaitForChild("modules"))
-		local network 		= modules.load("network")
-		
-	
-local firetime = 0
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local modules = require(replicatedStorage:WaitForChild("modules"))
+local network = modules.load("network")
 
+local firetime = 0
 local DURATION = 300
+local fireLoop
+local fireIgnite
+
 --[[
 local fireLoop = Instance.new("Sound")
 fireLoop.SoundId = "rbxassetid://2564068359"
@@ -24,28 +25,28 @@ if script.Parent:IsA("BasePart") then
 	script.Parent.Anchored = true
 end
 
-local sounds = game.ReplicatedStorage:WaitForChild("sounds")
+local sounds = game.ReplicatedStorage.assets:WaitForChild("sounds")
+
 if sounds:FindFirstChild("fireLoop") then
 	fireLoop = sounds.fireLoop:Clone()
 	fireLoop.Parent = script.Parent
 end
+
 if sounds:FindFirstChild("fireIgnite") then
 	fireIgnite = sounds.fireIgnite:Clone()
 	fireIgnite.Parent = script.Parent
 end
 
-		
 local function ignite(player, firepit)
-
 	if firepit == script.Parent then
 		if fireIgnite then
 			fireIgnite:Play()
 		end
-		for i,v in pairs(script.Parent:GetChildren()) do
+		for _, v in pairs(script.Parent:GetChildren()) do
 			pcall(function()
 				v.Enabled = true
 			end)
-		end	
+		end
 		if fireLoop then
 			fireLoop:Play()
 		end
@@ -55,7 +56,7 @@ local function ignite(player, firepit)
 end
 
 local function dampen()
-	for i,v in pairs(script.Parent:GetChildren()) do
+	for _, v in pairs(script.Parent:GetChildren()) do
 		pcall(function()
 			v.Enabled = false
 		end)
@@ -64,7 +65,6 @@ local function dampen()
 		fireLoop:Stop()
 	end
 	game.CollectionService:AddTag(script.Parent,"interact")
-
 end
 
 network:create("igniteFirePit","RemoteEvent","OnServerEvent",ignite)
@@ -76,6 +76,4 @@ while wait(1) do
 end
 --
 
-	
-	
 end

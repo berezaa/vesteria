@@ -1,19 +1,7 @@
-local abilityAnimations = game:GetService("ReplicatedStorage"):WaitForChild("abilityAnimations")
-
-local modules = require(game:GetService("ReplicatedStorage"):WaitForChild("modules"))
-	local projectile 		= modules.load("projectile")
-	local placeSetup 		= modules.load("placeSetup")
-	local client_utilities 	= modules.load("client_utilities")
-	local network 			= modules.load("network")
-
-local monsterManifestCollectionFolder = placeSetup.awaitPlaceFolder("monsterManifestCollection")
-
-local httpService = game:GetService("HttpService")
-
 local statusEffectData = {
 	--> identifying information <--
 	id 	= 1;
-	
+
 	--> generic information <--
 	name 				= "Potion";
 	activeEffectName 	= "Potioning";
@@ -27,7 +15,7 @@ function statusEffectData.execute(activeStatusEffectData, entityManifest, active
 	local healthHealed 	= activeStatusEffectData.statusEffectModifier.healthToHeal or 0
 	local manaRestored 	= activeStatusEffectData.statusEffectModifier.manaToRestore or 0
 	local duration 		= activeStatusEffectData.statusEffectModifier.duration or 5
-	
+
 	if entityManifest:FindFirstChild("health") and entityManifest:FindFirstChild("maxHealth") and healthHealed > 0 then
 		entityManifest.health.Value = math.clamp(
 			entityManifest.health.Value + healthHealed / duration / activeStatusEffectTickTimePerSecond,
@@ -35,7 +23,7 @@ function statusEffectData.execute(activeStatusEffectData, entityManifest, active
 			entityManifest.maxHealth.Value
 		)
 	end
-	
+
 	if entityManifest:FindFirstChild("mana") and entityManifest:FindFirstChild("maxMana") and manaRestored > 0 then
 		entityManifest.mana.Value = math.clamp(
 			entityManifest.mana.Value + manaRestored / duration / activeStatusEffectTickTimePerSecond,
@@ -46,19 +34,19 @@ function statusEffectData.execute(activeStatusEffectData, entityManifest, active
 end
 
 function statusEffectData.onStatusEffectApplied_server(player)
-	
+
 end
 
 function statusEffectData.onStatusEffectRemoved_server(player)
-	
+
 end
 
 function statusEffectData.onStatusEffectApplied_client(player)
-	
+
 end
 
 function statusEffectData.onStatusEffectRemoved_client(player)
-	
+
 end
 
 return statusEffectData
