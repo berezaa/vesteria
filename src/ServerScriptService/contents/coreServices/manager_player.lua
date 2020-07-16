@@ -4616,16 +4616,11 @@ local function playerRequest_transferStorageToInventory(player, storageSlotData)
 end
 
 local function main()
-	network:create("confirmPlayerDeath", "RemoteEvent", "OnServerEvent", onPlayerConfirmDeath)
-
 	-- data manipulation
 	network:create("loadPlayerData", "RemoteFunction", "OnServerInvoke", onPlayerAdded)
 	network:create("playerRequest_setupPlayerData", "RemoteFunction", "OnServerInvoke", onPlayerAdded)
-
 	network:create("switchInventorySlotData", "RemoteFunction", "OnServerInvoke", onSwitchInventorySlotDataRequestReceived)
 	network:create("playerRequest_switchInventorySlotData", "RemoteFunction", "OnServerInvoke", onSwitchInventorySlotDataRequestReceived)
-
-	network:create("playerRequest_primeArrow", "RemoteFunction", "OnServerInvoke", playerRequest_primeArrow)
 
 	network:create("transferInventoryToEquipment", "RemoteFunction", "OnServerInvoke", onTransferInventoryToEquipment)
 	network:create("playerRequest_transferInventoryToEquipment", "RemoteFunction", "OnServerInvoke", onTransferInventoryToEquipment)
@@ -4637,8 +4632,7 @@ local function main()
 	network:create("playerRequest_savePlayerDataForTeleportation", "RemoteFunction", "OnServerInvoke", saveDataForTeleport)
 
 	network:create("requestAddItemToInventory", "BindableFunction", "OnInvoke", onRequestAddItemToInventoryReceived)
-
-	network:create("playerRequest_grantQuestToPlayer", "RemoteFunction", "OnServerInvoke", grantQuestToPlayer)
+	network:create("onPlayerRemoving", "BindableFunction", "OnInvoke", onPlayerRemoving)
 
 	network:create("teleportPlayerCFrame_server", "BindableFunction", "OnInvoke", function(player, targetCFrame)
 		if playerPositionDataContainer[player] and player.Character and player.Character.PrimaryPart then
@@ -4646,18 +4640,6 @@ local function main()
 			player.Character.PrimaryPart.CFrame 			= targetCFrame
 		end
 	end)
-
-	network:create("dataRecoveryRequested", "RemoteEvent", "OnServerEvent", onDataRecoveryRequested)
-	network:create("dataRecoveryGetVersion", "RemoteFunction", "OnServerInvoke", function(player, slot, version)
-		local success, playerData, message = datastoreInterface:getPlayerSaveFileData(player, slot, version)
-
-		if not success then
-			return false, nil, message
-		else
-			return true, playerData, ""
-		end
-	end)
-	network:create("dataRecoveryRejected", "RemoteEvent", "OnServerEvent", onDataRecoveryRejected)
 
 	-- data interfacing with client
 	network:create("getPropogationCacheLookupTable", "RemoteFunction", "OnServerInvoke", getPropogationCacheLookupTable)
@@ -4688,9 +4670,7 @@ local function main()
 	network:create("getPlayerEquipmentDataByEquipmentPosition", "BindableFunction", "OnInvoke", onGetPlayerEquipmentDataByEquipmentPosition)
 	network:create("getPlayerInventorySlotDataByInventorySlotPosition", "BindableFunction", "OnInvoke", onGetPlayerInventorySlotDataByInventorySlotPosition)
 	network:create("removePlayerInventorySlotData", "BindableFunction", "OnInvoke", onRemovePlayerInventorySlotData)
-	network:create("questTriggerOccurred", "BindableEvent", "Event", onQuestTriggerOccured)
 
-	network:create("grantAbilityBook", "BindableFunction", "OnInvoke", grantPlayerAbilityBook)
 	network:create("playerEquipmentChanged_server", "BindableEvent")
 	network:create("doesPlayerHaveInventorySpaceForTrade", "BindableFunction", "OnInvoke", int__doesPlayerHaveInventorySpaceForTrade)
 
@@ -4699,8 +4679,6 @@ local function main()
 
 	-- events
 	network:create("playerCharacterDied", "BindableEvent")
-
-	network:create("playerRequest_submitQuest", "RemoteFunction", "OnServerInvoke", submitQuest)
 
 	network:create("alertPlayerNotification","RemoteEvent")
 
@@ -4734,8 +4712,6 @@ local function main()
 
 	game.Players.PlayerRemoving:connect(onPlayerRemoving)
 
-	spawn(int__tickForPVP)
-	spawn(init__exploitBlock)
 end
 
 spawn(main)

@@ -1,11 +1,22 @@
+local module = {}
+
 --[[
 	BANS & SUSPICION
 --]]
+local collectionService = game:GetService("CollectionService")
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local modules = require(replicatedStorage:WaitForChild("modules"))
+local network = modules.load("network")
+local utilities = modules.load("utilities")
+local configuration = modules.load("configuration")
+local abilityLookup = modules.load("abilityLookup")
+
+local playerPositionDataContainer = {}
 
 local function handleBanHistory(player, playerBanHistory)
 	if playerBanHistory and playerBanHistory.unbanTime > os.time() then
 		if player:FindFirstChild("DataLoaded") then
-			onPlayerRemoving()
+			network:invoke("onPlayerRemoving", player)
 		end
 		local banDuration = playerBanHistory.unbanTime - os.time()
 		if playerBanHistory.reason then
@@ -39,20 +50,24 @@ end)
 local function banPlayer(player, duration, reason, source)
 	source = source or "system"
 
-	local playerData = playerDataContainer[player]
+	local playerData = network:invoke("getPlayerData", player)
 	local playerBanHistory
 
-	for i=1, 3 do
-		local success, err = pcall(function()
+	for _=1, 3 do
+		local success = pcall(function()
 			banRecord:UpdateAsync(player.userId, function(banHistory)
 				banHistory = banHistory or {}
 				playerBanHistory = banHistory
 				playerBanHistory.reason = reason
 				playerBanHistory.source = source
 
-
 				playerBanHistory.previousRecords = playerBanHistory.previousRecords or {}
-				table.insert(playerBanHistory.previousRecords, {reason = reason, source = source, duration = duration, timestamp = os.time()})
+				table.insert(playerBanHistory.previousRecords, {
+					reason = reason,
+					source = source,
+					duration = duration,
+					timestamp = os.time()
+				})
 
 				if playerData then
 					playerBanHistory.offendingData = playerData
@@ -79,13 +94,13 @@ end
 network:create("banPlayer", "BindableFunction", "OnInvoke", banPlayer)
 
 local function addSuspicion(player, amount)
-	local playerData = playerDataContainer[player]
+	local playerData = network:invoke("getPlayerData", player)
 	playerData.internalData.suspicion = playerData.internalData.suspicion + amount
 
 	if playerData.internalData.suspicion > 100 then
 		local playerBanHistory
-		for i = 1, 3 do
-			local success, err = pcall(function()
+		for _ = 1, 3 do
+			local success = pcall(function()
 				banRecord:UpdateAsync(player.userId, function(banHistory)
 
 					banHistory = banHistory or {}
@@ -109,8 +124,12 @@ local function addSuspicion(player, amount)
 					end
 
 					playerBanHistory.previousRecords = playerBanHistory.previousRecords or {}
-					table.insert(playerBanHistory.previousRecords, {reason = reason, source = source, duration = duration, timestamp = os.time()})
-
+					table.insert(playerBanHistory.previousRecords, {
+						reason = reason,
+						source = source,
+						duration = duration,
+						timestamp = os.time()
+					})
 
 					playerBanHistory.reason = reason
 					playerBanHistory.source = source
@@ -149,7 +168,7 @@ local function init__exploitBlock()
 
 	local ACCEPTABLE_THRESHOLD_FOR_NEARBY = 50
 	local function isNearbyAcceptableObject(pos, objTable, label)
-		for i, obj in pairs(objTable) do
+		for _, obj in pairs(objTable) do
 			local objPos = obj:IsA("Model") and (obj.PrimaryPart and obj.PrimaryPart.Position) or obj.Position
 
 			if objPos and (pos - objPos).magnitude <= ACCEPTABLE_THRESHOLD_FOR_NEARBY then
@@ -161,7 +180,7 @@ local function init__exploitBlock()
 	end
 
 	local function getOtherDoorFromDoor(door)
-		for i, v in pairs(doors) do
+		for _, v in pairs(doors) do
 			if v.Parent.Name == door.Parent.Name and v.Parent ~= door.Parent then
 				return v
 			end
@@ -175,7 +194,7 @@ local function init__exploitBlock()
 		local score = 0
 
 		if playerPositionDataContainer[player] then
-			for i, scoreData in pairs(playerPositionDataContainer[player].sketchyMovements) do
+			for _, scoreData in pairs(playerPositionDataContainer[player].sketchyMovements) do
 				if tick() - scoreData.timestamp <= timeWindow then
 					score = score + scoreData.movementRatio
 				end
@@ -190,10 +209,11 @@ local function init__exploitBlock()
 			if playerPositionDataContainer[player].positions and #playerPositionDataContainer[player].positions > 0 then
 				local lastPosition = playerPositionDataContainer[player].positions[#playerPositionDataContainer[player].positions].position
 
-				local playerData = playerDataContainer[player]
+				local playerData = network:invoke("getPlayerData", player)
 				local distanceToTravel = (serverHitbox.Position - lastPosition).magnitude
+				local distanceMax = playerData.nonSerializeData.statistics_final.walkspeed * 4 * positionCheckHeartbeatTick + 5
 
-				if distanceToTravel > playerData.nonSerializeData.statistics_final.walkspeed * 4 * positionCheckHeartbeatTick + 5 then
+				if distanceToTravel > distanceMax then
 					warn("earlyTrigger exploiter!", player)
 					local response = configuration.getConfigurationValue("tpExploitPunishment")
 					if response == "suspicion" then
@@ -209,17 +229,6 @@ local function init__exploitBlock()
 			end
 		end
 	end)
-
-	local function visualizePart(brc, pos, nm)
-		local p = Instance.new("Part", workspace)
-		p.Size = Vector3.new(1, 1, 1)
-		p.CanCollide = false
-		p.Anchored = true
-		p.BrickColor = brc
-		p.CFrame = CFrame.new(pos)
-		p.Name = nm
-		--game:GetService("Debris"):AddItem(p, 10)
-	end
 
 	local function getRayClosestPoint(ray, point)
 	    --  shift point to be relative to the origin of the ray
@@ -283,7 +292,7 @@ local function init__exploitBlock()
 		for player, playerPositionData in pairs(playerPositionDataContainer) do
 			if player:FindFirstChild("isPlayerSpawning") and not player.isPlayerSpawning.Value and player:FindFirstChild("playerSpawnTime") and (os.time() - player.playerSpawnTime.Value >= 5) then
 				if player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart:FindFirstChild("state") and player.Character.PrimaryPart.state.Value ~= "dead" and configuration.getConfigurationValue("isTeleportingExploitFixEnabled", player) then
-					local playerData = playerDataContainer[player]
+					local playerData = network:invoke("getPlayerData", player)
 
 					if #playerPositionData.positions > 0 then
 						local currPosition = player.Character.PrimaryPart.Position
@@ -436,3 +445,7 @@ local function init__exploitBlock()
 		end
 	end
 end
+
+spawn(init__exploitBlock)
+
+return module
