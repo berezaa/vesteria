@@ -5,23 +5,23 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 		local network 			= modules.load("network")
 		local utilities 		= modules.load("utilities")
 		local configuration 	= modules.load("configuration")
-		
-local module = {}		
+
+local module = {}
 
 --[[
-  _____ _    _ _____ _      _____   _____ 
+  _____ _    _ _____ _      _____   _____
  / ____| |  | |_   _| |    |  __ \ / ____|
-| |  __| |  | | | | | |    | |  | | (___  
-| | |_ | |  | | | | | |    | |  | |\___ \ 
+| |  __| |  | | | | | |    | |  | | (___
+| | |_ | |  | | | | | |    | |  | |\___ \
 | |__| | |__| |_| |_| |____| |__| |____) |
- \_____|\____/|_____|______|_____/|_____/ 
+ \_____|\____/|_____|______|_____/|_____/
 
 7/25 - Guild Mandate Introduced. Create guilds functionally added -ber,prs
 7/26 - MessagingService subscription manager. Guild chat -ber
 7/28 - Implemented DataStore/Messaging Data Sync -ber
 7/29 - Invite players to guild; UI -ber
-7/31 - Exile & promote players in your guild -ber   
-8/10 - Converted Exile/Promote/Leave/Invite messages to short commands -ber                  
+7/31 - Exile & promote players in your guild -ber
+8/10 - Converted Exile/Promote/Leave/Invite messages to short commands -ber
 ]]
 
 local guildRankValues = {
@@ -62,7 +62,7 @@ local guildPurchases = 	{
 			members = 140;
 			cost = 10e9,
 		}
-	}	
+	}
 };
 
 local guildDataFolder = Instance.new("Folder")
@@ -82,7 +82,7 @@ local guildMessagingConnections = {}
 		value = value;
 		sender = player.Name;
 		senderId = player.userId;
-	})		
+	})
 ]]
 
 -- Update cache and replicated storage entry with new data.
@@ -97,7 +97,7 @@ local function guildDataUpdated(guid, guildDataEntry)
 		dataFolderEntry.Name = guid
 		dataFolderEntry.Parent = guildDataFolder
 	end
-	dataFolderEntry.Value = httpService:JSONEncode(guildDataEntry)	
+	dataFolderEntry.Value = httpService:JSONEncode(guildDataEntry)
 	for i,player in pairs(game.Players:GetPlayers()) do
 		if player:FindFirstChild("guildId") and player.guildId.Value == guid then
 			network:fireClient("signal_guildDataUpdated", player, guildDataEntry)
@@ -112,7 +112,7 @@ local function guildMessageRecieved(guid, message)
 	if data.messageType == "chat" then
 		local sender = data.sender
 		local message = data.message
-		
+
 		for i,player in pairs(game.Players:GetPlayers()) do
 			if player:FindFirstChild("guildId") and player.guildId.Value == guid then
 				local chatMessage = "[Guild] " .. sender .. ": "..data.message
@@ -125,8 +125,8 @@ local function guildMessageRecieved(guid, message)
 			guildData.lastUpdated = timestamp
 			guildData[data.key] = data.value
 			guildDataUpdated(guid, guildData)
-		end	
-			
+		end
+
     elseif data.messageType == "member_data" then
         -- soft update for things like leveling up, changing class
 		local guildData = guildDataCache[guid]
@@ -134,7 +134,7 @@ local function guildMessageRecieved(guid, message)
             local userId = data.userId
             guildData.members[tostring(userId)] = data.memberData
             guildDataUpdated(guid, guildData)
-        end        
+        end
 	end
 	-- allow an optional notice to all guild members via chat
 	if data.notice then
@@ -144,10 +144,10 @@ local function guildMessageRecieved(guid, message)
 		if game.Players:FindFirstChild(sender) == nil or not data.notice.Out then
 			if data.notice.Color then
 				data.notice.Color = Color3.fromRGB(data.notice.Color.r, data.notice.Color.g, data.notice.Color.b)
-			end		
+			end
 			for i,player in pairs(game.Players:GetPlayers()) do
 				if player:FindFirstChild("guildId") and player.guildId.Value == guid then
-	
+
 					-- data.notice: {Text = chatMessage; Font = Enum.Font.SourceSansBold; Color = Color3.fromRGB(145, 71, 255)}
 					network:fireClient("signal_alertChatMessage", player, data.notice)
 				end
@@ -182,7 +182,7 @@ local function sendGuildChat(player, message)
 		return sendGuildMessage(guildId, {
 			messageType = "chat";
 			sender = player.Name;
-			senderId = player.userId;			
+			senderId = player.userId;
 			message = filteredText;
 		})
 	else
@@ -200,7 +200,7 @@ local function setPlayerGuildId(player, guildId)
 	if guildFounderData and guildFounderData.globalData then
 		guildFounderData.globalData.guildId = guildId
 		guildFounderData.nonSerializeData.setPlayerData("globalData", guildFounderData.globalData)
-	end	
+	end
 end
 
 -- Fetches guild data, returns cache data if available.
@@ -224,7 +224,7 @@ local function getGuildData(player, guid)
 					setPlayerGuildId(player, nil)
 					return nil
 				end
-				
+
 				-- okay, we're good to go, return properly
 				guildDataUpdated(guid, guildDataEntry)
 				return guildDataEntry
@@ -256,12 +256,12 @@ local function getGuildPlayerData(player, guid)
 	class = partyMemberPlayer.class.Value;
 	rank = (partyMemberData.isLeader and "leader") or "member";
 	founder = true;
-	points = 0;	
-]]	
+	points = 0;
+]]
 	local guildData = getGuildData(player, guid)
 	if guildData == nil then
 		return false, "Guild data not found."
-	end	
+	end
 	local members = guildData.members
 	local guildPlayerData = members[tostring(player.userId)]
 	if guildPlayerData == nil then
@@ -292,10 +292,10 @@ local function modifyGuildDataValue(player, guid, action, key, value, atomic, no
 			guildDataStore:UpdateAsync("guildData", function(existingData)
                 if atomic then
  --                   if guildData.lastModified == existingData.lastModified then
-                        -- allow messagingService "soft updates" to sneak in through here 
+                        -- allow messagingService "soft updates" to sneak in through here
 						guildData.lastModified = os.time()
                         existingData = guildData
-						
+
  --                   else
  --                       canceledReason = "Atomic transaction out of sync"
  --                       return nil
@@ -317,13 +317,13 @@ local function modifyGuildDataValue(player, guid, action, key, value, atomic, no
 			network:invoke("reportError", player, "warning", "Failed to update guild value: "..dataError)
 			return false, "DataStore error"
 		elseif canceledReason then
-			return false, canceledReason	
+			return false, canceledReason
 		else
-			return true, "Success!"		
+			return true, "Success!"
 		end
 	else
 		return false, "Try again later."
-	end 
+	end
 end
 
 
@@ -348,14 +348,14 @@ local function subscribeGuild(guid)
 	if guildDataCache[guid] == nil then
 		return false, "Guild data does not exist."
 	end
-	
+
 	local subscribeSuccess, subscribeError = pcall(function()
 		local subscription = messagingService:SubscribeAsync("guild-"..guid, function(message)
 			guildMessageRecieved(guid, message)
 		end)
 		guildMessagingConnections[guid] = subscription
 	end)
-	
+
 	if subscribeSuccess then
 		return true, "Subscribed!"
 	else
@@ -372,12 +372,12 @@ local function playerGuildChanged(player, guid)
 	if guid then
 		activeGuilds[guid] = true
 	end
-	
+
 	-- Player needs a guild but guild data is not active?
 	if guid and not guildDataCache[guid] then
 		getGuildData(player, guid)
 	end
-	
+
 	-- Cycle through all other players and see which guilds are active.
 	for i, otherPlayer in pairs(game.Players:GetPlayers()) do
 		if otherPlayer ~= player  and otherPlayer:FindFirstChild("teleporting") == nil and otherPlayer:FindFirstChild("DataSaveFailed") == nil then
@@ -427,12 +427,12 @@ game.Players.PlayerAdded:connect(onPlayerAdded)
 local function onPlayerLoaded(player, playerData)
 	-- Tag the player's guild so others can see it.
 	local guildTag = player.guildId
-	
+
 	local globalData = playerData.globalData
 	if globalData and globalData.guildId then
 		local guid =  globalData.guildId
 		local guildData = getGuildData(player, guid)
-		
+
 		if guildData then
 			-- Check that the player is still a member of the guild.
 			if guildData.members[tostring(player.userId)] then
@@ -461,14 +461,14 @@ local function onPlayerLoaded(player, playerData)
                     guildMemberData.level = player.level.Value
 					guildMemberData.lastUpdate = os.time();
                     local notice = {Text = player.Name .. " has reached Lvl."..player.level.Value.."!"; Font = "SourceSansBold"; Color = {r=161, g=132, b=194}; Out = true}
-                   
+
 					sendGuildMessage(guid, {
                         messageType = "member_data";
                         memberData = guildMemberData;
                         sender = player.Name;
                         senderId = player.userId;
                         notice = notice;
-                    })	
+                    })
                 end
             end
         end
@@ -488,10 +488,10 @@ local function onPlayerLoaded(player, playerData)
                         sender = player.Name;
                         senderId = player.userId;
                         notice = notice;
-                    })	
+                    })
                 end
             end
-        end        
+        end
     end)
 end
 network:connect("playerDataLoaded", "Event", onPlayerLoaded)
@@ -511,31 +511,31 @@ local function playerRequest_createGuild(player, properties)
 	if globalData == nil then
 		return false, "no global data."
 	end
-	
+
 	local isStudio = game:GetService("RunService"):IsStudio()
-	
+
 	-- davidii doesn't think this is necessary a'ight? who cares if they make a lot of guilds
 --	if globalData.lastCreatedGuild and (os.time() - globalData.lastCreatedGuild <= 60 * 60 * 48) and (not isStudio) then
 --		return false, "You must wait 48 hours before founding a new guild."
 --	end
-	
+
 	if player:FindFirstChild("teleporting") or player:FindFirstChild("DataSaveFail") then
 		return false, "There is an issue accessing your data, please try again later."
 	end
-	
+
 	if globalData.guildId then
 		return false, "Already in a guild."
 	end
-	
+
 	local partyData = network:invoke("getPartyDataByPlayer", player)
 	if partyData == nil then
 		return false, "Only the leader of a full party can found a guild."
 	end
-	
+
 	local numPlayers = 0
-	
+
 	local guildFounders = {}
-	
+
 	for i, partyMemberData in pairs(partyData.members) do
 		numPlayers = numPlayers + 1
 		local partyMemberPlayer = partyMemberData.player
@@ -559,19 +559,19 @@ local function playerRequest_createGuild(player, properties)
 			founder = true;
 			points = 0;
 		}
-	end	
-	
+	end
+
 	if (numPlayers ~= 6) and (not isStudio) then
 		return false, "There must be exactly six members in your party to found a guild."
 	end
-	
+
 	local guildCreationCost = guildPurchases.createGuild
-	
+
 	if playerData.gold >= guildCreationCost then
-		
+
 		local guildId = httpService:GenerateGUID(false)
-		
-		
+
+
 		-- Run the desired guild name through the Roblox Filter.
 		local desiredGuildName = properties.name
 		if properties.name == nil then
@@ -592,7 +592,7 @@ local function playerRequest_createGuild(player, properties)
 		elseif #filteredText < 3 then
 			return false, "Guild name must be at least 3 characters long."
 		end
-		
+
 		-- Check the guild name database(TM) for a conflict.
 		local isNameTaken
 		local nameCheckSuccess, nameCheckError = pcall(function()
@@ -605,13 +605,13 @@ local function playerRequest_createGuild(player, properties)
 			return false, "That Guild name is already taken."
 		end
 		local guildName = filteredText
-		
+
 		-- now we jump into the meat.
 		local guildDataStore = game:GetService("DataStoreService"):GetDataStore("guild", guildId)
 		local abortDueToExistingData
 		local guildData
 		local guildSuccessfullyCreated
-		
+
 		-- oopsies required from here on out.
 		local function applyGuildIdToFounders(guildIdToApply)
 			for userId, userData in pairs(guildFounders) do
@@ -619,9 +619,9 @@ local function playerRequest_createGuild(player, properties)
 				if guildFounder and guildFounder.Parent then
 					setPlayerGuildId(guildFounder, guildIdToApply)
 				end
-			end					
+			end
 		end
-		
+
 		-- apply guild membership to all other users (this happens before yielding update async - may cause problems).
 		applyGuildIdToFounders(guildId)
 		local dataSuccess, dataError = pcall(function()
@@ -632,7 +632,7 @@ local function playerRequest_createGuild(player, properties)
 					return nil
 				end
 				-- We're good.
-				
+
 				guildData = {
 					name = guildName;
 					previousNames = {};
@@ -641,14 +641,14 @@ local function playerRequest_createGuild(player, properties)
 					id = guildId;
 					version = 1;
 
-					level = 1;					
+					level = 1;
 					points = 0;
 					bank = 0;
 				}
-				
+
 				-- we did it!.
 				guildSuccessfullyCreated = true
-				
+
 				return guildData
 			end)
 		end)
@@ -660,7 +660,7 @@ local function playerRequest_createGuild(player, properties)
 			applyGuildIdToFounders(nil) -- oopsie!
 			return false, "Guild ID already exists!"
 		end
-		
+
 		-- final stretch.
 		if guildSuccessfullyCreated then
 			local globalData = playerData.globalData
@@ -668,13 +668,13 @@ local function playerRequest_createGuild(player, properties)
 				applyGuildIdToFounders(nil) -- oopsie!
 				return false, "Issue with founder data"
 			end
-			
+
 			-- take money and apply guild leader data.
 			globalData.lastCreatedGuild = os.time()
 			playerData.nonSerializeData.incrementPlayerData("gold",-guildCreationCost,"guild:create")
 			globalData.guildId = guildId
 			playerData.nonSerializeData.setPlayerData("globalData", globalData)
-			
+
 			-- run some really scary code that claims the guild name.
 			spawn(function()
 				local i = 1
@@ -692,19 +692,19 @@ local function playerRequest_createGuild(player, properties)
 					end
 				until guildNameClaimed
 			end)
-			
+
 			playerGuildChanged(player, guildId)
-			
+
 			-- we did it guys.
 			return true, "A new guild has been born!"
 		else
 			applyGuildIdToFounders(nil) -- oopsie!
 			return false, "Guild failed to be created for some reason"
 		end
-		
-		
+
+
 	else
-		return false, "You don't have enough money to found a guild."	
+		return false, "You don't have enough money to found a guild."
 	end
 end
 network:create("playerRequest_createGuild", "RemoteFunction", "OnServerInvoke", playerRequest_createGuild)
@@ -724,13 +724,13 @@ local function playerRequest_invitePlayerToGuild(player, invitedPlayer)
 	elseif guildPlayerData.rank ~= "leader" and guildPlayerData.rank ~= "officer" and guildPlayerData.rank ~= "general" then
 		return false, "You do not have permission to invite new members."
 	end
-		
+
 	local guildData = getGuildData(player, guid)
 	if guildData == nil then
 		return false, "Could not find guild data."
-	end	
-		
-	local memberCap = guildPurchases.level[guildData.level].members	
+	end
+
+	local memberCap = guildPurchases.level[guildData.level].members
 	local existingMembers = 0
 	for userId, userData in pairs(guildData.members) do
 		existingMembers = existingMembers + 1
@@ -738,7 +738,7 @@ local function playerRequest_invitePlayerToGuild(player, invitedPlayer)
 	if existingMembers >= memberCap then
 		return false, "Your guild is already at full capacity."
 	end
-		
+
 	local playerResponse = network:invokeClient("serverPrompt_playerInvitedToServer", invitedPlayer, player, guid)
 	if playerResponse then
 		-- check nothing changed
@@ -757,24 +757,24 @@ local function playerRequest_invitePlayerToGuild(player, invitedPlayer)
 					class = invitedPlayer.class.Value;
 					rank = "member";
 					points = 0;
-				}				
+				}
 				local notice = {Text = invitedPlayer.Name .. " has joined the Guild. (Invited by "..player.Name..")"; Font = "SourceSansBold"; Color = {r=161, g=132, b=194}}
 				local success, reason = modifyGuildDataValue(player, guid, "set", "members", guildMembers, true, notice)
 				if success then
-					
+
 					sendGuildMessage(guid, {
 			            messageType = "member_data";
 			            memberData = guildMembers[tostring(invitedPlayer.userId)];
 			            sender = player.Name;
 			            senderId = player.userId;
 			            notice = notice;
-			        })						
-					
+			        })
+
 					setPlayerGuildId(invitedPlayer, guid)
 					guildDataUpdated(guid, guildData)
 				end
 				return success, reason
-				
+
 			end
 		else
 			return false, "Something changed during the player input and they can no longer be added."
@@ -783,7 +783,7 @@ local function playerRequest_invitePlayerToGuild(player, invitedPlayer)
 		return false, "Player did not accept the guild invite."
 	end
 end
-	
+
 network:create("playerRequest_invitePlayerToGuild", "RemoteFunction", "OnServerInvoke", playerRequest_invitePlayerToGuild)
 
 local function playerRequest_exileUserIdFromGuild(player, exiledUserId)
@@ -792,12 +792,12 @@ local function playerRequest_exileUserIdFromGuild(player, exiledUserId)
 	if not guildPlayerData then
 		return false, "Could not find your guild."
 	end
-	
+
 	local guildData = getGuildData(player, guid)
 	if guildData == nil then
 		return false, "Guild data not found"
-	end	
-	
+	end
+
     local exiledGuildPlayerData = guildData.members[tostring(exiledUserId)]
     if exiledGuildPlayerData == nil then
         return false, "Player is not in your guild."
@@ -814,7 +814,7 @@ local function playerRequest_exileUserIdFromGuild(player, exiledUserId)
     end
 
     local guildMembers = guildData.members
-    guildMembers[tostring(exiledUserId)] = nil;				
+    guildMembers[tostring(exiledUserId)] = nil;
     local notice = {Text = exiledUsername .. " has been exiled from the guild by "..player.Name.."!"; Font = "SourceSansBold"; Color = {r=161, g=132, b=194}}
     local success, reason = modifyGuildDataValue(player, guid, "set", "members", guildMembers, true, notice)
     if success then
@@ -831,7 +831,7 @@ local function playerRequest_exileUserIdFromGuild(player, exiledUserId)
             sender = player.Name;
             senderId = player.userId;
             notice = notice;
-        })	
+        })
 		guildDataUpdated(guid, guildData)
         return true, "Successfully exiled player."
     else
@@ -857,36 +857,36 @@ local function playerRequest_leaveMyGuild(player, confirmAbandon)
 	if guildPlayerData == nil then
 		return false, "Could not find your guild."
 	end
-	
+
 	local guildData = getGuildData(player, guid)
 	if guildData == nil then
 		return false, "Guild data not found"
-	end	
-	
+	end
+
 	if guildPlayerData.rank == "leader" then
 		local memberCount = 0
 		for _, member in pairs(guildData.members) do
 			memberCount = memberCount + 1
 		end
-		
+
 		if memberCount > 1 then
 			return false, "If you wish to abandon your guild, you must first exile all other members."
 		end
-		
+
 		if confirmAbandon then
 			return abandonGuild(player, guid)
 		end
-		
+
 		return false, "confirmAbandon"
 	end
-	
+
 	local exiledUserId = player.userId
     local guildMembers = guildData.members
-    guildMembers[tostring(exiledUserId)] = nil;				
+    guildMembers[tostring(exiledUserId)] = nil;
     local notice = {Text = player.Name .. " has left the guild."; Font = "SourceSansBold"; Color = {r=161, g=132, b=194}}
     local success, reason = modifyGuildDataValue(player, guid, "set", "members", guildMembers, true, notice)
     if success then
-	
+
 		-- alert other servers that the guild has been left
 		sendGuildMessage(guid, {
             messageType = "member_data";
@@ -894,14 +894,14 @@ local function playerRequest_leaveMyGuild(player, confirmAbandon)
             sender = player.Name;
             senderId = player.userId;
             notice = notice;
-        })		
-	
+        })
+
         setPlayerGuildId(player, nil)
 		guildDataUpdated(guid, guildData)
         return true, "Successfully left the guild."
     else
         return false, "Failed to leave: "..reason
-    end		
+    end
 end
 network:create("playerRequest_leaveMyGuild","RemoteFunction","OnServerInvoke",playerRequest_leaveMyGuild)
 
@@ -911,12 +911,12 @@ local function playerRequest_changeUserIdRankValue(player, rankedUserId, newRank
 	if not guildPlayerData then
 		return false, "Could not find your guild."
 	end
-	
+
 	local guildData = getGuildData(player, guid)
 	if guildData == nil then
 		return false, "Guild data not found"
 	end
-	
+
     local rankedGuildPlayerData = guildData.members[tostring(rankedUserId)]
     if rankedGuildPlayerData == nil then
         return false, "Player is not in your guild."
@@ -932,7 +932,7 @@ local function playerRequest_changeUserIdRankValue(player, rankedUserId, newRank
     end
 
     local newRank = "member"
-    for rankName, rankValue in pairs(guildRankValues) do 
+    for rankName, rankValue in pairs(guildRankValues) do
         if newRankValue == rankValue then
             newRank = rankName
         end
@@ -946,11 +946,11 @@ local function playerRequest_changeUserIdRankValue(player, rankedUserId, newRank
 		guildMembers[tostring(player.UserId)].rank = 3
 		notice.Text = player.Name.." has stepped down as leader, appointing "..rankedUsername.." as the new leader!"
 	end
-    
+
     local success, reason = modifyGuildDataValue(player, guid, "set", "members", guildMembers, true, notice)
     if success then
 		guildDataUpdated(guid, guildData)
-		
+
 		-- tell other servers about the promotion
 		sendGuildMessage(guid, {
             messageType = "member_data";
@@ -958,8 +958,8 @@ local function playerRequest_changeUserIdRankValue(player, rankedUserId, newRank
             sender = player.Name;
             senderId = player.userId;
             notice = notice;
-        })			
-		
+        })
+
         return true, "Successfully ranked player."
     else
         return false, "Failed to rank: "..reason
@@ -1013,26 +1013,26 @@ local function changeGuildHallLocation(player)
 		return false, "No guildId."
 	end
 	local guid = guildId.Value
-	
+
 	local guildData = getGuildData(player, guid)
 	if not guildData then
 		return false, "No guildData."
 	end
-	
+
 	local memberData = getGuildPlayerData(player, guid)
 	if not memberData then
 		return false, "No memberData."
 	end
-	
+
 	if memberData.rank ~= "leader" then
 		return false, "Not leader."
 	end
-	
+
 	local hallLocation = getHallLocationFromPlaceId()
 	if not hallLocation then
 		return false, "No guild hall at this location."
 	end
-	
+
 	local notice
 	if guildData.hallLocation then
 		notice = {Text = "The Guild Hall has been moved from "..properNamesByHallLocation[guildData.hallLocation].." to "..properNamesByHallLocation[hallLocation].."!"}
@@ -1041,13 +1041,13 @@ local function changeGuildHallLocation(player)
 	end
 	notice.Font = "SourceSansBold"
 	notice.Color = {r = 161, g = 132, b = 194}
-	
+
 	local hallServerId = teleportService:ReserveServer(guildHallPlaceId)
 	local serverIdSuccess, serverIdProblem = modifyGuildDataValue(player, guid, "set", "hallServerId", hallServerId, false)
 	if not serverIdSuccess then
 		return false, serverIdProblem
 	end
-	
+
 	local success, reason = modifyGuildDataValue(player, guid, "set", "hallLocation", hallLocation, false, notice)
 	if success then
 		sendGuildMessage(guid, {
@@ -1058,9 +1058,9 @@ local function changeGuildHallLocation(player)
 			senderId = player.userId,
 			notice = notice,
 		})
-		
+
 		resetGuildHallServer()
-		
+
 		return true, ""
 	else
 		return false, reason
@@ -1074,12 +1074,12 @@ local function getGuildUpgradeCost(player)
 		return nil, "No guildId."
 	end
 	local guid = guildId.Value
-	
+
 	local guildData = getGuildData(player, guid)
 	if not guildData then
 		return nil, "No guildData."
 	end
-	
+
 	local nextLevel = guildData.level + 1
 	if guildPurchases.level[nextLevel] then
 		return guildPurchases.level[nextLevel].cost, ""
@@ -1093,36 +1093,36 @@ local function upgradeGuild(player)
 	if (game.PlaceId ~= 2546689567) and (game.PlaceId ~= 2061558182) and (game.PlaceId ~= 3372071669) then
 		return false, "Not in Port Fidelio."
 	end
-	
+
 	local guildId = player:FindFirstChild("guildId")
 	if not guildId then
 		return false, "No guildId."
 	end
 	local guid = guildId.Value
-	
+
 	local guildData = getGuildData(player, guid)
 	if not guildData then
 		return false, "No guildData."
 	end
-	
+
 	local memberData = getGuildPlayerData(player, guid)
 	if not memberData then
 		return false, "No memberData."
 	end
-	
+
 	if memberData.rank ~= "leader" then
 		return false, "Not leader."
 	end
-	
+
 	local upgradeCost, reason = getGuildUpgradeCost(player)
 	if not upgradeCost then
 		return false, reason
 	end
-	
+
 	if guildData.bank < upgradeCost then
 		return false, "Not enough funds in guild bank."
 	end
-	
+
 	-- customized logic here since I don't want to do two separate update calls
 	local guildDataStore = game:GetService("DataStoreService"):GetDataStore("guild", guid)
 	local dataSuccess, dataError = pcall(function()
@@ -1130,12 +1130,12 @@ local function upgradeGuild(player)
 			if not data then return end
 			if not data.level then return end
 			if not data.bank then return end
-			
+
 			if data.bank < upgradeCost then return end
-			
+
 			data.bank = data.bank - upgradeCost
 			data.level = data.level + 1
-			
+
 			guildDataUpdated(guid, data)
 			return data
 		end)
@@ -1144,7 +1144,7 @@ local function upgradeGuild(player)
 		network:invoke("reportError", player, "warning", "Failed to upgrade guild level: "..dataError)
 		return false, "DataStore error"
 	end
-	
+
 	return true, ""
 end
 network:create("playerRequest_upgradeGuild", "RemoteFunction", "OnServerInvoke", upgradeGuild)
@@ -1154,38 +1154,38 @@ local function donateToGuild(player, amount)
 		return false, "Trying to donate not a number."
 	end
 	amount = math.floor(amount)
-	
+
 	if amount < 0 then
 		return false, "Trying to donate a negative number."
 	end
-	
+
 	local guildId = player:FindFirstChild("guildId")
 	if not guildId then
 		return false, "No guildId."
 	end
 	local guid = guildId.Value
-	
+
 	local guildData = getGuildData(player, guid)
 	if not guildData then
 		return false, "No guildData."
 	end
-	
+
 	local playerData = network:invoke("getPlayerData", player)
 	if not playerData then
 		return false, "No playerData."
 	end
-	
+
 	if playerData.gold < amount then
 		return false, "Not enough gold."
 	end
-	
+
 	playerData.nonSerializeData.incrementPlayerData("gold", -amount, "guild:donate")
 	local success, reason = modifyGuildDataValue(player, guid, "increment", "bank", amount, true)
 	if not success then
 		playerData.nonSerializeData.incrementPlayerData("gold", amount, "guild:donateFailed")
 		return false, reason
 	end
-	
+
 	return true, ""
 end
 network:create("playerRequest_donateToGuild", "RemoteFunction", "OnServerInvoke", donateToGuild)
@@ -1196,14 +1196,14 @@ local function teleportPlayersToGuildHall(players, guid)
 	if not guildData then
 		return false, "No guildData."
 	end
-	
+
 	local hallServerId = guildData.hallServerId
 	if not hallServerId then
 		return false, "No hallServerId."
 	end
-	
+
 	network:invoke("teleportPlayersToReserveServer", players, guildHallPlaceId, guid, nil, nil, hallServerId)
-	
+
 	return true, ""
 end
 network:create("teleportPlayersToGuildHall", "BindableFunction", "OnInvoke", teleportPlayersToGuildHall)
@@ -1212,17 +1212,17 @@ network:create("playerRequest_teleportToGuildHall", "RemoteFunction", "OnServerI
 	if not guildId then
 		return false, "No guildId."
 	end
-	
+
 	local guid = guildId.Value
 	if guid == "" then
 		return false, "No guild."
 	end
-	
+
 	local partyData = network:invoke("getPartyDataByPlayer", player)
 	if partyData then
 		-- teleport the party
 		local players = {}
-		
+
 		local leader
 		for _, memberInfo in pairs(partyData.members) do
 			local member = memberInfo.player
@@ -1232,11 +1232,11 @@ network:create("playerRequest_teleportToGuildHall", "RemoteFunction", "OnServerI
 				table.insert(players, member)
 			end
 		end
-		
+
 		if player ~= leader then
 			return false, "Only the party leader may teleport everyone to a guild hall."
 		end
-		
+
 		table.insert(players, 1, leader)
 		teleportPlayersToGuildHall(players, guid)
 	else
@@ -1257,7 +1257,7 @@ local function expelPlayer(player, target)
 	if (game.PlaceId ~= guildHallPlaceId) and (game.PlaceId ~= 2061558182) then
 		return false, "This command can only be used in the guild hall."
 	end
-	
+
 	local guildId = game.ReplicatedStorage:FindFirstChild("guildId")
 	if guildId then
 		guildId = guildId.Value
@@ -1268,7 +1268,7 @@ local function expelPlayer(player, target)
 			return false, "Couldn't find guildId."
 		end
 	end
-	
+
 	local playerGuildId = player:FindFirstChild("guildId")
 	local targetGuildId = target:FindFirstChild("guildId")
 	if (not playerGuildId) then
@@ -1277,7 +1277,7 @@ local function expelPlayer(player, target)
 		if playerGuildId.Value ~= guildId then
 			return false, "You are not a member of this guild."
 		end
-		
+
 		if (not targetGuildId) then
 			expelPlayerHelper(player, target)
 			return true, ""
@@ -1288,11 +1288,11 @@ local function expelPlayer(player, target)
 			else
 				local playerData = getGuildPlayerData(player, guildId)
 				local targetData = getGuildPlayerData(target, guildId)
-				
+
 				if (not playerData) or (not targetData) or (not playerData.rank) or (not targetData.rank) then
 					return false, "There was an issue with player data."
 				end
-				
+
 				local playerRank = getRankNumberFromRank(playerData.rank)
 				local targetRank = getRankNumberFromRank(targetData.rank)
 				if playerRank <= targetRank then
