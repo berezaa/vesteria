@@ -1,11 +1,10 @@
 local modules = require(game.ReplicatedStorage.modules)
-	local network = modules.load("network")
-	local events = modules.load("events")
+local network = modules.load("network")
 
 local statusEffectData = {
 	--> identifying information <--
 	id = 16;
-	
+
 	--> generic information <--
 	name 				= "Taunted";
 	activeEffectName 	= "Taunted";

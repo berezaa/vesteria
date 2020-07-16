@@ -1,19 +1,20 @@
 --[[
 	monsterData {}
-		
+
 --]]
 
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local lookupTable = {} do
-	for i, monsterDataModule in pairs(script:GetChildren()) do
+	for _, monsterDataModule in pairs(script:GetChildren()) do
 		local monsterData = require(monsterDataModule)
-		
+
 		-- internal stuff
-		monsterData.module 		= monsterDataModule
-		monsterData.entity 		= monsterDataModule:WaitForChild("entity")
+		monsterData.module = monsterDataModule
+		monsterData.entity = replicatedStorage:WaitForChild("assets"):WaitForChild("monsters"):WaitForChild(monsterDataModule.name)
+
 		local defaultStatesData = require(replicatedStorage.defaultMonsterState)
-		local statesData 	
+		local statesData
 		local statesModule = monsterDataModule:FindFirstChild("states")
 		if statesModule then
 			statesData = require(statesModule)

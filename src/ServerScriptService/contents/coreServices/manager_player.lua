@@ -2295,7 +2295,6 @@ local function flagCheck(player, playerData)
 			for i, statName in pairs(playerStatTypes) do
 				playerData.statistics[statName] = 0
 			end
-			addSuspicion(player, 200)
 		end
 	end
 
@@ -4548,8 +4547,6 @@ local function main()
 	network:create("playerRequest_transferInventoryToEquipment", "RemoteFunction", "OnServerInvoke", onTransferInventoryToEquipment)
 	network:create("playerRequest_transferInventoryToStorage", "RemoteFunction", "OnServerInvoke", playerRequest_transferInventoryToStorage)
 	network:create("playerRequest_transferStorageToInventory", "RemoteFunction", "OnServerInvoke", playerRequest_transferStorageToInventory)
-	network:create("saveDataForTeleportation", "RemoteFunction", "OnServerInvoke", saveDataForTeleport)
-	network:create("playerRequest_savePlayerDataForTeleportation", "RemoteFunction", "OnServerInvoke", saveDataForTeleport)
 	network:create("requestAddItemToInventory", "BindableFunction", "OnInvoke", onRequestAddItemToInventoryReceived)
 	network:create("onPlayerRemoving", "BindableFunction", "OnInvoke", onPlayerRemoving)
 	network:create("teleportPlayerCFrame_server", "BindableFunction", "OnInvoke", function(player, targetCFrame)
@@ -4610,8 +4607,6 @@ local function main()
 	network:create("playerWasExhausted", "RemoteEvent", "OnServerEvent", function()
 
 	end)
-
-
 
 	game.Players.PlayerRemoving:connect(onPlayerRemoving)
 end

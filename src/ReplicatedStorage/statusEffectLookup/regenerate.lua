@@ -1,10 +1,7 @@
-local modules = require(game.ReplicatedStorage.modules)
-local network = modules.load("network")
-
 local statusEffectData = {
 	--> identifying information <--
 	id 	= 1;
-	
+
 	--> generic information <--
 	name 				= "Regeneration";
 	activeEffectName 	= "Regenerating";
@@ -16,7 +13,7 @@ local statusEffectData = {
 function statusEffectData.execute(activeStatusEffectData, entityManifest, activeStatusEffectTickTimePerSecond)
 	local healthHealed = activeStatusEffectData.statusEffectModifier.healthToHeal or 10
 	local duration = activeStatusEffectData.statusEffectModifier.duration or 5
-	
+
 	local health = entityManifest:FindFirstChild("health")
 	local maxHealth = entityManifest:FindFirstChild("maxHealth")
 	if health and maxHealth then
