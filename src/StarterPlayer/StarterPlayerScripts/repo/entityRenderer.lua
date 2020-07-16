@@ -1,16 +1,12 @@
 -- Master script that handles entity rendering
 -- Main Author: Polymorphic
 -- Co-Author: berezaa
---Funny man who is making it not 7k Lines long: lmaginationBurst
 
 local module = {}
 local client = game.Players.LocalPlayer
 
-local repo = client:WaitForChild("repo")
-local coreRenderServices = repo:WaitForChild("coreRenderServices")
-
-local assetFolder = client:WaitForChild("assets")
-
+local assetFolder = client.PlayerScripts:WaitForChild("assets")
+local repo = client.PlayerScripts:WaitForChild("repo")
 
 
 local runService 		= game:GetService("RunService")
@@ -21,10 +17,11 @@ local network 		= modules.load("network")
 local tween 		= modules.load("tween")
 local utilities 	= modules.load("utilities")
 local physics 		= modules.load("physics")
+local coreRenderServices = repo:WaitForChild("coreRenderServices")
 local bow_manager   = require(coreRenderServices:WaitForChild("bow_manager"))
 local staff_manager = require(coreRenderServices:WaitForChild("staff_manager"))
 local melee_manager = require(coreRenderServices:WaitForChild("melee_manager"))
-local appearance_manager = require(coreRenderServices:WaitForChild("appearence_manager"))
+local appearance_manager = require(coreRenderServices:WaitForChild("appearance_manager"))
 local ragdoll_manager = require(coreRenderServices:WaitForChild("ragdoll_manager"))
 local item_manager = require(coreRenderServices:WaitForChild("item_manager"))
 
@@ -1781,8 +1778,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 		network:fire("myClientCharacterContainerChanged", renderEntityData.entityContainer)
 	end
-end
-
 
 events:registerForEvent("playersXpGained", function(playerXpRewards)
 	for playerName,xpgained in pairs(playerXpRewards) do

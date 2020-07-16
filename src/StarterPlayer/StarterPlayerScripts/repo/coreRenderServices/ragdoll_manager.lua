@@ -1,10 +1,11 @@
 local ragdoll_manager = {}
 
+local replicatedStorage = game:GetService("ReplicatedStorage")
 
 local modules		= require(replicatedStorage:WaitForChild("modules"))
 local physics 		= modules.load("physics")
 
-function ragoll_manager.ragDollCharacter(entity, renderEntityData)
+function ragdoll_manager.ragDollCharacter(entity, renderEntityData)
 
     local ragdoll = entity:Clone()
     ragdoll.Parent = entity.Parent
