@@ -1,7 +1,8 @@
 local network = require(game:GetService("ReplicatedStorage"):WaitForChild("modules")).load("network")
 local items = require(game:GetService("ReplicatedStorage"):WaitForChild("itemData"))
 
-local folder = script.Parent
+local localPlayer = game.Players.LocalPlayer
+local folder = localPlayer.PlayerGui.gameUI.dataRecovery
 
 local menu = folder:WaitForChild("menu")
 local equipment = menu:WaitForChild("equipment")
@@ -25,7 +26,7 @@ local function clearMenu()
 			child:Destroy()
 		end
 	end
-	
+
 	for _, child in pairs(inventory:GetChildren()) do
 		if child:IsA("ImageLabel") then
 			child:Destroy()
@@ -35,24 +36,24 @@ end
 
 local function howLongAgo(playerData)
 	local since = os.time() - playerData.lastSaveTimestamp or 0
-	
+
 	local days = math.floor(since / 60 / 60 / 24)
 	since = since - days * 24 * 60 * 60
 	local hours = math.floor(since / 60 / 60)
 	since = since - hours * 60 * 60
 	local minutes = math.floor(since / 60)
-	
-	return string.format("%dd %dh %dm", days, hours, minutes) 
+
+	return string.format("%dd %dh %dm", days, hours, minutes)
 end
 
 local function showData(playerData)
-	
+
 	clearMenu()
-	
+
 	local function newLabel(item, parent)
 		local label = Instance.new("ImageLabel")
 		label.Image = items[item.id] and items[item.id].image or ""
-		
+
 		if item.stacks and item.stacks > 1 then
 			local number = Instance.new("TextLabel")
 			number.BackgroundTransparency = 1
@@ -63,18 +64,18 @@ local function showData(playerData)
 			number.Text = item.stacks
 			number.Parent = label
 		end
-		
+
 		label.Parent = parent
 	end
-	
+
 	for _, item in pairs(playerData.equipment) do
 		newLabel(item, equipment)
 	end
-	
+
 	for _, item in pairs(playerData.inventory) do
 		newLabel(item, inventory)
 	end
-	
+
 	info.Text = string.format(
 		"Version: %d    Level: %d    Exp: %d    Class: %s    Gold: %d    Approx. %s ago",
 		playerData.globalData.version,
@@ -97,21 +98,21 @@ end
 network:connect("dataRecoveryRequested", "OnClientEvent", function(playerData, slot, flagName)
 	if hasShown then return end
 	hasShown = true
-	
+
 	prompt.Visible = true
-	
+
 	promptConfirm.Activated:Connect(function()
 		prompt:Destroy()
-		
+
 		menu.Visible = true
 		showData(playerData)
-		
+
 		local version = playerData.globalData.version
 		local maxVersion = version
-		
+
 		nextButton.Activated:Connect(function()
 			if version >= maxVersion then return end
-			
+
 			version = version + 1
 			toggleButtons(false)
 			local success, data, message = network:invokeServer("dataRecoveryGetVersion", slot, version)
@@ -122,10 +123,10 @@ network:connect("dataRecoveryRequested", "OnClientEvent", function(playerData, s
 			end
 			toggleButtons(true)
 		end)
-		
+
 		prevButton.Activated:Connect(function()
 			if version <= 1 then return end
-			
+
 			version = version - 1
 			toggleButtons(false)
 			local success, data, message = network:invokeServer("dataRecoveryGetVersion", slot, version)
@@ -136,7 +137,7 @@ network:connect("dataRecoveryRequested", "OnClientEvent", function(playerData, s
 			end
 			toggleButtons(true)
 		end)
-		
+
 		selectButton.Activated:Connect(function()
 			toggleButtons(false)
 			loading.Visible = false
@@ -145,16 +146,16 @@ network:connect("dataRecoveryRequested", "OnClientEvent", function(playerData, s
 				toggleButtons(true)
 			end)
 		end)
-		
+
 		confirmButton.Activated:Connect(function()
 			network:fireServer("dataRecoveryRequested", slot, version, flagName)
 			menu:Destroy()
 		end)
 	end)
-	
+
 	promptCancel.Activated:Connect(function()
 		prompt:Destroy()
-		
+
 		network:fireServer("dataRecoveryRejected", flagName)
 	end)
 end)

@@ -11,43 +11,39 @@ local coreRenderServices = repo:WaitForChild("coreRenderServices")
 
 local assetFolder = client:WaitForChild("assets")
 
-
-
-local runService 		= game:GetService("RunService")
-local httpService 		= game:GetService("HttpService")
+local runService = game:GetService("RunService")
+local httpService = game:GetService("HttpService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules		= require(replicatedStorage:WaitForChild("modules"))
-local network 		= modules.load("network")
-local tween 		= modules.load("tween")
-local utilities 	= modules.load("utilities")
-local physics 		= modules.load("physics")
-local bow_manager   = require(coreRenderServices:WaitForChild("bow_manager"))
+local modules = require(replicatedStorage:WaitForChild("modules"))
+local network = modules.load("network")
+local tween = modules.load("tween")
+local utilities = modules.load("utilities")
+local physics = modules.load("physics")
+local placeSetup = modules.load("placeSetup")
+local projectile = modules.load("projectile")
+local configuration = modules.load("configuration")
+local events = modules.load("events")
+
+local bow_manager = require(coreRenderServices:WaitForChild("bow_manager"))
 local staff_manager = require(coreRenderServices:WaitForChild("staff_manager"))
 local melee_manager = require(coreRenderServices:WaitForChild("melee_manager"))
 local appearance_manager = require(coreRenderServices:WaitForChild("appearence_manager"))
 local ragdoll_manager = require(coreRenderServices:WaitForChild("ragdoll_manager"))
 local item_manager = require(coreRenderServices:WaitForChild("item_manager"))
+local defaultCharacterAppearance = require(replicatedStorage:WaitForChild("defaultCharacterAppearance"))
+local defaultMonsterStateStates = require(replicatedStorage.defaultMonsterState).states
 
-local placeSetup 	= modules.load("placeSetup")
-local entityManifestCollectionFolder 	= placeSetup.awaitPlaceFolder("entityManifestCollection")
-local entityRenderCollectionFolder 		= placeSetup.awaitPlaceFolder("entityRenderCollection")
-local projectile 	= modules.load("projectile")
-local configuration = modules.load("configuration")
-local events		= modules.load("events")
-local defaultCharacterAppearance 	= require(replicatedStorage:WaitForChild("defaultCharacterAppearance"))
-local defaultMonsterStateStates 	= require(replicatedStorage.defaultMonsterState).states
-
+local entityManifestCollectionFolder = placeSetup.awaitPlaceFolder("entityManifestCollection")
+local entityRenderCollectionFolder = placeSetup.awaitPlaceFolder("entityRenderCollection")
 
 local animationInterface
-local accessoryLookup 		= replicatedStorage.accessoryLookup
-local itemLookup 			= require(replicatedStorage.itemData)
-local monsterLookup 		= require(replicatedStorage.monsterLookup)
-local abilityLookup 		= require(replicatedStorage.abilityLookup)
-local statusEffectLookup 	= require(replicatedStorage.statusEffectLookup)
+local accessoryLookup = replicatedStorage.accessoryLookup
+local itemLookup = require(replicatedStorage.itemData)
+local monsterLookup = require(replicatedStorage.monsterLookup)
+local abilityLookup = require(replicatedStorage.abilityLookup)
+local statusEffectLookup = require(replicatedStorage.statusEffectLookup)
 
 local entitiesBeingRendered = {}
-
-
 
 -- builds a table of whats currently equipped on a renderCharacter,
 -- id rather do this than store what every renderCharacter is wearing and
@@ -79,8 +75,8 @@ local function int__updateRenderCharacter(renderCharacter, appearanceData, _enti
 	end
 
 	appearanceData = appearanceData or defaultCharacterAppearance
-		appearanceData.equipment 	= appearanceData.equipment or defaultCharacterAppearance.equipment
-		appearanceData.accessories 	= appearanceData.accessories or defaultCharacterAppearance.accessories
+	appearanceData.equipment = appearanceData.equipment or defaultCharacterAppearance.equipment
+	appearanceData.accessories = appearanceData.accessories or defaultCharacterAppearance.accessories
 
 	-- wipe all previous additions
 	local accessories = {
@@ -147,36 +143,36 @@ local function int__assembleRenderCharacter(manifest)
 	local entityContainer 	= Instance.new("Model")
 
 	local clientPlayerHitbox = manifest:Clone()
-		clientPlayerHitbox.BrickColor 	= BrickColor.new("Hot pink")
-		clientPlayerHitbox.CanCollide 	= false
-		clientPlayerHitbox.Anchored 	= true
-		clientPlayerHitbox.Name 		= "hitbox"
+	clientPlayerHitbox.BrickColor = BrickColor.new("Hot pink")
+	clientPlayerHitbox.CanCollide = false
+	clientPlayerHitbox.Anchored = true
+	clientPlayerHitbox.Name = "hitbox"
 
 	local clientHitboxToServerHitboxReference = Instance.new("ObjectValue")
-		clientHitboxToServerHitboxReference.Name 	= "clientHitboxToServerHitboxReference"
-		clientHitboxToServerHitboxReference.Value 	= manifest
-		clientHitboxToServerHitboxReference.Parent  = entityContainer
+	clientHitboxToServerHitboxReference.Name = "clientHitboxToServerHitboxReference"
+	clientHitboxToServerHitboxReference.Value = manifest
+	clientHitboxToServerHitboxReference.Parent = entityContainer
 
 	-- clear all unnecessary parts within the hitbox
 	-- we only want the part itself
 	clientPlayerHitbox:ClearAllChildren()
 
 	entityContainer.PrimaryPart = clientPlayerHitbox
-	clientPlayerHitbox.Parent 	= entityContainer
+	clientPlayerHitbox.Parent = entityContainer
 
 
 
 	local characterBaseModel = replicatedStorage.playerBaseCharacter:Clone()
-		characterBaseModel.Name 	= "entity"
-		characterBaseModel.Parent 	= entityContainer
+	characterBaseModel.Name = "entity"
+	characterBaseModel.Parent = entityContainer
 
 	local projectionWeld = Instance.new("Motor6D")
-		projectionWeld.Name 	= "projectionWeld"
-		projectionWeld.Part0 	= clientPlayerHitbox
-		projectionWeld.Part1 	= characterBaseModel.PrimaryPart
-		projectionWeld.C0 		= CFrame.new()
-		projectionWeld.C1 		= CFrame.new(0, characterBaseModel:GetModelCFrame().Y - characterBaseModel.PrimaryPart.CFrame.Y, 0)
-		projectionWeld.Parent 	= clientPlayerHitbox
+	projectionWeld.Name = "projectionWeld"
+	projectionWeld.Part0 = clientPlayerHitbox
+	projectionWeld.Part1 = characterBaseModel.PrimaryPart
+	projectionWeld.C0 = CFrame.new()
+	projectionWeld.C1 = CFrame.new(0, characterBaseModel:GetModelCFrame().Y - characterBaseModel.PrimaryPart.CFrame.Y, 0)
+	projectionWeld.Parent = clientPlayerHitbox
 
 	return entityContainer
 end
@@ -199,7 +195,6 @@ local function dissassembleRenderEntityByManifest(entityManifest)
 		entitiesBeingRendered[entityManifest] = nil
 	end
 end
-
 
 -- Chat part setup
 
@@ -277,10 +272,9 @@ end
 network:create("createChatTagPart", "BindableFunction", "OnInvoke", createChatTagPart)
 
 local function displayChatMessageFromChatTagPart(chatTagPart, message, speakerName)
---	local chatTag = chatTagPart:FindFirstChild("SurfaceGui")
+	--local chatTag = chatTagPart:FindFirstChild("SurfaceGui")
 	local chatTag = chatTagPart
 	if chatTag then
-
 		local newChatBubble = chatTag.chatTemplate:clone()
 		newChatBubble.titleFrame.title.Text = speakerName or ""
 		local titleBounds = game.TextService:GetTextSize(newChatBubble.titleFrame.title.Text, newChatBubble.titleFrame.title.TextSize, newChatBubble.titleFrame.title.Font, Vector2.new()).X + 20
@@ -330,12 +324,10 @@ local function displayChatMessageFromChatTagPart(chatTagPart, message, speakerNa
 		end)
 	end
 end
+
 network:create("displayChatMessageFromChatTagPart", "BindableFunction", "OnInvoke", displayChatMessageFromChatTagPart)
 
-
 local playerXpTagPairing = {}
-
-
 
 local function int__connectEntityEvents(entityManifest, renderEntityData)
 	local associatePlayer = game.Players:GetPlayerFromCharacter(entityManifest.Parent)
@@ -351,9 +343,9 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 	local entityStatesData
 	local entityBaseData
 
-	local previousState 		= ""
+	local previousState = ""
 	local isWalkingSoundPlaying = false
-	local isIdleSoundPlaying 	= false
+	local isIdleSoundPlaying = false
 	local isRunningSoundPlaying = false
 
 	local monsterAnimations = {}
@@ -365,10 +357,10 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			-- please dont ask me why im putting it here
 			physics:setWholeCollisionGroup(renderEntityData.entityContainer.entity, "monstersLocal")
 
-
 			for i, animation in pairs(renderEntityData.entityContainer.entity.animations:GetChildren()) do
-				local animationTrack 				= renderEntityData.entityContainer.entity.AnimationController:LoadAnimation(animation)
+				local animationTrack = renderEntityData.entityContainer.entity.AnimationController:LoadAnimation(animation)
 				local animPriority = "Idle"
+
 				if animation.Name == "attacking" or animation.Name == "death" then
 					animPriority = "Action"
 				elseif animation.Name == "dashing" or animation.Name == "damaged" then
@@ -387,8 +379,8 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 		if entityManifest.entityType.Value == "character" then
 			characterEntityAnimationTracks = animationInterface:registerAnimationsForAnimationController(renderEntityData.entityContainer.entity.AnimationController, "movementAnimations", "swordAndShieldAnimations", "dualAnimations", "greatswordAnimations", "swordAnimations", "daggerAnimations", "staffAnimations", "fishing-rodAnimations", "emoteAnimations", "bowAnimations")
 		elseif entityManifest.entityType.Value == "monster" or entityManifest.entityType.Value == "pet" then
-			entityBaseData 		= (entityManifest.entityType.Value == "monster") and monsterLookup[entityManifest.entityId.Value] or itemLookup[tonumber(entityManifest.entityId.Value)]
-			entityStatesData 	= utilities.copyTable(entityBaseData.statesData.states)
+			entityBaseData = (entityManifest.entityType.Value == "monster") and monsterLookup[entityManifest.entityId.Value] or itemLookup[tonumber(entityManifest.entityId.Value)]
+			entityStatesData = utilities.copyTable(entityBaseData.statesData.states)
 
 			setmetatable(entityStatesData, {
 				__index = function(_, index)
@@ -402,8 +394,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 		if keyframeName == "footstep" then
 			-- do not play footstep sounds on stealthed characters
 			if entityManifest:FindFirstChild("isStealthed") then return end
-
-
 
 			local footStep = ""
 
@@ -445,7 +435,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			end
 
 			if footStepSound and renderEntityData.entityContainer.PrimaryPart then
-
 				local newSound 	= utilities.soundFromMirror(footStepSound)
 
 				newSound.Parent = renderEntityData.entityContainer.PrimaryPart
@@ -462,7 +451,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				newSound:Play()
 				game.Debris:AddItem(newSound,1.5)
 			end
-
 		end
 	end
 
@@ -482,13 +470,10 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						end
 					end
 				end
-
 				currentPlayingStateAnimation = nil
 			end
 		elseif entityManifest.entityType.Value == "monster" or entityManifest.entityType.Value == "pet" then
-
 			if renderEntityData.entityContainer:FindFirstChild("entity") and renderEntityData.entityContainer.entity.PrimaryPart:FindFirstChild("walking") then
-
 				if newState == "walking" or (entityStatesData[newState] and (entityStatesData[newState].animationEquivalent == "walking")) or newState == "movement" or (entityStatesData[newState] and (entityStatesData[newState].animationEquivalent == "movement")) then
 					if not isWalkingSoundPlaying then
 						renderEntityData.entityContainer.entity.PrimaryPart.walking.Looped = true
@@ -499,7 +484,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 					renderEntityData.entityContainer.entity.PrimaryPart.walking:Stop()
 					isWalkingSoundPlaying = false
 				end
-
 			end
 
 			if renderEntityData.entityContainer:FindFirstChild("entity") and renderEntityData.entityContainer.entity.PrimaryPart:FindFirstChild("running") then
@@ -539,9 +523,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 		if newState == "dead" then
 			-- stop all animations
-
 			local function deathEffect(multi)
-
 				multi = multi or 1
 
 				local target = entityManifest.CFrame
@@ -551,7 +533,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 					elseif renderEntityData.entityContainer.entity:FindFirstChild("UpperTorso") then
 						target = renderEntityData.entityContainer.entity.UpperTorso.CFrame
 					end
-
 				end
 
 				local deathPart = Instance.new("Part")
@@ -631,8 +612,8 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						table.insert(hitsounds, renderEntityData.entityContainer.entity.PrimaryPart:FindFirstChild("death4"))
 					end
 
-					local rand 		= math.random(#hitsounds)
-					local hitsound 	= hitsounds[rand]
+					local rand = math.random(#hitsounds)
+					local hitsound = hitsounds[rand]
 
 					if entityManifest:FindFirstChild("monsterScale") and entityManifest.monsterScale.Value > 1.3 and hitsound:FindFirstChild("scalePitch") == nil then
 						local scale = entityManifest.monsterScale.Value
@@ -641,16 +622,15 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						hitsound.EmitterSize 	= hitsound.EmitterSize * (scale ^ 2)
 						hitsound.MaxDistance 	= hitsound.MaxDistance * (scale ^ 3)
 						hitsound.PlaybackSpeed 	= 1 - ((scale-1) * 0.2)
-
 					end
 
-					local deathPart 		= Instance.new("Part")
-					deathPart.Anchored 		= true
-					deathPart.CanCollide 	= false
-					deathPart.Parent 		= workspace.CurrentCamera
-					deathPart.Size 			= Vector3.new(0.1,0.1,0.1)
-					deathPart.Transparency 	= 1
-					deathPart.CFrame 		= entityManifest.CFrame
+					local deathPart = Instance.new("Part")
+					deathPart.Anchored = true
+					deathPart.CanCollide = false
+					deathPart.Parent = workspace.CurrentCamera
+					deathPart.Size = Vector3.new(0.1,0.1,0.1)
+					deathPart.Transparency = 1
+					deathPart.CFrame = entityManifest.CFrame
 
 					hitsound.Parent = deathPart
 					hitsound:Play()
@@ -666,7 +646,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 					end
 				end)
 			elseif entityManifest.entityType.Value == "character" then
-
 				local entity = renderEntityData.entityContainer and renderEntityData.entityContainer:FindFirstChild("entity")
 				if entity then
 					ragdoll_manager.RagDollCharacter(entity,renderEntityData)
@@ -704,8 +683,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			if entityManifest.entityType.Value == "monster" or entityManifest.entityType.Value == "pet" then
 				-- todo: can we remove monsterAnimations[newState] ?
 				if monsterAnimations[newState] or (entityStatesData[newState] and entityStatesData[newState].animationEquivalent and monsterAnimations[entityStatesData[newState].animationEquivalent]) then
-
-
 					local targetAnimation 	= monsterAnimations[newState] or monsterAnimations[entityStatesData[newState].animationEquivalent]
 
 					-- added support for animation variance for a single state
@@ -716,13 +693,12 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						end
 					end
 
-
-					local stateData 		= entityStatesData[newState]-- or (entityStatesData[newState].animationEquivalent and entityStatesData[entityStatesData[newState].animationEquivalent])
+					local stateData = entityStatesData[newState]-- or (entityStatesData[newState].animationEquivalent and entityStatesData[entityStatesData[newState].animationEquivalent])
 
 					if targetAnimation then
-						currentPlayingStateAnimation 			= targetAnimation
-						currentPlayingStateAnimation.Priority 	= (entityStatesData[newState] and entityStatesData[newState].animationPriority) or Enum.AnimationPriority.Idle
-						currentPlayingStateAnimation.Looped 	= (entityStatesData[newState] and entityStatesData[newState].doNotLoopAnimation ~= true) or false
+						currentPlayingStateAnimation = targetAnimation
+						currentPlayingStateAnimation.Priority = (entityStatesData[newState] and entityStatesData[newState].animationPriority) or Enum.AnimationPriority.Idle
+						currentPlayingStateAnimation.Looped = (entityStatesData[newState] and entityStatesData[newState].doNotLoopAnimation ~= true) or false
 						currentPlayingStateAnimation:Play()
 					else
 						targetAnimation = nil
@@ -742,7 +718,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				end
 			elseif entityManifest.entityType.Value == "character" then
 				local weaponStateAppendment = item_manager.GetWeaponStateAppendment(currentlyEquipped,renderEntityData)
-				end
 
 				local animationNameToLookFor = newState do
 					if entityManifest.entityId.Value ~= "" then
@@ -831,31 +806,28 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 			local associatePlayer = game.Players:GetPlayerFromCharacter(entityManifest.Parent)
 
-
-
 			if animationName == "consume_consumable" and extraData and extraData.id then
-				local itemBaseData 					= itemLookup[extraData.id]
-				local consumableManifest 			= itemBaseData.module:FindFirstChild("manifest")
-
+				local itemBaseData = itemLookup[extraData.id]
+				local consumableManifest = itemBaseData.module:FindFirstChild("manifest")
 
 				if consumableManifest and renderEntityData.entityContainer and renderEntityData.entityContainer:FindFirstChild("entity") then
 					local consumableGrip = renderEntityData.entityContainer.entity:FindFirstChild("ConsumableGrip", true)
 
 					if consumableGrip then
-						consumableManifest 				= consumableManifest:Clone()
-						consumableManifest.CanCollide 	= false
-						consumableManifest.Anchored		= false
+						consumableManifest = consumableManifest:Clone()
+						consumableManifest.CanCollide = false
+						consumableManifest.Anchored	= false
 
 						for i, Child in pairs(consumableManifest:GetChildren()) do
 							if Child:IsA("BasePart") then
-								local motor6d 		= Instance.new("Motor6D")
-								motor6d.Part0 		= consumableManifest
-								motor6d.Part1		= Child
-								motor6d.C0    		= CFrame.new()
-								motor6d.C1 			= Child.CFrame:toObjectSpace(consumableManifest.CFrame)
-								motor6d.Parent		= Child
-								Child.CanCollide 	= false
-								Child.Anchored 		= false
+								local motor6d = Instance.new("Motor6D")
+								motor6d.Part0 = consumableManifest
+								motor6d.Part1 = Child
+								motor6d.C0 = CFrame.new()
+								motor6d.C1 = Child.CFrame:toObjectSpace(consumableManifest.CFrame)
+								motor6d.Parent = Child
+								Child.CanCollide = false
+								Child.Anchored = false
 							end
 						end
 
@@ -893,7 +865,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 								sound.MaxDistance = 150
 								sound:Play()
 							end
-
 						end
 
 						delay(extraData.ANIMATION_DESIRED_LENGTH or 2, function()
@@ -949,8 +920,8 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 				if not currentWeaponManifest or not currentWeaponManifest:FindFirstChild("line") then return end
 
-				local startPosition 	= (currentWeaponManifest.CFrame * CFrame.new(0, currentWeaponManifest.Size.Y / 2, 0)).p
-				local unitDirection 	= ((Vector3.new(extraData.targetPosition.X, extraData.targetPosition.Y, extraData.targetPosition.Z) - startPosition).unit + Vector3.new(0, 0.08, 0)).unit--((Vector3.new(extraData.targetPosition.X, startPosition.Y, extraData.targetPosition.Z) - startPosition).unit + Vector3.new(0, 0.05, 0)).unit
+				local startPosition = (currentWeaponManifest.CFrame * CFrame.new(0, currentWeaponManifest.Size.Y / 2, 0)).p
+				local unitDirection = ((Vector3.new(extraData.targetPosition.X, extraData.targetPosition.Y, extraData.targetPosition.Z) - startPosition).unit + Vector3.new(0, 0.08, 0)).unit--((Vector3.new(extraData.targetPosition.X, startPosition.Y, extraData.targetPosition.Z) - startPosition).unit + Vector3.new(0, 0.05, 0)).unit
 
 				if renderEntityData.fishingBob then
 					renderEntityData.fishingBob:Destroy()
@@ -998,7 +969,8 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 							renderEntityData.fishingBob = nil
 						end
-					end, function(t)
+					end,
+					function(t)
 						if currentWeaponManifest:FindFirstChild("line") then
 							currentWeaponManifest.line.Length = 25 * t
 						end
@@ -1019,8 +991,8 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 					local fish, fishVelocity
 					if renderEntityData.fishingBob then
 						local _, fishModel, fishVelocityGiven = network:invokeServer("playerRequest_reelFishingRod", renderEntityData.fishingBob.Position)
-							fish = fishModel
-							fishVelocity = fishVelocityGiven
+						fish = fishModel
+						fishVelocity = fishVelocityGiven
 					end
 
 					if currentWeaponManifest and not fish then
@@ -1035,98 +1007,85 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 					renderEntityData.fishingBob = nil
 				end
 			elseif extraData and extraData.dance then
-					-- dance emotes
+				-- dance emotes
+				local currentEquippedManifest
+				if  animationName ~= "point" then
+					currentEquippedManifest = network:invoke("getCurrentWeaponManifest", entityManifest) --currentlyEquipped[1] and currentlyEquipped[1].manifest
 
-					local currentEquippedManifest
-						if  animationName ~= "point" then
-							currentEquippedManifest = network:invoke("getCurrentWeaponManifest", entityManifest) --currentlyEquipped[1] and currentlyEquipped[1].manifest
-
-							if currentEquippedManifest then
-								if currentEquippedManifest:IsA("BasePart") then
-									currentEquippedManifest.Transparency = 1
-								end
-								for i,part in pairs(currentEquippedManifest:GetDescendants()) do
-									if part:isA("BasePart") then
-										part.Transparency = part.Transparency + 1
-									end
-								end
+					if currentEquippedManifest then
+						if currentEquippedManifest:IsA("BasePart") then
+							currentEquippedManifest.Transparency = 1
+						end
+						for i,part in pairs(currentEquippedManifest:GetDescendants()) do
+							if part:isA("BasePart") then
+								part.Transparency = part.Transparency + 1
 							end
 						end
+					end
+				end
+
+				local prop
+				local extraEmoteInfo = {
+					["handstand"]	= {fadeTime = .3;};
+					["sit"]			= {fadeTime = .3;};
+					["panic"]		= {fadeTime = .3;};
+					["pushups"]		= {fadeTime = .3;};
+					["point"] 		= {singleAction = true;};
+					["flex"] 		= {singleAction = true;};
+					["guitar"] 		= {singleAction = true;};
+					["tadaa"] 		= {singleAction = true;};
+					["cheer"] 		= {singleAction = true;};
+				}
 
 
+				if extraEmoteInfo[animationName] and  extraEmoteInfo[animationName].fadeTime then
+					characterEntityAnimationTracks[animationSequenceName][animationName]:Play(extraEmoteInfo[animationName].fadeTime)
+				else
+					characterEntityAnimationTracks[animationSequenceName][animationName]:Play()
+				end
 
-						local prop
-						local extraEmoteInfo = {
-							["handstand"]	= {fadeTime = .3;};
-							["sit"]			= {fadeTime = .3;};
-							["panic"]		= {fadeTime = .3;};
-							["pushups"]		= {fadeTime = .3;};
-							["point"] 		= {singleAction = true;};
-							["flex"] 		= {singleAction = true;};
-							["guitar"] 		= {singleAction = true;};
-							["tadaa"] 		= {singleAction = true;};
-							["cheer"] 		= {singleAction = true;};
-						}
+				--to-do: potentially do a unified system for animations that hold
+				if animationName == "beg" then
+					prop = assetFolder.Plate:Clone()
+					local weld = Instance.new("WeldConstraint", prop)
+					prop.CFrame = renderEntityData.entityContainer.entity.RightHand.CFrame *CFrame.Angles(math.pi,0,0) * CFrame.new(-.5,.16,-.2)
+					weld.Part1 = prop
+					weld.Part0 = renderEntityData.entityContainer.entity.RightHand
+					prop.Parent = workspace
 
 
-						if extraEmoteInfo[animationName] and  extraEmoteInfo[animationName].fadeTime then
-							characterEntityAnimationTracks[animationSequenceName][animationName]:Play(extraEmoteInfo[animationName].fadeTime)
-						else
-							characterEntityAnimationTracks[animationSequenceName][animationName]:Play()
+					delay(3.1, function()
+						--characterEntityAnimationTracks[animationSequenceName]["beg_hold"]:Play()
+						characterEntityAnimationTracks[animationSequenceName][animationName]:AdjustSpeed(0)
+					end)
+				end
+
+				local connection
+				connection = characterEntityAnimationTracks[animationSequenceName][animationName].Stopped:connect(function()
+					if prop then
+						prop:Destroy()
+					end
+
+
+					if currentEquippedManifest then
+						if currentEquippedManifest:IsA("BasePart") then
+							currentEquippedManifest.Transparency = 0
 						end
-
-
-
-						--to-do: potentially do a unified system for animations that hold
-						if animationName == "beg" then
-							prop = assetFolder.Plate:Clone()
-							local weld = Instance.new("WeldConstraint", prop)
-							prop.CFrame = renderEntityData.entityContainer.entity.RightHand.CFrame *CFrame.Angles(math.pi,0,0) * CFrame.new(-.5,.16,-.2)
-							weld.Part1 = prop
-							weld.Part0 = renderEntityData.entityContainer.entity.RightHand
-							prop.Parent = workspace
-
-
-							delay(3.1, function()
-								--characterEntityAnimationTracks[animationSequenceName]["beg_hold"]:Play()
-								characterEntityAnimationTracks[animationSequenceName][animationName]:AdjustSpeed(0)
-							end)
+						for i,part in pairs(currentEquippedManifest:GetDescendants()) do
+							if part:isA("BasePart") then
+								part.Transparency = part.Transparency - 1
+							end
 						end
+					end
 
+					-- kind of a messy solution but this is needed for emotes to properly work with the control script
+					if extraEmoteInfo[animationName] and  extraEmoteInfo[animationName].singleAction then
+						network:fire("endEmote")
+					end
 
-
-
-						local connection
-						connection = characterEntityAnimationTracks[animationSequenceName][animationName].Stopped:connect(function()
-							if prop then
-								prop:Destroy()
-							end
-
-
-							if currentEquippedManifest then
-								if currentEquippedManifest:IsA("BasePart") then
-									currentEquippedManifest.Transparency = 0
-								end
-								for i,part in pairs(currentEquippedManifest:GetDescendants()) do
-									if part:isA("BasePart") then
-										part.Transparency = part.Transparency - 1
-									end
-								end
-							end
-
-							-- kind of a messy solution but this is needed for emotes to properly work with the control script
-							if extraEmoteInfo[animationName] and  extraEmoteInfo[animationName].singleAction then
-								network:fire("endEmote")
-							end
-
-
-							connection:disconnect()
-
-						end)
-
+					connection:disconnect()
+				end)
 			else
-
-
 				local animationToBePlayed = characterEntityAnimationTracks[animationSequenceName][animationName]
 
 				if animationSequenceName == "bowAnimations" then
@@ -1158,29 +1117,28 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 	local monsterNameTag
 
 	local function setupMonsterDisplayUI()
---		local monsterNameUIPart 	= renderEntityData.entityContainer:FindFirstChild("MonsterHealthTag") or assetFolder.MonsterHealthTag:Clone()
---		monsterNameUIPart.Parent 	= renderEntityData.entityContainer
-
---		monsterNameUI				= monsterNameUIPart.SurfaceGui
+		--local monsterNameUIPart = renderEntityData.entityContainer:FindFirstChild("MonsterHealthTag") or assetFolder.MonsterHealthTag:Clone()
+		--monsterNameUIPart.Parent = renderEntityData.entityContainer
+		--monsterNameUI	= monsterNameUIPart.SurfaceGui
 		monsterNameUI = assetFolder.monsterHealth:Clone()
 		monsterNameUI.Parent = renderEntityData.entityContainer
 		monsterNameUI.Adornee = renderEntityData.entityContainer
-		monsterNameUI.Enabled 		= false
---		monsterNameUIPart.Parent 	= renderEntityData.entityContainer
+		monsterNameUI.Enabled = false
+		--monsterNameUIPart.Parent = renderEntityData.entityContainer
 
-		local monsterNamePart 	= renderEntityData.entityContainer:FindFirstChild("MonsterEnemyTag") or assetFolder.MonsterEnemyTag:Clone()
-		monsterNamePart.Parent 	= workspace.CurrentCamera
+		local monsterNamePart = renderEntityData.entityContainer:FindFirstChild("MonsterEnemyTag") or assetFolder.MonsterEnemyTag:Clone()
+		monsterNamePart.Parent = workspace.CurrentCamera
 
-		monsterNameTag 			= monsterNamePart.SurfaceGui
-		monsterNameTag.Enabled 	= false
+		monsterNameTag = monsterNamePart.SurfaceGui
+		monsterNameTag.Enabled = false
 
 		local monsterScaled = false
 
 		local function monsterScale()
 			if not monsterScaled then
 				if entityManifest.monsterScale.Value > 1.3 then
-					monsterScaled 					= true
-					monsterNameTag.skull.Visible 	= true
+					monsterScaled = true
+					monsterNameTag.skull.Visible= true
 				end
 			end
 		end
@@ -1205,19 +1163,19 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 		monsterNamePart.Parent = renderEntityData.entityContainer
 
-		local level 				= entityManifest:FindFirstChild("level") and entityManifest.level.Value or 1
-		local levelText 			= "Lvl "..tostring(level)
-		monsterNameTag.level.Text 	= levelText
+		local level = entityManifest:FindFirstChild("level") and entityManifest.level.Value or 1
+		local levelText = "Lvl "..tostring(level)
+		monsterNameTag.level.Text = levelText
 
 		if renderEntityData.disableLevelUI then
 			monsterNameTag.level.Visible = false
 		end
 
-		local levelBounds 			= game.TextService:GetTextSize(levelText, monsterNameTag.level.TextSize, monsterNameTag.level.Font, Vector2.new()).X + 6
-		monsterNameTag.level.Size 	= UDim2.new(0, levelBounds, 1, -6)
+		local levelBounds = game.TextService:GetTextSize(levelText, monsterNameTag.level.TextSize, monsterNameTag.level.Font, Vector2.new()).X + 6
+		monsterNameTag.level.Size = UDim2.new(0, levelBounds, 1, -6)
 
-		local isMonsterPet 	= not not entityManifest:FindFirstChild("pet")
-		local monsterText 	= entityManifest.entityId:FindFirstChild("nickname") and entityManifest.entityId.nickname.Value or entityManifest.entityId.Value
+		local isMonsterPet = not not entityManifest:FindFirstChild("pet")
+		local monsterText = entityManifest.entityId:FindFirstChild("nickname") and entityManifest.entityId.nickname.Value or entityManifest.entityId.Value
 
 		local isNicknamed = entityManifest.entityId:FindFirstChild("nickname") ~= nil
 
@@ -1262,7 +1220,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 		end
 	end
 
-
 	local function setupCharacterDisplayUI()
 		local nameTag 	= renderEntityData.entityContainer.PrimaryPart:FindFirstChild("PlayerTag") or assetFolder.PlayerTag:Clone()
 		nameTag.Parent 	= renderEntityData.entityContainer.PrimaryPart
@@ -1275,24 +1232,21 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			playerXpTagPairing[associatePlayer] = xpTag
 		end
 
-
-
 		monsterNameUI = assetFolder.monsterHealth:Clone()
 		monsterNameUI.Parent = renderEntityData.entityContainer
 		monsterNameUI.Adornee = renderEntityData.entityContainer
-
-		monsterNameUI.Enabled 		= false
+		monsterNameUI.Enabled = false
 
 		if associatePlayer and nameTag then
 			local function updateNameTagForCharacter()
-				local level 					= associatePlayer:FindFirstChild("level") and associatePlayer.level.Value or 0
-				local levelText 				= "Lvl." .. level
-				nameTag.SurfaceGui.top.level.Text 	= levelText
+				local level = associatePlayer:FindFirstChild("level") and associatePlayer.level.Value or 0
+				local levelText = "Lvl." .. level
+				nameTag.SurfaceGui.top.level.Text = levelText
 
 				local class = associatePlayer:FindFirstChild("class") and associatePlayer.class.Value or "unknown"
 				if class:lower() ~= "adventurer" then
-					nameTag.SurfaceGui.top.class.Image 		= "rbxgameasset://Images/emblem_"..class:lower()
-					nameTag.SurfaceGui.top.class.Visible 	= true
+					nameTag.SurfaceGui.top.class.Image = "rbxgameasset://Images/emblem_"..class:lower()
+					nameTag.SurfaceGui.top.class.Visible = true
 				else
 					nameTag.SurfaceGui.top.class.Visible = false
 				end
@@ -1306,10 +1260,9 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 							if guildDataValue then
 								local guildData = httpService:JSONDecode(guildDataValue.Value)
 								if guildData.name then
-
 									nameTag.SurfaceGui.bottom.guild.Text = guildData.name
 									local nameBounds = game.TextService:GetTextSize(guildData.name, nameTag.SurfaceGui.bottom.guild.TextSize, nameTag.SurfaceGui.bottom.guild.Font, Vector2.new()).X + 10
-									nameTag.SurfaceGui.bottom.guild.Size 	= UDim2.new(0, nameBounds, 1, -4)
+									nameTag.SurfaceGui.bottom.guild.Size = UDim2.new(0, nameBounds, 1, -4)
 									nameTag.SurfaceGui.bottom.guild.Visible = true
 								end
 							end
@@ -1335,11 +1288,11 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				nameTag.SurfaceGui.top.dev.Visible = associatePlayer:FindFirstChild("developer") ~= nil
 				nameTag.SurfaceGui.top.player.Text = associatePlayer.Name
 
-				local levelBounds 				= game.TextService:GetTextSize(levelText, nameTag.SurfaceGui.top.level.TextSize, nameTag.SurfaceGui.top.level.Font, Vector2.new()).X + 8
+				local levelBounds = game.TextService:GetTextSize(levelText, nameTag.SurfaceGui.top.level.TextSize, nameTag.SurfaceGui.top.level.Font, Vector2.new()).X + 8
 				nameTag.SurfaceGui.top.level.Size 	= UDim2.new(0, levelBounds, 1, -4)
 
-				local nameBounds 				= game.TextService:GetTextSize(associatePlayer.Name, nameTag.SurfaceGui.top.player.TextSize, nameTag.SurfaceGui.top.player.Font, Vector2.new()).X + 10
-				nameTag.SurfaceGui.top.player.Size 	= UDim2.new(0, nameBounds, 1, -4)
+				local nameBounds = game.TextService:GetTextSize(associatePlayer.Name, nameTag.SurfaceGui.top.player.TextSize, nameTag.SurfaceGui.top.player.Font, Vector2.new()).X + 10
+				nameTag.SurfaceGui.top.player.Size = UDim2.new(0, nameBounds, 1, -4)
 
 				local totalXBound = 0
 				for i,child in pairs(nameTag.SurfaceGui.top:GetChildren()) do
@@ -1398,7 +1351,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			end
 		end
 
-
 		if monsterNameTag and renderEntityData.entityContainer.Name ~= "Chicken" then
 			monsterNameTag.Enabled = true
 		end
@@ -1440,7 +1392,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			spawn(function()
 				wait(0.5)
 				if fill and fill:FindFirstChild("healthLag") and fill.currentHealthFill.Size == goal then
---				if fill and fill:FindFirstChild("healthLag") and fill.healthLag.ImageColor3 == Color3.fromRGB(255, 43, 43) then
+				--if fill and fill:FindFirstChild("healthLag") and fill.healthLag.ImageColor3 == Color3.fromRGB(255, 43, 43) then
 					tween(fill.healthLag, {"Size","ImageColor3"}, {goal, Color3.fromRGB(255, 210, 38)}, 0.3)
 				end
 			end)
@@ -1621,9 +1573,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 		local success, abilityExecutionData = utilities.safeJSONDecode(value)
 
 		if success then
-
-
-
 			if previousAbilityExecutionData["ability-guid"] == abilityExecutionData["ability-guid"] and previousAbilityExecutionData["ability-state"] == "end" then
 				return false
 			end
@@ -1643,6 +1592,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				if abilityBaseData and abilityBaseData.abilityDecidesEnd and abilityBaseData.execute then
 					abilityBaseData:execute(renderEntityData.entityContainer, previousAbilityExecutionData, associatePlayer == client, associatePlayer == client and previousAbilityExecutionData["ability-guid"])
 				end
+
 				if associatePlayer == client then
 					network:fire("setIsPlayerCastingAbility", false)
 				end
@@ -1663,10 +1613,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						network:invoke("client_changeAbilityState", abilityExecutionData.id, "end", abilityExecutionData, abilityExecutionData.guid)
 					end
 				end
-
 			end
-
-
 		end
 	end
 
@@ -1720,7 +1667,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						end
 					end
 				end
-
 				previousStatusEffectsV2 = currentStatusEffectsV2
 			end
 		end
@@ -1746,7 +1692,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 		end
 
 		populateMonsterAnimationsTable()
-
 		cleanupCharacterDisplayUI()
 		setupMonsterDisplayUI()
 	elseif entityManifest.entityType.Value == "character" then
@@ -1775,14 +1720,10 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 	table.insert(renderEntityData.connections, entityManifest.entityId.Changed:connect(onEntityIdChanged))
 	table.insert(renderEntityData.connections, entityManifest.health.Changed:connect(onEntityHealthChanged))
 
-
 	if associatePlayer == client then
-
-
 		network:fire("myClientCharacterContainerChanged", renderEntityData.entityContainer)
 	end
 end
-
 
 events:registerForEvent("playersXpGained", function(playerXpRewards)
 	for playerName,xpgained in pairs(playerXpRewards) do

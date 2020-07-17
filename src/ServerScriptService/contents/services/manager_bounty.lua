@@ -1,5 +1,10 @@
 local module = {}
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Modules = require(ReplicatedStorage.modules)
+local Network = Modules.load("network")
+
 local function playerRequest_claimBounty(player, monsterName)
 	local playerData = playerDataContainer[player]
 	if not playerData then
@@ -8,7 +13,7 @@ local function playerRequest_claimBounty(player, monsterName)
 	if not player:FindFirstChild("bountyHunter") then
 		return false, "Not a bounty hunter."
     end
-    
+
 	local monster = monsterLookup[monsterName]
 	if monster then
 		local page = monster.monsterBookPage
@@ -30,12 +35,12 @@ local function playerRequest_claimBounty(player, monsterName)
 				end
 				return false, "No room in inventory."
 			end
-			return false, "No bounty available."		
+			return false, "No bounty available."
 		end
 		return false, "Invalid monster."
 	end
 end
 
-network:create("playerRequest_claimBounty", "RemoteFunction", "OnServerInvoke", playerRequest_claimBounty)
+Network:create("playerRequest_claimBounty", "RemoteFunction", "OnServerInvoke", playerRequest_claimBounty)
 
 return module

@@ -6,8 +6,10 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local modules = require(replicatedStorage:WaitForChild("modules"))
 local network = modules.load("network")
 
+local shuttingDown = false
+
 -- TODO: give this a value LOL
-local pvpZoneCollectionFolder
+local pvpZoneCollectionFolder = workspace.placeFolders.pvpZoneCollection
 
 local function isPlayerInPVPZone(pvpZone, player)
 	if not player or not player.Character or not player.Character.PrimaryPart then return false end
