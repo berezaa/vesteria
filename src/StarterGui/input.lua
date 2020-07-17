@@ -11,24 +11,17 @@ local USI = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 
 local module = {}
-
 local keybinds = {}
-
 local inputObjects = {}
-
 local actions = {}
 
 module.actions = actions
 
-
 local mode = script.Parent.mode
 module.mode = mode
 
-
 -- track all gui objects that belong to a specific (or multiple) platforms
 local platformSpecificGuiObjects = {}
-
-
 
 module.shortcuts = {
 	Unknown = "???";

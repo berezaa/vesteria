@@ -424,7 +424,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 			local possibleSounds = {}
 			for i = 1, 3 do
-				local sound = game.ReplicatedStorage.sounds:FindFirstChild("footstep_"..footStep..(i>1 and tostring(i) or ""))
+				local sound = game.ReplicatedStorage.assets.sounds:FindFirstChild("footstep_"..footStep..(i>1 and tostring(i) or ""))
 
 				if sound then
 					table.insert(possibleSounds, sound)
@@ -740,7 +740,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						animationNameToLookFor = string.lower(associatePlayer.class.Value) .. "_" .. animationNameToLookFor .. weaponStateAppendment
 					end
 				end
-				print(renderEntityData.entityContainer.entity)
 				local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderEntityData.entityContainer.entity)
 
 				if characterEntityAnimationTracks.movementAnimations[animationNameToLookFor] or (currentlyEquipped["1"] and currentlyEquipped["1"].baseData.equipmentType and characterEntityAnimationTracks.movementAnimations[animationNameToLookFor .. "_" .. currentlyEquipped["1"].baseData.equipmentType .. weaponStateAppendment]) then

@@ -46,6 +46,7 @@ local function int__tickForPVP()
 	while not shuttingDown do
 		for _, player in pairs(game.Players:GetPlayers()) do
 			local playerData = network:invoke("getPlayerData", player)
+			if not playerData then return end
 			local currentPVPValue = playerData.nonSerializeData.isGlobalPVPEnabled
 
 			if replicatedStorage:FindFirstChild("isPVPGloballyEnabled") and replicatedStorage.isPVPGloballyEnabled.Value then

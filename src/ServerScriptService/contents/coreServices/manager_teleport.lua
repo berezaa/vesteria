@@ -22,13 +22,13 @@ local function preparePlayerToTeleport(player, destination)
 	local timestamp = saveDataForTeleport(player)
 	if timestamp then
 		local teleportData = {}
-		teleportData.arrivingFrom				= game.PlaceId
-		teleportData.destination 				= destination
-		teleportData.dataTimestamp 				= timestamp
-		teleportData.dataSlot					= player.dataSlot.Value
-		teleportData.analyticsSessionId 		= player.AnalyticsSessionId.Value
-		teleportData.joinTime					= player.JoinTime.Value
-		teleportData.partyData 					= network:invoke("getPartyDataByPlayer", player)
+		teleportData.arrivingFrom = game.PlaceId
+		teleportData.destination = destination
+		teleportData.dataTimestamp = timestamp
+		teleportData.dataSlot = player.dataSlot.Value
+		teleportData.analyticsSessionId = player.AnalyticsSessionId.Value
+		teleportData.joinTime = player.JoinTime.Value
+		teleportData.partyData = network:invoke("getPartyDataByPlayer", player)
 		return teleportData
 	else
 		network:fireClient("alertPlayerNotification", player, {

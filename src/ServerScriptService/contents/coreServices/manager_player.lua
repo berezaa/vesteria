@@ -6,7 +6,7 @@
 local module = {}
 local playerDataContainer = {}
 local playerPositionDataContainer = {}
-local datastoreInterface = require(script.datastoreInterface)
+local datastoreInterface = require(script.Parent.datastoreInterface)
 
 local shuttingDown = false
 local runService = game:GetService("RunService")
@@ -28,6 +28,11 @@ local detection = modules.load("detection")
 -- todo: phase out
 local entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
 local temporaryEquipmentFolder = placeSetup.getPlaceFolder("temporaryEquipment")
+local playerRenderCollectionFolder = placeSetup.getPlaceFolder("playerRenderCollection")
+local playerManifestCollectionFolder = placeSetup.getPlaceFolder("playerManifestCollection")
+local monsterManifestCollectionFolder = placeSetup.getPlaceFolder("monsterManifestCollection")
+local entityRenderCollectionFolder = placeSetup.getPlaceFolder("entityRenderCollection")
+local pvpZoneCollectionFolder = placeSetup.getPlaceFolder("pvpZoneCollection")
 
 local itemLookup = require(replicatedStorage.itemData)
 local itemAttributes = require(replicatedStorage.itemAttributes)
