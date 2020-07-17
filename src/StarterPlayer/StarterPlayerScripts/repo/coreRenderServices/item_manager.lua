@@ -9,7 +9,7 @@ local mapping 		= modules.load("mapping")
 
 local itemLookup 			= require(replicatedStorage.itemData)
 
-local function getCurrentlyEquippedForRenderCharacter(renderCharacter)
+function item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
 	local currentlyEquipped = {}
 
 	for i, obj in pairs(renderCharacter:GetChildren()) do
@@ -51,7 +51,7 @@ end
 
 function item_manager.GetWeaponStateAppendment(renderEntityData)
     local weaponStateAppendment
-    local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(renderEntityData.entityContainer.entity)
+    local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderEntityData.entityContainer.entity)
 
     if currentlyEquipped["1"] and currentlyEquipped["1"].baseData.equipmentType then
         -- weaponState weapons should never overlap with dual wielding (BOW IN PARTICULAR)
@@ -66,15 +66,31 @@ function item_manager.GetWeaponStateAppendment(renderEntityData)
         end
     end
 
-
     return weaponStateAppendment
+end
+
+function item_manager.CheckForCurrentlyEquippedForAnim(animationNameToLookFor,weaponStateAppendment,characterEntityAnimationTracks,currentPlayingStateAnimation,renderCharacter)
+	local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
+	local currentPlayingStateAnimation
+
+	if currentlyEquipped["1"] and currentlyEquipped["1"].baseData and currentlyEquipped["1"].baseData.equipmentType then
+		local fullAnimationName = animationNameToLookFor.."_"..currentlyEquipped["1"].baseData.equipmentType..weaponStateAppendment
+
+		currentPlayingStateAnimation =
+			characterEntityAnimationTracks.movementAnimations[fullAnimationName] or
+			characterEntityAnimationTracks.movementAnimations[animationNameToLookFor]
+	else
+		currentPlayingStateAnimation = characterEntityAnimationTracks.movementAnimations[animationNameToLookFor]
+	end
+
+	return currentPlayingStateAnimation
 end
 
 function item_manager.RefreshStateAnimation(entityManifest,renderEntityData,weaponType)
     local needStateChange
 
     if entityManifest.entityType.Value == "character" then
-        local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(renderEntityData.entityContainer.entity)
+        local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderEntityData.entityContainer.entity)
         if currentlyEquipped["1"] then
             if weaponType == currentlyEquipped["1"].baseData.equipmentType then
                 needStateChange = true
@@ -93,7 +109,7 @@ function item_manager.EquipNewItem(appearanceData,renderCharacter,_entityManifes
 	renderCharacter["LowerTorso"]:FindFirstChild("HipMount"),
 	renderCharacter["UpperTorso"]:FindFirstChild("BackMount")
 
-    local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(renderCharacter)
+    local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
 
     for i, equipmentData in pairs(appearanceData.equipment) do
 		if not isCurrentlyEquipped(currentlyEquipped, equipmentData) then
@@ -316,7 +332,7 @@ function item_manager.IterateThroughItems(renderCharacter,appearanceData)
 	renderCharacter["LowerTorso"]:FindFirstChild("HipMount"),
 	renderCharacter["UpperTorso"]:FindFirstChild("BackMount")
 
-    local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(renderCharacter)
+    local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
 	for equipmentPosition, equipmentContainerData in pairs(currentlyEquipped) do
 		local isStillEquipped = false
 
@@ -407,15 +423,15 @@ function item_manager.iterateThroughappearanceData(appearanceData,renderCharacte
 end
 
 function item_manager.createNetworkConnections(client,entitiesBeingRendered)
-    network:create("getCurrentlyEquippedForRenderCharacter", "BindableFunction", "OnInvoke", function(renderCharacter)
-		return getCurrentlyEquippedForRenderCharacter(renderCharacter)
+    network:create("item_manager.getCurrentlyEquippedForRenderCharacter", "BindableFunction", "OnInvoke", function(renderCharacter)
+		return item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
     end)
 
     network:create("getCurrentWeaponManifest", "BindableFunction", "OnInvoke", function(entityManifest)
 		entityManifest = entityManifest or (client.Character and client.Character.PrimaryPart)
 
 		if entityManifest and entitiesBeingRendered[entityManifest] then
-			local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(entitiesBeingRendered[entityManifest].entityContainer.entity)
+			local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(entitiesBeingRendered[entityManifest].entityContainer.entity)
 
 			return currentlyEquipped["1"] and currentlyEquipped["1"].manifest
 		end
@@ -425,14 +441,14 @@ function item_manager.createNetworkConnections(client,entitiesBeingRendered)
 		local entityManifest = player.Character and player.Character.PrimaryPart
 
 		if entityManifest and entitiesBeingRendered[entityManifest] then
-			local currentlyEquipped = getCurrentlyEquippedForRenderCharacter(entitiesBeingRendered[entityManifest].entityContainer.entity)
+			local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(entitiesBeingRendered[entityManifest].entityContainer.entity)
 
 			return currentlyEquipped["1"] and currentlyEquipped["1"].manifest
 		end
     end)
 
     network:create("hideWeapons", "BindableFunction", "OnInvoke", function(entity)
-		local equipment = getCurrentlyEquippedForRenderCharacter(entity)
+		local equipment = item_manager.getCurrentlyEquippedForRenderCharacter(entity)
 		local partData = {}
 
 		local checks = {

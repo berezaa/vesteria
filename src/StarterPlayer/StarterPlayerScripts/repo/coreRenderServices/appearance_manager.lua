@@ -10,11 +10,11 @@ local function isBodyPart(obj)
 	return obj:IsA("BasePart") and replicatedStorage.playerBaseCharacter:FindFirstChild(obj.Name) and replicatedStorage.playerBaseCharacter[obj.Name]:IsA("BasePart")
 end
 
-function appearence_manager.ApplySkinColor(appearanceData,renderCharacter,accessoryLookup)
+function appearence_manager.ApplySkinColor(appearanceData,renderCharacter,accessoryLookup,assets)
     if appearanceData and appearanceData.accessories.skinColorId then
 		for i, obj in pairs(renderCharacter:GetChildren()) do
 			if obj:IsA("BasePart") and isBodyPart(obj) then
-				obj.Color = accessoryLookup.skinColor:FindFirstChild(tostring(appearanceData.accessories.skinColorId or 1)).Value
+				obj.Color = assets.accessories.skinColor:FindFirstChild(tostring(appearanceData.accessories.skinColorId or 1)).Value
 			end
 		end
 	else

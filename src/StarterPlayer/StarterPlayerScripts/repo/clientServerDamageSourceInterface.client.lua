@@ -48,7 +48,7 @@ local isPlayerCastingAbility = false
 
 local function onSetCanPlayerBasicAttack(value)
 	canPlayerBasicAttack = value
-	
+
 	if not canPlayerBasicAttack and isPlayerHoldingDownBasicAttack then
 		if currentlyEquipped and currentlyEquipped.release then
 			isPlayerHoldingDownBasicAttack = false
@@ -66,39 +66,39 @@ local function getPlayerEquipmentSlotDataForWeapon()
 			end
 		end
 	end
-	
+
 	return nil
 end
 
 local function equipmentMeetsAbilityRequirement(equipmentData, abilityRequirement)
 	local equipmentType = equipmentData.equipmentType
-	
+
 	if equipmentType == abilityRequirement then
 		return true
 	end
-	
+
 	if abilityRequirement == "sword" and equipmentType == "greatsword" then
 		return true
 	end
-	
+
 	local isBowDaggerAbility = (abilityRequirement == "dagger") or (abilityRequirement == "bow")
 	local isBowDaggerEquipped = (equipmentType == "dagger") or (equipmentType == "bow")
 	if isBowDaggerAbility and isBowDaggerEquipped then
 		local renderCharacterContainer = network:invoke("getMyClientCharacterContainer")
 		if not  renderCharacterContainer then return false end
-		
+
 		local equipment = network:invoke("getCurrentlyEquippedForRenderCharacter", renderCharacterContainer.entity)
 		if not equipment then return false end
-		
+
 		local offhand = equipment["11"]
 		if (not offhand) or (not offhand.baseData) then return false end
-		
+
 		if offhand.baseData.equipmentType == abilityRequirement then
 			network:invokeServer("playerRequest_swapWeapons_yielding")
 			return true
 		end
 	end
-	
+
 	return false
 end
 
@@ -119,10 +119,10 @@ end
 -- sourceType = "ability", "item"
 local function handleRequestEntityDamageRequest(serverHitbox, damagePosition, sourceType, sourceId, sourceTag, GUID)
 	-- todo: do client-side sanity checks
-	
+
 	-- check if is descendant
 	if damage.canPlayerDamageTarget(player, serverHitbox) then
-		
+
 
 		network:fire("monsterDamagedAtPosition", damagePosition)
 
@@ -134,13 +134,13 @@ local curWeaponType
 local function int__equipWeapon(weaponData)
 	local itemBaseData = itemData[weaponData.id]
 	if itemBaseData and itemBaseData.isEquippable and itemBaseData.equipmentType and itemBaseData.equipmentSlot == mapping.equipmentPosition.weapon then
-		if not currentlyEquipped and assetFolder.damageInterfaces:FindFirstChild(itemBaseData.equipmentType) then	
+		if not currentlyEquipped and assetFolder.damageInterfaces:FindFirstChild(itemBaseData.equipmentType) then
 			curWeaponType = itemBaseData.equipmentType
-			
+
 			-- check for dual swords and sword and shield
 			if clientCharacterContainer and clientCharacterContainer:FindFirstChild("entity") then
 				local currentEquipment = network:invoke("getCurrentlyEquippedForRenderCharacter", clientCharacterContainer.entity)
-				
+
 				if currentEquipment["1"] and currentEquipment["11"] then
 					if currentEquipment["1"].baseData.equipmentType == "sword" and currentEquipment["11"].baseData.equipmentType == "sword" then
 						curWeaponType = "dual"
@@ -150,7 +150,7 @@ local function int__equipWeapon(weaponData)
 				end
 			end
 		end
-		
+
 		if curWeaponType then
 			currentlyEquipped = require(assetFolder.damageInterfaces[curWeaponType])
 			currentlyEquipped:equip()
@@ -174,13 +174,13 @@ local function int_checkIfEquipWeaponFromEquipment(equipment)
 				weaponEquipmentData = equipmentData
 			end
 		end
-		
+
 		if weaponEquipmentData then
 			if currentlyEquipped then
 				-- unequip weapon first, then equip the other weapon
 				int__unequipWeapon()
 			end
-			
+
 			int__equipWeapon(weaponEquipmentData)
 		else
 			if currentlyEquipped then
@@ -193,23 +193,23 @@ end
 
 local function onPropogationRequestToSelf(propogationNameTag, propogationValue)
 	if propogationNameTag == "equipment" then
-		int_checkIfEquipWeaponFromEquipment(propogationValue)	
+		int_checkIfEquipWeaponFromEquipment(propogationValue)
 	end
 end
 
 local function onMyClientCharacterWeaponChanged(weaponManifest)
 	-- set the weapon stuff
 	currentWeaponManifest = weaponManifest
-	
+
 	if weaponManifest:IsA("BasePart") then
 		weaponManifest.Touched:Connect(function()
 			-- do nothing just have a touch interest I guess
 		end)
 	end
-	
+
 --	if currentWeaponManifest then
 --		local equipmentSlotDataCollection = network:invoke("getCacheValueByNameTag", "equipment")
---		
+--
 --		if equipmentSlotDataCollection then
 --			int_checkIfEquipWeaponFromEquipment(equipmentSlotDataCollection)
 --		end
@@ -225,17 +225,17 @@ local function onMyClientCharacterContainerChanged(newMyClientCharacterContainer
 	-- wait for humanoid
 	local animationController = newMyClientCharacterContainer.entity:WaitForChild("AnimationController")
 	while not animationController:IsDescendantOf(workspace) do wait() end
-	
+
 	if currentlyEquipped then
 		currentlyEquipped:equip()
 	end
-	
-	castingAnimation = animationController:LoadAnimation(game.ReplicatedStorage.abilityAnimations.rock_throw_upper_loop)
+
+	castingAnimation = animationController:LoadAnimation(game.ReplicatedStorage.assets.abilityAnimations.rock_throw_upper_loop)
 end
 
-local function onCharacterAdded(character)	
+local function onCharacterAdded(character)
 	local equipment = network:invoke("getCacheValueByNameTag", "equipment")
-	
+
 	int_checkIfEquipWeaponFromEquipment(equipment)
 end
 
@@ -247,23 +247,23 @@ local function onInputBegan(input, absorbed)
 		if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 or input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.ButtonR2 then
 			if network:invoke("isCharacterStunned") then return end
 			if attackOnCoolDown then return end
-			
+
 			network:invoke("setCharacterMovementState", "isSprinting", false)
 --			isPlayerHoldingDownBasicAttack = true
 
 			events:fireEventAll("playerWillUseBasicAttack", player)
 			currentlyEquipped:attack(input)
-	
+
 			network:fire("stopChannels", "attack")
 			network:fire("signalBasicAttacking", true)
-			
+
 --			attackOnCoolDown = true
 			local stats = network:invoke("getCacheValueByNameTag", "nonSerializeData").statistics_final
-			local attackDelay = .25 
-			
+			local attackDelay = .25
+
 			if weaponDelays[curWeaponType] then
 				attackDelay = weaponDelays[curWeaponType] / (1 + stats.attackSpeed)
-			end					
+			end
 		end
 	end
 end
@@ -272,7 +272,7 @@ local function onInputEnded(input, absorbed)
 	if isPlayerHoldingDownBasicAttack and currentlyEquipped and not absorbed and currentlyEquipped.release then -- bows
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.KeyCode == Enum.KeyCode.LeftControl or input.KeyCode == Enum.KeyCode.ButtonR2 then
 			currentlyEquipped:release()
-			
+
 			isPlayerHoldingDownBasicAttack = false
 		end
 	elseif isPlayerHoldingDownBasicAttack and currentlyEquipped then -- swords
@@ -280,7 +280,7 @@ local function onInputEnded(input, absorbed)
 			isPlayerHoldingDownBasicAttack = false
 			network:fire("signalBasicAttacking", false)
 		end
-		
+
 	end
 end
 
@@ -288,7 +288,7 @@ local function onAttackInteractionSoundPlayed(position, soundName)
 	if not position then
 		position = player.Character.PrimaryPart.Position
 	end
-	
+
 	utilities.playSound(soundName, position)
 end
 network:connect("attackInteractionSoundPlayed", "OnClientEvent", onAttackInteractionSoundPlayed)
@@ -296,17 +296,17 @@ network:connect("attackInteractionSoundPlayed", "OnClientEvent", onAttackInterac
 local function onAttackInteractionAttackableAttacked(attackingPlayer, part, hitPosition)
 	local module = part:FindFirstChild("attackableScript")
 	if not module then return end
-	
+
 	-- hit effects
 	network:fire("monsterDamagedAtPosition", hitPosition, attackingPlayer ~= player)
-	
+
 	module = require(module)
 	module.onAttackedClient(attackingPlayer)
 end
 network:connect("attackInteractionAttackableAttacked", "OnClientEvent", onAttackInteractionAttackableAttacked)
 
 
-local function shake(model)	
+local function shake(model)
 	if model and model:IsA("Model") then
 		if model.PrimaryPart then
 			local originalCFrameValue = model:FindFirstChild("originalCFrame")
@@ -320,28 +320,28 @@ local function shake(model)
 			local primaryPart = model.PrimaryPart
 			local rootCFrame =	originalCFrame * CFrame.new(0, -primaryPart.Size.Y/2, 0) * CFrame.Angles(0, math.pi * 2 * math.random(), 0)
 			local offset = rootCFrame:ToObjectSpace(originalCFrame)
-			
+
 			local dummyPart = Instance.new("Part")
 			dummyPart.CFrame = rootCFrame
-			
+
 			local shakeTime = 0.2
 			local easingStyle = Enum.EasingStyle.Quad
 			tween(dummyPart, {"CFrame"}, rootCFrame * CFrame.Angles(0.075, 0, 0), shakeTime, easingStyle, Enum.EasingDirection.Out)
 			delay(shakeTime, function()
 				tween(dummyPart, {"CFrame"}, rootCFrame, shakeTime, easingStyle, Enum.EasingDirection.In)
 			end)
-			
+
 			effects.onHeartbeatFor(shakeTime * 2, function()
 				model:SetPrimaryPartCFrame(dummyPart.CFrame:ToWorldSpace(offset))
-			end)	
-		end					
-	end	
+			end)
+		end
+	end
 end
 
 local hitInteractions = {}
 local function attackInteraction(interaction, part)
 	local name = part.Name:lower()
-	
+
 	-- leafy boy
 	if (name == "grass") or (name == "leaf") or (name == "bush") or (name == "green") then
 		if not interaction["strikeFoliage"] then
@@ -349,15 +349,15 @@ local function attackInteraction(interaction, part)
 			onAttackInteractionSoundPlayed(part.Position, soundName)
 			network:fireServer("attackInteractionSoundPlayed", part, soundName)
 
-			shake(part.Parent)					
+			shake(part.Parent)
 		end
 	end
-	
+
 	-- stumpy dude
 	if (name == "stump") or (name == "log") or (name == "wood") then
 		shake(part.Parent)
 	end
-	
+
 	--attackable interactable ableables!
 	if collectionService:HasTag(part, "attackable") then
 		if part.Parent:IsA("Model") and part.Parent.Parent.Name == "Nodes" and part:IsDescendantOf(placeSetup.getPlaceFolder("resourceNodes")) then
@@ -369,7 +369,7 @@ local function attackInteraction(interaction, part)
 			onAttackInteractionAttackableAttacked(player, part, hitPosition)
 			network:fireServer("attackInteractionAttackableAttacked", part, hitPosition)
 		end
-		
+
 	end
 end
 
@@ -377,7 +377,7 @@ local function doAttackInteractions(guid)
 	local interaction = hitInteractions[guid]
 	if not interaction then
 		interaction = {}
-		
+
 		-- save this interaction for a bit, then
 		-- get rid of it to avoid memory leaks
 		hitInteractions[guid] = interaction
@@ -385,7 +385,7 @@ local function doAttackInteractions(guid)
 			hitInteractions[guid] = nil
 		end)
 	end
-	
+
 	for _, part in pairs(currentWeaponManifest:GetTouchingParts()) do
 		if not interaction[part] then
 			interaction[part] = true
@@ -399,27 +399,27 @@ local function performClientDamageCycle(sourceType, sourceId, guid)
 	if (sourceType == "equipment" and currentWeaponManifest) then
 		if not hitDebounceTable[guid] then
 			hitDebounceTable[guid] = {}
-			
+
 			-- invalidate this GUID in 5 seconds
 			-- if an exploiter messes with this, oh well. have fun with a memory leak.
 			delay(5, function()
 				hitDebounceTable[guid] = nil
 			end)
 		end
-		
+
 		doAttackInteractions(guid)
-		
+
 		local sizeIncrease = 1 + network:invoke("getCacheValueByNameTag", "nonSerializeData").statistics_final.attackRangeIncrease
-		
+
 		for i, entityManifest in pairs(utilities.getEntities()) do
 			if entityManifest ~= player.Character.PrimaryPart then
 				if not hitDebounceTable[guid][entityManifest] then
 					local boxcastOriginCF 	= currentWeaponManifest.CFrame
 					local boxProjection_serverHitbox = detection.projection_Box(entityManifest.CFrame, entityManifest.Size, boxcastOriginCF.p)
-										
+
 					if detection.boxcast_singleTarget(boxcastOriginCF, currentWeaponManifest.Size * Vector3.new(3 + sizeIncrease, 2 + sizeIncrease, 3 + sizeIncrease), boxProjection_serverHitbox) then
 						hitDebounceTable[guid][entityManifest] = true
-						
+
 						network:fire("requestEntityDamageDealt", entityManifest, boxProjection_serverHitbox, sourceType, sourceId, guid)
 					end
 				end
@@ -432,7 +432,7 @@ end
 
 local function int_getCurrentlyEquippedEquipmentType()
 	local weaponData = getPlayerEquipmentSlotDataForWeapon()
-	
+
 	return itemData[weaponData.id].equipmentType
 end
 
@@ -445,31 +445,31 @@ local function main()
 	network:create("getCurrentlyEquippedEquipmentType", "BindableFunction", "OnInvoke", int_getCurrentlyEquippedEquipmentType)
 	network:create("setCanPlayerBasicAttack", "BindableFunction", "OnInvoke", onSetCanPlayerBasicAttack)
 	network:create("requestEntityDamageDealt", "BindableEvent", "Event", handleRequestEntityDamageRequest)
-	
+
 	network:create("performClientDamageCycle", "BindableFunction", "OnInvoke", performClientDamageCycle)
 	network:connect("propogationRequestToSelf", "Event", onPropogationRequestToSelf)
 
 	currentWeaponManifest = network:invoke("getCurrentWeaponManifest")
-	
+
 	network:connect("myClientCharacterWeaponChanged", "Event", onMyClientCharacterWeaponChanged)
-	
+
 	local equipment = network:invoke("getCacheValueByNameTag", "equipment")
-	
+
 	-- render character listener --
 	local newMyClientCharacterContainer = network:invoke("getMyClientCharacterContainer")
 	if newMyClientCharacterContainer then
 		onMyClientCharacterContainerChanged(newMyClientCharacterContainer)
 	end
-	
+
 	network:connect("myClientCharacterContainerChanged", "Event", onMyClientCharacterContainerChanged)
-	
+
 	-- get player character --
 	if player.Character then
 		onCharacterAdded(player.Character)
 	end
-	
+
 	player.CharacterAdded:connect(onCharacterAdded)
-	
+
 	userInputService.InputBegan:connect(onInputBegan)
 	userInputService.InputEnded:connect(onInputEnded)
 end
