@@ -1,10 +1,12 @@
 local staff_manager = {}
 
+local replicatedStorage = game:GetService("ReplicatedStorage")
+
 local modules = require(replicatedStorage:WaitForChild("modules"))
 local projectile 	= modules.load("projectile")
 
 
-funnction staff_manager.PlayAnimation(animationToBePlayed,extraData,configuration)
+function staff_manager.PlayAnimation(animationToBePlayed,extraData,configuration)
     if animationToBePlayed and not extraData.noRangeManaAttack and configuration.getConfigurationValue("doUseMageRangeAttack", game.Players.LocalPlayer) then
         local magicBullet 		= assetFolder.mageBullet:Clone()
         magicBullet.CanCollide 	= false

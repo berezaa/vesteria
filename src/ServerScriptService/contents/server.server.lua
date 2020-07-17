@@ -53,8 +53,9 @@ local function main()
 
 	-- not sure where else to put this... turn sounds into values BC Roblox sound memory is weird -ber
 	-- utilities.playSound should fix this for us
+	local soundFolder = game.ReplicatedStorage.assets.sounds
 
-	for _, sound in pairs(game.ReplicatedStorage.assets.sounds:GetChildren()) do
+	for _, sound in pairs(soundFolder:GetChildren()) do
 		if sound:IsA("Sound") then
 			local mirror = Instance.new("StringValue")
 			mirror.Name = sound.Name
@@ -74,7 +75,7 @@ local function main()
 				child.Parent = mirror
 			end
 			sound:Destroy()
-			mirror.Parent = game.ReplicatedStorage.assets.sounds
+			mirror.Parent = soundFolder
 		end
 	end
 end

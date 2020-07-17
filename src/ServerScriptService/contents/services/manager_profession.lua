@@ -5,8 +5,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Modules = require(ReplicatedStorage.modules)
 local Network = Modules.load("network")
 
-function getProfessionLevel(player, profession)
-	local playerData = playerDataContainer[player]
+local modules = require(game.ReplicatedStorage:WaitForChild("modules"))
+local network = modules.load("network")
+local levels = modules.load("levels")
+local professionLookup = require(game.ReplicatedStorage:WaitForChild("professionLookup"))
+
+local function getProfessionLevel(player, profession)
+	local playerData = network:invoke("getPlayerData", player)
 	if playerData then
 		if professionLookup[profession] then
 			playerData.professions[profession] = playerData.professions[profession] or {level = 1, exp = 0}
@@ -17,8 +22,8 @@ end
 
 Network:create("getProfessionLevel", "BindableFunction", "OnInvoke", getProfessionLevel)
 
-function grantProfessionExp(player, profession, exp)
-	local playerData = playerDataContainer[player]
+local function grantProfessionExp(player, profession, exp)
+	local playerData = network:invoke("getPlayerData", player)
 	if playerData then
 		-- professions are not hard-coded, can be added at any time.
 		playerData.professions[profession] = playerData.professions[profession] or {level = 1, exp = 0}

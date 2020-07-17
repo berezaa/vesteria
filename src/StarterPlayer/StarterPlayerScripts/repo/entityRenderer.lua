@@ -1,7 +1,6 @@
 -- Master script that handles entity rendering
 -- Main Author: Polymorphic
 -- Co-Author: berezaa
---Funny man who is making it not 7k Lines long: lmaginationBurst
 
 local module = {}
 local client = game.Players.LocalPlayer
@@ -27,7 +26,7 @@ local events = modules.load("events")
 local bow_manager = require(coreRenderServices:WaitForChild("bow_manager"))
 local staff_manager = require(coreRenderServices:WaitForChild("staff_manager"))
 local melee_manager = require(coreRenderServices:WaitForChild("melee_manager"))
-local appearance_manager = require(coreRenderServices:WaitForChild("appearence_manager"))
+local appearance_manager = require(coreRenderServices:WaitForChild("appearance_manager"))
 local ragdoll_manager = require(coreRenderServices:WaitForChild("ragdoll_manager"))
 local item_manager = require(coreRenderServices:WaitForChild("item_manager"))
 local defaultCharacterAppearance = require(replicatedStorage:WaitForChild("defaultCharacterAppearance"))

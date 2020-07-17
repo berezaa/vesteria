@@ -10,7 +10,7 @@ local numberGenerator_enchantment = Random.new()
 local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlotDataFromPlayer, equipmentInventorySlotDataFromPlayer, itemLocationView, playerInput)
 	itemLocationView = itemLocationView or "inventory"
 
-	local playerData = playerDataContainer[player]
+	local playerData = network:invoke("getPlayerData", player)
 	if playerData and equipmentInventorySlotDataFromPlayer.id and (itemLocationView == "inventory" or itemLocationView == "equipment") then
 		local itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment do
 			if (itemLocationView == "inventory") then
@@ -44,7 +44,7 @@ local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlo
 			local success = enchantment.applyEnchantment(itemLocationViewSlotData_equipment)
 
 			if success then
-				local wasSpent = int__tradeItemsBetweenPlayerAndNPC(player, {}, cost, {}, 0, "etc:enchant")
+				local wasSpent = network:invoke("tradeItemsBetweenPlayerAndNPC", player, {}, cost, {}, 0, "etc:enchant")
 				if not wasSpent then
 					Network:invoke("reportError", player, "error", "Enchantment went through but money wasn't spent??")
 				end

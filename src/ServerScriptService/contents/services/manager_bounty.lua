@@ -1,12 +1,12 @@
 local module = {}
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local Modules = require(ReplicatedStorage.modules)
-local Network = Modules.load("network")
+local modules = require(game.ReplicatedStorage:WaitForChild("modules"))
+local network = modules.load("network")
+local levels = modules.load("levels")
+local monsterLookup = require(game.ReplicatedStorage:WaitForChild("monsterLookup"))
 
 local function playerRequest_claimBounty(player, monsterName)
-	local playerData = playerDataContainer[player]
+	local playerData = network:invoke("getPlayerData", player)
 	if not playerData then
 		return false, "PlayerData not found."
 	end
@@ -17,20 +17,20 @@ local function playerRequest_claimBounty(player, monsterName)
 	local monster = monsterLookup[monsterName]
 	if monster then
 		local page = monster.monsterBookPage
-		local playerBountyData = playerData.bountyBook[monsterName]
-		if page and playerBountyData then
+		local bountyData = playerData.bountyBook
+		local monsterData = bountyData[monsterName]
+		if page and monsterData then
 			local bountyPageInfo = levels.bountyPageInfo[tostring(page)]
-			local lastBounty = playerBountyData.lastBounty or 0
+			local lastBounty = monsterData.lastBounty or 0
 			local bountyInfo = bountyPageInfo[lastBounty + 1]
-			if bountyInfo and playerBountyData.kills >= bountyInfo.kills then
+			if bountyInfo and monsterData.kills >= bountyInfo.kills then
 				-- this line is duplicated in client monsterBook ui module
-				local goldReward = levels.getBountyGoldReward(bountyInfo, monster)
+				local money = math.floor(levels.getBountyGoldReward(bountyInfo, monster))
 				local rewards = {}
-				local wasRewarded = int__tradeItemsBetweenPlayerAndNPC(player, {}, 0, rewards, math.floor(goldReward), "etc:bounty")
+				local wasRewarded = network:invoke("tradeItemsBetweenPlayerAndNPC", player, {}, 0, rewards, money, "etc:bounty")
 				if wasRewarded then
-					playerBountyData.lastBounty = lastBounty + 1
-					--playerBountyData.kills = 0
-					onClientRequestPropogateCacheData(player, "bountyBook")
+					monsterData.lastBounty = lastBounty + 1
+					playerData.nonSerializeData.setPlayerData("bountyBook", bountyData)
 					return true
 				end
 				return false, "No room in inventory."
@@ -41,6 +41,6 @@ local function playerRequest_claimBounty(player, monsterName)
 	end
 end
 
-Network:create("playerRequest_claimBounty", "RemoteFunction", "OnServerInvoke", playerRequest_claimBounty)
+network:create("playerRequest_claimBounty", "RemoteFunction", "OnServerInvoke", playerRequest_claimBounty)
 
 return module
