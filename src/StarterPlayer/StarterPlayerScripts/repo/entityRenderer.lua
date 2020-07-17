@@ -5,10 +5,11 @@
 local module = {}
 local client = game.Players.LocalPlayer
 
-local repo = client:WaitForChild("repo")
+local repo = script.Parent
 local coreRenderServices = repo:WaitForChild("coreRenderServices")
 
-local assetFolder = client:WaitForChild("assets")
+local assetFolder = script.Parent.Parent:WaitForChild("assets")
+
 
 local runService = game:GetService("RunService")
 local httpService = game:GetService("HttpService")
@@ -22,6 +23,7 @@ local placeSetup = modules.load("placeSetup")
 local projectile = modules.load("projectile")
 local configuration = modules.load("configuration")
 local events = modules.load("events")
+local replicatedStorageAssetFolder = replicatedStorage:WaitForChild("assets")
 
 local bow_manager = require(coreRenderServices:WaitForChild("bow_manager"))
 local staff_manager = require(coreRenderServices:WaitForChild("staff_manager"))
@@ -92,7 +94,7 @@ local function int__updateRenderCharacter(renderCharacter, appearanceData, _enti
 		end
 	end
 
-	appearance_manager.ApplySkinColor(appearanceData,renderCharacter,accessoryLookup)
+	appearance_manager.ApplySkinColor(appearanceData,renderCharacter,accessoryLookup,replicatedStorageAssetFolder)
 
 	local hatEquipmentData
 	local inventoryCountLookup = getInventoryCountLookupTableByItemId()
@@ -113,10 +115,10 @@ local function int__updateRenderCharacter(renderCharacter, appearanceData, _enti
 	item_manager.IterateThroughItems(renderCharacter,appearanceData)
 
 	-- equipping new stuff
-	item_manager.EquipNewItem(appearanceData,currentlyEquipped,renderCharacter,_entityManifest,entitiesBeingRendered,animationInterface,associatePlayer,client,assetFolder)
+	item_manager.EquipNewItem(appearanceData,renderCharacter,_entityManifest,entitiesBeingRendered,animationInterface,associatePlayer,client,assetFolder)
 
 	if appearanceData and appearanceData.accessories then
-		appearance_manager.LoadAppearence(accessoryLookup,appearanceData,hatEquipmentData,itemLookup,renderCharacter)
+		appearance_manager.LoadAppearence(replicatedStorageAssetFolder.accessories,appearanceData,hatEquipmentData,itemLookup,renderCharacter)
 	end
 
 	if appearanceData and appearanceData.temporaryEquipment then
@@ -716,7 +718,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 					end
 				end
 			elseif entityManifest.entityType.Value == "character" then
-				local weaponStateAppendment = item_manager.GetWeaponStateAppendment(currentlyEquipped,renderEntityData)
+				local weaponStateAppendment = item_manager.GetWeaponStateAppendment(renderEntityData)
 
 				local animationNameToLookFor = newState do
 					if entityManifest.entityId.Value ~= "" then
@@ -733,20 +735,17 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 					end
 				end
 
-				if associatePlayer and associatePlayer:FindFirstChild("class") and characterEntityAnimationTracks.movementAnimations[string.lower(associatePlayer.class.Value) .. "_" .. animationNameToLookFor .. weaponStateAppendment] then
-					animationNameToLookFor = string.lower(associatePlayer.class.Value) .. "_" .. animationNameToLookFor .. weaponStateAppendment
+				if weaponStateAppendment then
+					if associatePlayer and associatePlayer:FindFirstChild("class") and characterEntityAnimationTracks.movementAnimations[string.lower(associatePlayer.class.Value) .. "_" .. animationNameToLookFor .. weaponStateAppendment] then
+						animationNameToLookFor = string.lower(associatePlayer.class.Value) .. "_" .. animationNameToLookFor .. weaponStateAppendment
+					end
 				end
+				print(renderEntityData.entityContainer.entity)
+				local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderEntityData.entityContainer.entity)
 
 				if characterEntityAnimationTracks.movementAnimations[animationNameToLookFor] or (currentlyEquipped["1"] and currentlyEquipped["1"].baseData.equipmentType and characterEntityAnimationTracks.movementAnimations[animationNameToLookFor .. "_" .. currentlyEquipped["1"].baseData.equipmentType .. weaponStateAppendment]) then
-					if currentlyEquipped["1"] and currentlyEquipped["1"].baseData and currentlyEquipped["1"].baseData.equipmentType then
-						local fullAnimationName = animationNameToLookFor.."_"..currentlyEquipped["1"].baseData.equipmentType..weaponStateAppendment
 
-						currentPlayingStateAnimation =
-							characterEntityAnimationTracks.movementAnimations[fullAnimationName] or
-							characterEntityAnimationTracks.movementAnimations[animationNameToLookFor]
-					else
-						currentPlayingStateAnimation = characterEntityAnimationTracks.movementAnimations[animationNameToLookFor]
-					end
+					currentPlayingStateAnimation = item_manager.CheckForCurrentlyEquippedForAnim(animationNameToLookFor,weaponStateAppendment,characterEntityAnimationTracks,currentPlayingStateAnimation,renderEntityData.entityContainer.entity)
 
 					if currentPlayingStateAnimation then
 						if previousKeyframeReached_event then

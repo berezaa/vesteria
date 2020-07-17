@@ -259,7 +259,7 @@ local function main()
 							end
 						end
 
-						local randPart = spawnParts[rand:NextInteger(#spawnParts)]
+						local randPart = spawnParts[rand:NextInteger(1,#spawnParts)]
 
 						-- fix the randomization here
 						local randomX = rand:NextInteger(randPart.Position.X - randPart.Size.X/2, randPart.Position.X + randPart.Size.X/2)
