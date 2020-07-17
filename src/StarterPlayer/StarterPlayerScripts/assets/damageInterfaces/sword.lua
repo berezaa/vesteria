@@ -6,14 +6,14 @@ local httpService 		= game:GetService("HttpService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
 
-local abilityAnimations = game:GetService("ReplicatedStorage"):WaitForChild("assets"):WaitForChild("abilityAnimations")
+local abilityAnimations = game:GetService("ReplicatedStorage"):WaitForChild("assetsFolder"):WaitForChild("abilityAnimations")
 
 
-	local modules = require(replicatedStorage.modules)
-		local network 		= modules.load("network")
-		local utilities 	= modules.load("utilities")
-		local detection 	= modules.load("detection")
-		local placeSetup 	= modules.load("placeSetup")
+local modules = require(replicatedStorage.modules)
+local network 		= modules.load("network")
+local utilities 	= modules.load("utilities")
+local detection 	= modules.load("detection")
+local placeSetup 	= modules.load("placeSetup")
 
 local currentDamageGUID = httpService:GenerateGUID(false)
 

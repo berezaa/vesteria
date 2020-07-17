@@ -36,6 +36,7 @@ local entityRenderCollectionFolder = placeSetup.awaitPlaceFolder("entityRenderCo
 local entityManifestCollectionFolder = placeSetup.awaitPlaceFolder("entityManifestCollection")
 local itemsFolder = placeSetup.awaitPlaceFolder("items")
 local entitiesFolder = placeSetup.awaitPlaceFolder("entities")
+local assetsFolder = replicatedStorage:WaitForChild("assetsFolder")
 
 local currentlyEquipped
 local currentWeaponManifest
@@ -230,7 +231,7 @@ local function onMyClientCharacterContainerChanged(newMyClientCharacterContainer
 		currentlyEquipped:equip()
 	end
 
-	castingAnimation = animationController:LoadAnimation(game.ReplicatedStorage.assets.abilityAnimations.rock_throw_upper_loop)
+	castingAnimation = animationController:LoadAnimation(assetsFolder.abilityAnimations.rock_throw_upper_loop)
 end
 
 local function onCharacterAdded(character)

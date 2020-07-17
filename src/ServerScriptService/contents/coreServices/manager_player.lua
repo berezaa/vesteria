@@ -4567,6 +4567,7 @@ local function main()
 	network:create("clientFlushPropogationCache", "RemoteEvent", "OnServerEvent", onClientRequestFlushPropogationCache)
 	network:create("getPlayerEquipment", "RemoteFunction", "OnServerInvoke", onGetPlayerEquipment)
 	network:create("playerRequest_getPlayerEquipmentData", "RemoteFunction", "OnServerInvoke", onGetPlayerEquipment)
+	network:create("dataRecoveryRequested", "RemoteEvent", "OnServerEvent", onDataRecoveryRequested)
 	network:create("playerEquipmentChanged", "RemoteEvent")
 
 	network:create("requestSplitInventorySlotDataStack", "RemoteFunction", "OnServerInvoke", onRequestSplitInventorySlotDataStack)

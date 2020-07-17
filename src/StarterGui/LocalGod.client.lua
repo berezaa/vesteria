@@ -28,8 +28,6 @@ local Libs = {
 }
 
 local Ignore = {}
-
-
 local currentModule
 
 local function printError(...)
@@ -41,13 +39,11 @@ end
 
 local function AddModule(Ins)
 	local Success, Error = pcall(function()
-
 		Modules[Ins.Name] = require(Ins)
 	end)
+
 	if not Success then
-
 		printError("Error requiring module "..Ins.Name.."! Module failed to load")
-
 		printError(Error)
 	end
 end
@@ -61,10 +57,6 @@ local function scan(Ins)
 		scan(Child)
 	end
 end
-
-
-
-
 
 local function Init()
 	currentProcess = "requiring"

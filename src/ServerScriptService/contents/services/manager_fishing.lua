@@ -8,6 +8,8 @@ local network= modules.load("network")
 local placeSetup = modules.load("placeSetup")
 local physics = modules.load("physics")
 
+local assetsFolder = replicatedStorage.assetsFolder
+
 local httpService = game:GetService("HttpService")
 local itemLookupContainer = replicatedStorage.itemData
 local itemLookup = require(itemLookupContainer)
@@ -15,12 +17,12 @@ local itemLookup = require(itemLookupContainer)
 local LATENCY_FORGIVENESS_AFTER_BOBBING = 2.2
 
 
-local spawnRegionCollectionsFolder 		= placeSetup.getPlaceFolder("fishingRegionCollections")
+local spawnRegionCollectionsFolder = placeSetup.getPlaceFolder("fishingRegionCollections")
 
 -- keep leveling data for the fish here
 local fishpedia = {
-	["Fresh Fish"] 	= {id = "fish"; level = 1; expMulti = 1; favoredRodLevel = 1;};
-	["Zebra Fish"] 	= {id = "pretty pink fish"; level = 1; expMulti = 1; favoredRodLevel = 1;};
+	["Fresh Fish"] = {id = "fish"; level = 1; expMulti = 1; favoredRodLevel = 1;};
+	["Zebra Fish"] = {id = "pretty pink fish"; level = 1; expMulti = 1; favoredRodLevel = 1;};
 	["Rock Fish"] = {id = "tall blue fish";   level = 2; expMulti = 1; favoredRodLevel = 1;};
 
 }
@@ -53,16 +55,16 @@ local fishPool = {
 }
 
 local baseHitbox do
-	baseHitbox 					= script.spot:Clone() --Instance.new("Part")
-	--[[baseHitbox.TopSurface 		= Enum.SurfaceType.Smooth
-	baseHitbox.BottomSurface 	= Enum.SurfaceType.Smooth
-	baseHitbox.Shape 			= Enum.PartType.Cylinder
-	baseHitbox.Orientation      = Vector3.new(0, 0, -90)
-	baseHitbox.Size             = Vector3.new(1, 3, 3)
-	baseHitbox.Transparency 	= 1]]--
+	baseHitbox = assetsFolder.entities.spot:Clone() --Instance.new("Part")
+	--[[baseHitbox.TopSurface = Enum.SurfaceType.Smooth
+	baseHitbox.BottomSurface = Enum.SurfaceType.Smooth
+	baseHitbox.Shape = Enum.PartType.Cylinder
+	baseHitbox.Orientation = Vector3.new(0, 0, -90)
+	baseHitbox.Size = Vector3.new(1, 3, 3)
+	baseHitbox.Transparency = 1]]--
 
-	baseHitbox.CanCollide 		= true
-	baseHitbox.Anchored 		= true
+	baseHitbox.CanCollide = true
+	baseHitbox.Anchored = true
 	--script.bubbles:Clone().Parent = baseHitbox
 	--script.SurfaceLight:Clone().Parent = baseHitbox
 
@@ -204,7 +206,8 @@ local function playerRequest_reelFishingRod(player, bobPosition)
 			local fishVelocity 	= -Vector3.new(r.lookVector.X, r.lookVector.Y * 1.4, r.lookVector.Z) * 50
 			fish.Velocity 		= fishVelocity
 
-			Instance.new("Attachment", fish)
+			local attachment = Instance.new("Attachment")
+			attachment.Parent = fish
 
 			fish:SetNetworkOwner(player)
 			fish.HumanoidRootPart:SetNetworkOwner(player)

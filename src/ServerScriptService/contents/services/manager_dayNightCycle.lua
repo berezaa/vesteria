@@ -11,12 +11,11 @@ local module = {}
 
 local dynamicParts = {}
 local ReplicatedStorage = game.ReplicatedStorage
-local assets = ReplicatedStorage.assets
+local assets = ReplicatedStorage.assetsFolder
 local sunRays = assets.misc.SunRays
 local depthOfField = assets.misc.DepthOfField
 local sky = assets.misc.Sky
 local atmosphere = assets.misc.Atmosphere
-
 
 -- Run the clock and handle dynamic map elements on the server.
 -- Set Lighting.ClockTime on the client. Tween using the server

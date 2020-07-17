@@ -23,7 +23,7 @@ local placeSetup = modules.load("placeSetup")
 local projectile = modules.load("projectile")
 local configuration = modules.load("configuration")
 local events = modules.load("events")
-local replicatedStorageAssetFolder = replicatedStorage:WaitForChild("assets")
+local replicatedStorageAssetFolder = replicatedStorage:WaitForChild("assetsFolder")
 
 local bow_manager = require(coreRenderServices:WaitForChild("bow_manager"))
 local staff_manager = require(coreRenderServices:WaitForChild("staff_manager"))
@@ -94,7 +94,7 @@ local function int__updateRenderCharacter(renderCharacter, appearanceData, _enti
 		end
 	end
 
-	appearance_manager.ApplySkinColor(appearanceData,renderCharacter,accessoryLookup,replicatedStorageAssetFolder)
+	appearance_manager.ApplySkinColor(appearanceData, renderCharacter, accessoryLookup, replicatedStorageAssetFolder)
 
 	local hatEquipmentData
 	local inventoryCountLookup = getInventoryCountLookupTableByItemId()
@@ -1044,7 +1044,8 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				--to-do: potentially do a unified system for animations that hold
 				if animationName == "beg" then
 					prop = assetFolder.Plate:Clone()
-					local weld = Instance.new("WeldConstraint", prop)
+					local weld = Instance.new("WeldConstraint")
+					weld.Parent = prop
 					prop.CFrame = renderEntityData.entityContainer.entity.RightHand.CFrame *CFrame.Angles(math.pi,0,0) * CFrame.new(-.5,.16,-.2)
 					weld.Part1 = prop
 					weld.Part0 = renderEntityData.entityContainer.entity.RightHand
@@ -1092,7 +1093,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				end
 
 				if animationToBePlayed then
-					melee_manager.PlayAnimation(animationSequenceName,CharacterEntityAnimationTracks,animationName,animationToBePlayed,extraData)
+					melee_manager.PlayAnimation(animationSequenceName, CharacterEntityAnimationTracks, animationName, animationToBePlayed, extraData)
 				end
 			end
 		end
@@ -2267,10 +2268,10 @@ local function int__updateNearbyEntities()
 
 		if client.Character and client.Character.PrimaryPart then
 
-			local clientPosition    = workspace.CurrentCamera.CFrame.Position
-			local entities 			= utilities.getEntities()
+			local clientPosition = workspace.CurrentCamera.CFrame.Position
+			local entities = utilities.getEntities()
 
-			for i, entityManifest in pairs(entities) do
+			for _, entityManifest in pairs(entities) do
 				local distanceAway = (entityManifest.Position - clientPosition).magnitude
 				local alwaysRendered = (entityManifest:FindFirstChild("alwaysRendered") ~= nil)
 
@@ -2299,8 +2300,6 @@ local function int__updateNearbyEntities()
 		wait(1)
 	end
 end
-
-
 
 local function getAlertColor(scale)
 	local alertColor = Color3.fromRGB(255, 89, 92);

@@ -1,6 +1,6 @@
 local melee_manager = {}
 
-function melee_manager.PlayAnimation(animationSequenceName,...)
+function melee_manager.PlayAnimation(animationSequenceName, ...)
     if
         animationSequenceName == "staffAnimations" or
         animationSequenceName == "swordAnimations" or
@@ -18,7 +18,7 @@ function melee_manager.PlayAnimation(animationSequenceName,...)
             elseif typeof(characterEntityAnimationTracks[animationSequenceName][animationName]) == "table" then
                 animationToBePlayed = animationToBePlayed[1]
 
-            for i, obj in pairs(characterEntityAnimationTracks[animationSequenceName][animationName]) do
+            for _, obj in pairs(characterEntityAnimationTracks[animationSequenceName][animationName]) do
                 obj:Play()
             end
         end

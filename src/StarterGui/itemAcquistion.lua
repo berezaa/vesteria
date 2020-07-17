@@ -8,40 +8,31 @@ local utilities = modules.load("utilities")
 local ability_utilities = modules.load("ability_utilities")
 local enchantment = modules.load("enchantment")
 
-
 local userInputService 	= game:GetService("UserInputService")
-
 local replicatedStorage = game:GetService("ReplicatedStorage")
+local textService = game:GetService("TextService")
+
 local itemsDataFolder = replicatedStorage:WaitForChild("itemData")
 local itemLookup = require(itemsDataFolder)
 local perkLookup = require(replicatedStorage:WaitForChild("perkLookup"))
 local itemAttributes = require(replicatedStorage:WaitForChild("itemAttributes"))
 
-local textService = game:GetService("TextService")
-
-
 local player = game.Players.LocalPlayer
+local playerGui = player.PlayerGui
 local itemsFolder = placeSetup.awaitPlaceFolder("items")
 
 local rootFrame = script.Parent.gameUI.itemHoverFrame
-
 local itemHoverFrame = rootFrame.contents
 local gameUI = rootFrame.Parent
 
-
-
 rootFrame.Visible = false
 
-local uiCreator = require(gameUI:WaitForChild("uiCreator"))
-
+local uiCreator = require(playerGui.uiCreator)
 local currentItemHoverData = nil
 --	currentItemHoverData.item 					= nil
 --	currentItemHoverData.pickupSizeAnimation 	= nil
 --	currentItemHoverData.regularSizeAnimation 	= nil
-
 local ITEM_ACQUISITION_RANGE = 5
-
-
 
 local pickupInteractionPromptTable = {
 	prompt = uiCreator.createInteractionPrompt({promptId = "pickupInteractionPrompt"},

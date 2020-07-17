@@ -2,16 +2,17 @@
 -- Handles chest opening and makes previously-accessed chests already open
 
 local replicatedStorage = game:GetService("ReplicatedStorage")
-	local modules = require(replicatedStorage:WaitForChild("modules"))
-		local network = modules.load("network")
-		local tween = modules.load("tween")
-		local utilities = modules.load("utilities")
-		
+local modules = require(replicatedStorage:WaitForChild("modules"))
+local network = modules.load("network")
+local tween = modules.load("tween")
+local utilities = modules.load("utilities")
+
 game.Players.LocalPlayer:WaitForChild("dataLoaded", 60)
 
 local treasureChests = {}
 local billboards = {}
 
+local assetsFolder = replicatedStorage:WaitForChild("assetsFolder")
 local assetFolder = script.Parent.Parent:WaitForChild("assets")
 local progressUi = assetFolder:WaitForChild("chestBillboard")
 
@@ -24,7 +25,7 @@ local function addBillboardToChest(treasureChest)
 		ui.Adornee = treasureChest.PrimaryPart
 		local totalChests = 0
 		local openedChests = 0
-		for i, chestInfo in pairs(treasureChests) do
+		for _, chestInfo in pairs(treasureChests) do
 			totalChests = totalChests + 1
 			if chestInfo.open then
 				openedChests = openedChests + 1
@@ -36,7 +37,7 @@ local function addBillboardToChest(treasureChest)
 		tween(ui.ImageLabel, {"ImageTransparency"}, 0, 1)
 		tween(ui.TextLabel, {"TextTransparency","TextStrokeTransparency"}, 0, 1)
 		table.insert(billboards, ui)
-	end	
+	end
 end
 
 local INTERVAL = 30 * 60 * 24
@@ -45,8 +46,6 @@ local function getTime()
 	-- 7AM/PM PT, 10AM/PM ET
 	return os.time() - INTERVAL / 12
 end
-
-
 
 local playerTreasureData = network:invoke("getCacheValueByNameTag", "treasure")
 
@@ -59,64 +58,64 @@ end)
 -- create model for chest and add it to world, hide bounding box
 local function registerTreasureChest(chestRoot)
 	local isOldStyle = game.CollectionService:HasTag(chestRoot.PrimaryPart, "interact")
-	
+
 	local chestPropsModule = chestRoot:FindFirstChild("chestProps") or script.defaultChestProps
 	local chestProps = require(chestPropsModule)
 	local defaultChestProps = require(script.defaultChestProps)
-	
+
 	-- wierd assignment here. It's getting the chest model from the chest props, or falling back on default if undefined
 	-- this should probably be cleaned up but it's 12:50AM and im tired
 	-- ~ nimblz
-	local chestModel = script.chests:FindFirstChild(
+	local chestModel = assetsFolder.chests:FindFirstChild(
 		chestProps.chestModel or defaultChestProps.chestModel
-	) or script.chests:FindFirstChild("defaultChest")
-	
-	
+	) or assetsFolder.chests:FindFirstChild("defaultChest")
+
+
 	if isOldStyle then
 		chestModel = chestRoot
 	else
 		chestModel = chestModel:Clone()
-		
+
 		chestModel.Parent = chestRoot
 	end
-	
+
 	local animationController = chestModel:WaitForChild("AnimationController")
 	local chestOpenAnimation = chestModel:WaitForChild("chestOpen")
 	local chestOpenLoopAnimation = chestModel:WaitForChild("chestOpenLoop")
-	
+
 	local chestLockedTrack = Instance.new("Animation", chestModel)
 	chestLockedTrack.Name = "chestLocked"
 	chestLockedTrack.AnimationId = "rbxassetid://3916391981"
-	
+
 	local openTrack = animationController:LoadAnimation(chestOpenAnimation);
-	local openLoopTrack = animationController:LoadAnimation(chestOpenLoopAnimation);	
+	local openLoopTrack = animationController:LoadAnimation(chestOpenLoopAnimation);
 	local lockedTrack = animationController:LoadAnimation(chestLockedTrack)
-	
+
 	openTrack.Looped = false
 	openTrack.Priority = Enum.AnimationPriority.Action
-	
+
 	lockedTrack.Looped = false
 	lockedTrack.Priority = Enum.AnimationPriority.Action
-	
+
 	openLoopTrack.Looped = true
-	openLoopTrack.Priority = Enum.AnimationPriority.Core	
-	
+	openLoopTrack.Priority = Enum.AnimationPriority.Core
+
 	local chestRootPart = chestRoot.PrimaryPart or chestRoot:WaitForChild("RootPart")
-	
+
 	local chestModelRootPart = chestModel.PrimaryPart
-	
+
 	chestModel:SetPrimaryPartCFrame(chestRootPart.CFrame * CFrame.new(0, (-chestRootPart.Size.Y/2) + (chestModelRootPart.Size.Y/2), 0))
-	
+
 	chestRootPart.Transparency = 1
-	
+
 	if not isOldStyle then
 		local attackScript = script.attackableScript:Clone()
 		attackScript.Parent = chestModelRootPart
-		
+
 		game.CollectionService:AddTag(chestModelRootPart, "attackable")
 	end
-	
-	
+
+
 	local chest = {
 		chestRoot = chestRoot;
 		chestModel = chestModel;
@@ -126,9 +125,9 @@ local function registerTreasureChest(chestRoot)
 		openLoopTrack = openLoopTrack;
 		open = false;
 	}
-	
+
 	treasureChests[chestRoot.Name] = chest
-	
+
 	local today = math.floor(getTime() / INTERVAL)
 	local chestData = playerTreasureData["place-"..game.PlaceId].chests[chestModel.Name]
 	local specialContents = chestModel:FindFirstChild("inventory") or chestModel:FindFirstChild("ironChest") or chestModel:FindFirstChild("goldChest")
@@ -158,8 +157,7 @@ local function openTreasureChest(treasureChest)
 	if chestInfo and not chestInfo.open then
 		local chestModel = chestInfo.chestModel
 		local glow = chestModel:FindFirstChild("Glow")
-		
-		
+
 		if game.ReplicatedStorage.sounds:FindFirstChild("chest_unlock") then
 --			local sound = game.ReplicatedStorage.sounds.chest_unlock:Clone()
 --			sound.Parent = chestModel.PrimaryPart
@@ -167,27 +165,27 @@ local function openTreasureChest(treasureChest)
 --			game.Debris:AddItem(sound,10)
 			utilities.playSound("chest_unlock", chestModel.PrimaryPart)
 		end
-		
+
 		local lock = chestModel:FindFirstChild("Lock")
 		if lock then
 			tween(lock, {"Transparency"}, 1, 1)
 		end
-		
+
 		local rewards, status = network:invokeServer("playerRequest_openTreasureChest", treasureChest)
-		
+
 		if status then
 			return nil, status
 		end
-		
+
 		chestInfo.open = true
-		
+
 		local track
 		if rewards then
 			track = chestInfo.openTrack
 		else
 			track = chestInfo.lockedTrack
 		end
-		
+
 		if rewards then
 			track:Play()
 			track.KeyframeReached:connect(function(key)
@@ -210,19 +208,19 @@ local function openTreasureChest(treasureChest)
 						game.Debris:AddItem(sound,10)
 						]]
 						utilities.playSound("chest_reward", glow)
-					end									
+					end
 				end
 			end)
-	--		addBillboardToChest(chestModel)			
+	--		addBillboardToChest(chestModel)
 		elseif status and typeof(status) == "number" then
 			glow.Transparency = 1
 			track:Play()
-			
+
 			track.KeyframeReached:connect(function(key)
 				if key == "opened" then
 					chestInfo.openLoopTrack:Play()
 				end
-			end)		
+			end)
 			if script.Parent.Parent:FindFirstChild("goldChest") or script.Parent.Parent:FindFirstChild("ironChest") then
 				local alert = {
 					text = "You've already opened this chest.";
@@ -232,10 +230,10 @@ local function openTreasureChest(treasureChest)
 					textStrokeTransparency = 1;
 					id = "goldchest"..script.Parent.Parent.Name;
 				}
-		--		Modules.notifications.alert(alert, 3)				
-				network:fire("alert", {text = alert}, 2)		
+		--		Modules.notifications.alert(alert, 3)
+				network:fire("alert", {text = alert}, 2)
 			else
-				
+
 				for i=0,2 do
 					local alert = {
 						text = "Chest can be opened again in " .. utilities.timeToString(status - i);
@@ -245,7 +243,7 @@ local function openTreasureChest(treasureChest)
 						textStrokeTransparency = 1;
 						id = "chest"..script.Parent.Parent.Name;
 					}
-			--		Modules.notifications.alert(alert, 3)				
+			--		Modules.notifications.alert(alert, 3)
 					network:fire("alert", {text = alert}, 1)
 					wait(1)
 				end
@@ -257,15 +255,15 @@ local function openTreasureChest(treasureChest)
 					textStrokeTransparency = 1;
 					id = "chest"..script.Parent.Parent.Name;
 				}
-		--		Modules.notifications.alert(alert, 3)				
-				network:fire("alert", alert, 0.5)		
-				
+		--		Modules.notifications.alert(alert, 3)
+				network:fire("alert", alert, 0.5)
+
 			end
 		end
-		return rewards, status		
+		return rewards, status
 	end
 	return nil, "You cant open that."
-end		
+end
 network:create("openTreasureChest_client", "BindableFunction", "OnInvoke", openTreasureChest)
 
 

@@ -3,13 +3,15 @@ local collectionService = game:GetService("CollectionService")
 local modules = require(game.ReplicatedStorage.modules)
 local network = modules.load("network")
 
+local assetsFolder = game.ReplicatedStorage:WaitForChild("assetsFolder")
+
 local placeIdList do
 	-- main game
 	if game.GameId == 833209132 then
 		placeIdList = {
 			2119298605, -- nilgarf
 		}
-		
+
 	-- free to play
 	elseif game.GameId == 712031239 then
 		placeIdList = {
@@ -39,16 +41,16 @@ end
 local orbSpawn do
 	local orbSpawnParts = collectionService:GetTagged("orbSpawn")
 	assert(#orbSpawnParts == 1, "There must be only one part in the game tagged \"orbSpawn\"")
-	
+
 	orbSpawn = Instance.new("Vector3Value")
 	orbSpawn.Name = "orbSpawn"
 	orbSpawn.Value = orbSpawnParts[1].Position
 	orbSpawn.Parent = game:GetService("ReplicatedStorage")
-	
+
 	orbSpawnParts[1]:Destroy()
 end
 
-local orb = script.orb
+local orb = assetsFolder.entities.orb
 local checkForOrbSpawn = true
 
 local function onPlayerAdded(player)
@@ -77,32 +79,32 @@ local function getCurrentDay()
 	if not vesterianDay then
 		return 0
 	end
-	
+
 	return math.floor(vesterianDay.Value + 0.5)
 end
 
 local function update()
 	local clockTime = game.Lighting.ClockTime
 	local isNight = (clockTime < 5.9) or (clockTime > 18.6) -- keep synchronized with day night cycle
-	
+
 	if isNight then
 		if checkForOrbSpawn then
 			checkForOrbSpawn = false
-			
+
 			local day = getCurrentDay()
 			local rand = Random.new(day)
-			
+
 			local placeId = placeIdList[rand:NextInteger(1, #placeIdList)]
 			if game.PlaceId == placeId then
 				spawnOrb()
 			end
-			
+
 			print("manager_orb chose "..placeId.." as the spawn location. This place is "..game.PlaceId..".")
 		end
 	else
 		if not checkForOrbSpawn then
 			checkForOrbSpawn = true
-			
+
 			if orb.Parent ~= script then
 				despawnOrb()
 			end
@@ -138,7 +140,7 @@ local function playerRequest_enchantAbility(player, orb, requestData)
 						break
 					end
 				end
-				
+
 				local abilityBaseData = abilityLookup[abilitySlotData.id](playerData)
 				if abilitySlotData and abilityBaseData then
 					local metadata = abilityBaseData.metadata
@@ -147,17 +149,17 @@ local function playerRequest_enchantAbility(player, orb, requestData)
 						local availablePoints = AP - getPlayerDataSpentAP(playerData)
 						if requestData.request == "upgrade" then
 							if metadata.upgradeCost and metadata.maxRank and availablePoints >= metadata.upgradeCost then
-								if abilitySlotData.rank > 0 and abilitySlotData.rank < metadata.maxRank then		
+								if abilitySlotData.rank > 0 and abilitySlotData.rank < metadata.maxRank then
 									abilitySlotData.rank = abilitySlotData.rank + 1
 									playerData.nonSerializeData.playerDataChanged:Fire("abilities")
 									orb.itemEnchanted:Play()
 									if orb:FindFirstChild("steady") then
 										orb.steady:Emit(50)
-									end									
-									
-									return true, "upgrade applied"									
-								end	
-							end				
+									end
+
+									return true, "upgrade applied"
+								end
+							end
 						elseif requestData.request == "variant" then
 							if abilitySlotData.variant == nil or metadata.variants[abilitySlotData.variant].default then
 								local variantData = metadata.variants[requestData.variant]
@@ -168,8 +170,8 @@ local function playerRequest_enchantAbility(player, orb, requestData)
 										orb.itemEnchanted:Play()
 										if orb:FindFirstChild("steady") then
 											orb.steady:Emit(50)
-										end																			
-										
+										end
+
 										return true, "variant applied"
 									end
 									return false, "requirements not fufilled"
