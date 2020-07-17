@@ -1,14 +1,14 @@
 local module = {}
 
-local runService = game:GetService("RunService")
 local modules = require(game:GetService("ReplicatedStorage"):WaitForChild("modules"))
-	local network = modules.load("network")
-	local configuration = modules.load("configuration")
+local assets = require(game:GetService("ReplicatedStorage"):WaitForChild("assets"))
+local network = modules.load("network")
+local configuration = modules.load("configuration")
 
 -- x = x0 + v0 * t + 0.5 * g * t ^ 2
 -- todo
 function module.simulateProjectileMotion()
-	
+
 end
 
 module.romanNumerals = {"I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII","XIV","XV","XVI","XVII","XVIII","XIX","XX"}
@@ -22,11 +22,11 @@ function module.copyTable(tableToCopy)
 			tableCopy[i] = v
 		end
 	end
-	
+
 	return tableCopy
 end
 
-function addComas(str)
+local function addComas(str)
 	return #str % 3 == 0 and str:reverse():gsub("(%d%d%d)", "%1,"):reverse():sub(2) or str:reverse():gsub("(%d%d%d)", "%1,"):reverse()
 end
 
@@ -56,7 +56,7 @@ function module.getEntities(_entityType, deadIncluded)
 				entityManifest = entityObject
 			end
 		end
-		
+
 		if entityManifest then
 			if module.isEntityManifestValid(entityManifest, deadIncluded) then
 				if not _entityType or entityManifest.entityType.Value == _entityType then
@@ -65,7 +65,7 @@ function module.getEntities(_entityType, deadIncluded)
 			end
 		end
 	end
-	
+
 	return entities
 end
 
@@ -76,7 +76,7 @@ function module.timeToString(seconds)
 	seconds = seconds - hours * 3600
 	local minutes = math.floor(seconds / 60)
 	seconds = seconds - minutes * 60
-	
+
 	local timestring = ""
 	if days > 0 then
 		timestring = timestring .. days .. "d "
@@ -89,61 +89,56 @@ function module.timeToString(seconds)
 	end
 	if seconds > 0 then
 		timestring = timestring .. seconds .. "s"
-	end	
+	end
 	return timestring
 end
 
 
--- LOCATION: Part, Vector3 or CFrame	
+-- LOCATION: Part, Vector3 or CFrame
 -- location and duration are optional
 
-function module.soundFromMirror(mirror)
-	local sound = Instance.new("Sound")
-	for property, value in pairs(game.HttpService:JSONDecode(mirror.Value)) do
-		sound[property] = value
-	end
-	for _, child in pairs(mirror:GetChildren()) do
-		child:Clone().Parent = sound
-	end	
-	return sound
-end	
-		
-				
+
 function module.playSound(soundName, location, duration, additionalInfo)
+	-- soundName can be an instance (deprecated)
 	local sound
 	if typeof(soundName) == "string" then
-		sound = module.soundFromMirror(game.ReplicatedStorage.sounds:FindFirstChild(soundName))
+		local soundData = assets.sounds[soundName]
+		assert(soundData, "Sound " .. soundName .. " missing from assets.")
+		sound = Instance.new("Sound")
+		for property, value in pairs(soundData) do
+			sound[property] = value
+		end
 	else
 		sound = soundName
 	end
-	
+
 	if sound then
 		if location then
 			if typeof(location) == "Instance" and location:IsA("BasePart") then
 				-- existing part
-				
+
 				sound.Volume = additionalInfo and additionalInfo.volume or sound.Volume
 				sound.EmitterSize = additionalInfo and additionalInfo.emitterSize or sound.EmitterSize
 				sound.MaxDistance = additionalInfo and additionalInfo.maxDistance or sound.MaxDistance
-				
+
 				sound.Parent = location
 				sound:Play()
-				
+
 				if not sound.Looped then
 					game.Debris:AddItem(sound, duration or sound.TimeLength + 1)
 				elseif duration then
 					game.Debris:AddItem(sound, duration)
 				end
-				
+
 				return sound
 			else
-				-- create a new part	
+				-- create a new part
 				local targetCF
 				if typeof(location) == "CFrame" then
 					targetCF = location
 				elseif typeof(location) == "Vector3" then
 					targetCF = CFrame.new(location)
-				end	
+				end
 				if targetCF then
 					local soundPart = Instance.new("Part")
 					soundPart.Name = "soundPart"
@@ -153,22 +148,21 @@ function module.playSound(soundName, location, duration, additionalInfo)
 					soundPart.Transparency = 1
 					soundPart.CFrame = targetCF
 					soundPart.Parent = workspace.CurrentCamera
-					
+
 					sound = sound:Clone()
-					
+
 				sound.Volume = additionalInfo and additionalInfo.volume or sound.Volume
 				sound.EmitterSize = additionalInfo and additionalInfo.emitterSize or sound.EmitterSize
-				sound.MaxDistance = additionalInfo and additionalInfo.maxDistance or sound.MaxDistance					
+				sound.MaxDistance = additionalInfo and additionalInfo.maxDistance or sound.MaxDistance
 					sound.Parent = soundPart
-					
+
 					sound:Play()
 					if not sound.Looped then
 						game.Debris:AddItem(soundPart, duration or sound.TimeLength + 1)
 					elseif duration then
 						game.Debris:AddItem(soundPart, duration)
-					end		
-					return soundPart			
-				else
+					end
+					return soundPart
 				end
 			end
 		else
@@ -179,15 +173,14 @@ function module.playSound(soundName, location, duration, additionalInfo)
 				sound = sound:Clone()
 				sound.Parent = workspace.CurrentCamera
 				sound:Play()
-				game.Debris:AddItem(sound, 1 + sound.TimeLength)				
+				game.Debris:AddItem(sound, 1 + sound.TimeLength)
 			end
 
 			return sound
 		end
-	else
 	end
-end	
-	
+end
+
 
 -- welds two parts together
 function module.weld(part0, part1)
@@ -211,13 +204,13 @@ function module.safeJSONEncode(t)
 			t2[i] = {x = v.X; y = v.Y}
 		end
 	end
-	
+
 	return pcall(function() return httpService:JSONEncode(t2) end)
 end
 
 function module.safeJSONDecode(t)
 	local success, response = pcall(function() return httpService:JSONDecode(t) end)
-	
+
 	if success then
 		local t2 = module.copyTable(response)
 		for i, v in pairs(t2) do
@@ -227,10 +220,10 @@ function module.safeJSONDecode(t)
 				t2[i] = Vector2.new(v.x, v.y)
 			end
 		end
-		
+
 		return true, t2
 	end
-	
+
 	return false, nil
 end
 
@@ -240,18 +233,18 @@ function module.playerCanPickUpItem(player, item, isPet)
 	if not itemLookup then
 		itemLookup = require(game.ReplicatedStorage.itemData)
 	end
-	
+
 	if item:FindFirstChild("pickupBlacklist") and item.pickupBlacklist:FindFirstChild(tostring(player.userId)) then
 		return false
 	end
-	
+
 	if isPet and item:FindFirstChild("petsIgnore") then
 		return false
 	end
-	
+
 	if item:FindFirstChild("created") then
 		local timeSinceCreated = os.time() - item.created.Value
-		
+
 		if timeSinceCreated >= configuration.getConfigurationValue("timeForAnyonePickupItem") then
 			return true
 		elseif itemLookup[item.Name] then
@@ -260,17 +253,17 @@ function module.playerCanPickUpItem(player, item, isPet)
 			end
 		end
 	end
-	
+
 	if item:FindFirstChild("owners") then
-		for i, owner in pairs(item.owners:GetChildren()) do
+		for _, owner in pairs(item.owners:GetChildren()) do
 			if owner.Value == player or tonumber(owner.Name) == player.userId then
 				return true
 			end
 		end
-		
+
 		return false
 	end
-	
+
 	return true
 end
 
@@ -278,10 +271,10 @@ function module.magnitude(vec)
 	local x = vec.x;
 	local y = vec.y;
 	local z = vec.z;
-	
+
 	local m = (x*x + y*y + z*z)
-	
-	return m ^ .5;	
+
+	return m ^ .5;
 end
 
 function module.wipeReferences(tableToLookInto)
@@ -291,7 +284,7 @@ function module.wipeReferences(tableToLookInto)
 		elseif type(v) == "table" then
 			module.wipeReferences(v)
 		end
-		
+
 		-- do this after iterating through v to make sure we get deepest references
 		if typeof(i) == "Instance" then
 			tableToLookInto[i] = nil
@@ -300,7 +293,7 @@ function module.wipeReferences(tableToLookInto)
 end
 
 function module.isSafeToProcess(part, doWaitForChild, ...)
-	for i, v in pairs({...}) do
+	for _, v in pairs({...}) do
 		if doWaitForChild then
 			part:WaitForChild(v)
 		else
@@ -309,31 +302,31 @@ function module.isSafeToProcess(part, doWaitForChild, ...)
 			end
 		end
 	end
-	
+
 	return true
 end
 
 function module.isInTable(t, valueToLookFor)
-	for i, v in pairs(t) do
+	for _, v in pairs(t) do
 		if v == valueToLookFor then
 			return true
 		end
 	end
-	
+
 	return false
 end
 
 local itemWeightSelectionGenerator = Random.new()
 function module.selectFromWeightTable(weightTable)
 	local sum = 0
-	for i, item in pairs(weightTable) do
+	for _, item in pairs(weightTable) do
 		sum = sum + item.selectionWeight
 	end
-	
+
 	while true do
 		local rIndex 	= itemWeightSelectionGenerator:NextInteger(1, #weightTable)
 		local item 		= weightTable[rIndex]
-		
+
 		if item then
 			if sum - item.selectionWeight > 0 then
 				sum = sum - item.selectionWeight
@@ -371,27 +364,27 @@ local function resizeModelInternal(model, resizeFactor)
 	local joints = {}
 	local jointParents = {}
 	local meshes = {}
- 
+
 	findObjectHelper(model, ".*", "BasePart", baseParts)
 	findObjectHelper(model, ".*", "JointInstance", joints)
- 
+
 	-- meshes don't inherit from anything accessible?
 	findObjectHelper(model, ".*", "FileMesh", meshes)                    -- base class for SpecialMesh and FileMesh
 	findObjectHelper(model, ".*", "CylinderMesh", meshes)
 	findObjectHelper(model, ".*", "BlockMesh", meshes)
- 
+
 	-- store the CFrames, so our other changes don't rearrange stuff
 	for _, basePart in pairs(baseParts) do
 		basePartCFrames[basePart] = basePart.CFrame
 	end
- 
+
 	-- scale joints
 	for _, joint in pairs(joints) do
 		joint.C0 = joint.C0 + (joint.C0.p) * (resizeFactor - 1)
 		joint.C1 = joint.C1 + (joint.C1.p) * (resizeFactor - 1)
 		jointParents[joint] = joint.Parent
 	end
- 
+
 	-- scale parts and reposition them within the model
 	for _, basePart in pairs(baseParts) do
 		-- if pcall(function() basePart.FormFactor = "Custom" end) then basePart.FormFactor = "Custom" end
@@ -400,7 +393,7 @@ local function resizeModelInternal(model, resizeFactor)
 		local oldPositionInModel = modelCFrame:pointToObjectSpace(oldCFrame.p)
 		local distanceFromCorner = oldPositionInModel + modelSize/2
 		distanceFromCorner = distanceFromCorner * resizeFactor
- 
+
 		local newPositionInSpace = modelCFrame:pointToWorldSpace(distanceFromCorner - modelSize/2)
 		basePart.CFrame = oldCFrame - oldCFrame.p + newPositionInSpace
 	end
@@ -409,12 +402,12 @@ local function resizeModelInternal(model, resizeFactor)
 	for _,mesh in pairs(meshes) do
 --		mesh.Scale = mesh.Scale * resizeFactor
 	end
- 
+
 	-- pop the joints back, because they prolly got borked
 	for _, joint in pairs(joints) do
 		joint.Parent = jointParents[joint]
 	end
- 
+
 	return model
 end
 
@@ -430,7 +423,7 @@ function module.getEntityGUIDByEntityManifest(entityManifest)
 	elseif entityManifest:FindFirstChild("entityGUID") then
 		return entityManifest.entityGUID.Value
 	end
-		
+
 	return nil
 end
 
@@ -439,20 +432,20 @@ end
 -- * Boolean isEntityInWorld [even if first argument is nil, treat it like it isn't... ie if player is respawning]
 function module.getEntityManifestByEntityGUID(entityGUID)
 	local entityManifests = module.getEntities(nil, true)
-	
+
 	for i, entityManifest in pairs(entityManifests) do
 		local _entityGUID = module.getEntityGUIDByEntityManifest(entityManifest)
 		if _entityGUID == entityGUID then
 			return entityManifest, true
 		end
 	end
-	
+
 	for i, player in pairs(game.Players:GetPlayers()) do
 		if player:FindFirstChild("entityGUID") and player.entityGUID.Value == entityGUID then
 			return nil, true
 		end
 	end
-	
+
 	return nil, false
 end
 
@@ -460,12 +453,12 @@ function module.connectEventHelper(event, func)
 	local connection
 	connection = event:connect(function(...)
 		local doDisconnect = func(...)
-		
+
 		if doDisconnect then
 			connection:disconnect()
 		end
 	end)
-	
+
 	return connection
 end
 
@@ -487,8 +480,8 @@ module.placeIdMapping = {
 	["2496503573"] = 4042381342;
 	["2119298605"] = 4042577479;
 	["2878620739"] = 4042595899;
-	["2677014001"] = 4786263828;	
-	
+	["2677014001"] = 4786263828;
+
 	["3232913902"] = 4787417227;
 	["2544075708"] = 4787415375;
 }
@@ -526,7 +519,7 @@ function module.doesPlayerHaveEquipmentPerk(player, perkName)
 	if not entityRender then return false end
 	local equipment = network:invoke("getCurrentlyEquippedForRenderCharacter", entityRender)
 	if not equipment then return false end
-	
+
 	for position, info in pairs(equipment) do
 		if info.baseData.perks then
 			for perk, active in pairs(info.baseData.perks) do
@@ -536,7 +529,7 @@ function module.doesPlayerHaveEquipmentPerk(player, perkName)
 			end
 		end
 	end
-	
+
 	return false
 end
 
@@ -544,7 +537,7 @@ function module.calculateNumArrowsFromDex(dex)
 	local numArrows = 1
 	local dexAccumulator = 0
 	local currentDexStep = 20
-	
+
 	repeat
 		dexAccumulator = dexAccumulator + currentDexStep
 		currentDexStep = currentDexStep + 10
@@ -552,7 +545,7 @@ function module.calculateNumArrowsFromDex(dex)
 			numArrows = numArrows + 1
 		end
 	until dexAccumulator >= dex
-	
+
 	return numArrows
 end
 
@@ -561,7 +554,7 @@ function module.calculatePierceFromStr(str)
 	local accumulator = 0
 	local currentStep = 20
 	local stepIncrease = 10
-	
+
 	repeat
 		accumulator = accumulator + currentStep
 		currentStep = currentStep + stepIncrease
@@ -569,23 +562,23 @@ function module.calculatePierceFromStr(str)
 			pierce = pierce + 1
 		end
 	until accumulator >= str
-	
+
 	return pierce
 end
 
 function module.doesEntityHaveStatusEffect(entity, statusEffectName)
 	local statusEffectsV2 = entity:FindFirstChild("statusEffectsV2")
 	if not statusEffectsV2 then return false end
-	
+
 	local success, statusEffects = module.safeJSONDecode(statusEffectsV2.Value)
 	if not success then return false end
-	
+
 	for _, statusEffect in pairs(statusEffects) do
 		if statusEffect.statusEffectType == statusEffectName then
 			return true
 		end
 	end
-	
+
 	return false
 end
 
@@ -594,11 +587,11 @@ function module.healEntity(sourceEntity, targetEntity, amount)
 	if not health then return end
 	local maxHealth = targetEntity:FindFirstChild("maxHealth")
 	if not maxHealth then return end
-	
+
 	local healthBefore = health.Value
 	health.Value = math.min(health.Value + amount, maxHealth.Value)
 	local trueHealing = health.Value - healthBefore
-	
+
 	if trueHealing > 1 then
 		network:fireAllClients("signal_damage", targetEntity, {
 			damage = -trueHealing,
@@ -608,34 +601,34 @@ end
 
 local function rankCheck(player)
 	wait(0.1)
-	
+
 	local playerRank = 0 do
 		local success, returnValue = pcall(function()
 			return player:GetRankInGroup(4238824)
 		end)
-		
+
 		if success and returnValue > playerRank then
 			playerRank = returnValue
 		end
 	end
-	
+
 	if game:GetService("RunService"):IsStudio() or player.Name == "berezaa" or player.Name == "Polymorphic" or player.Name == "sk3let0n" or playerRank >= 250 then
 		local devTag 	= Instance.new("BoolValue")
 		devTag.Name 	= "developer"
 		devTag.Parent 	= player
 	end
-	
+
 	if playerRank > 1 then
 		local devTag 	= Instance.new("BoolValue")
 		devTag.Name 	= "QA"
 		devTag.Parent 	= player
 --	elseif game.PlaceId == 2061558182 and not (runService:IsRunMode() or runService:IsStudio()) then
---		player:Kick("Not allowed to be here.")	
+--		player:Kick("Not allowed to be here.")
 	end
 end
 
 game.Players.PlayerAdded:connect(rankCheck)
-for i,player in pairs(game.Players:GetPlayers()) do
+for _, player in pairs(game.Players:GetPlayers()) do
 	rankCheck(player)
 end
 
