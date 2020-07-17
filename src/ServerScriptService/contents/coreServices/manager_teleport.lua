@@ -97,7 +97,7 @@ local function getReserveServerKeyForMirrorDestination(destination)
 		local mirrorWorldStore = game:GetService("DataStoreService"):GetDataStore("mirrorWorld"..configuration.getConfigurationValue("mirrorWorldVersion"))
 		reserveServerKey = mirrorWorldStore:GetAsync(tostring(destination))
 		if reserveServerKey == nil then
-			reserveServerKey = teleportService:ReserveServer(destination) 
+			reserveServerKey = teleportService:ReserveServer(destination)
 			mirrorWorldStore:SetAsync(tostring(destination), reserveServerKey)
 		end
 	end)
@@ -266,8 +266,8 @@ local function teleportPlayer(player, destination, spawnLocation, realm, telepor
 			end)
 			if teleportType == "death" and not player:FindFirstChild("disconnected") then
 				network:fireAllClients("signal_alertChatMessage", {
-					Text = playerName .. " escaped to " .. getPlaceName(destination) .. "."; 
-					Font = Enum.Font.SourceSansBold; 
+					Text = playerName .. " escaped to " .. getPlaceName(destination) .. ".";
+					Font = Enum.Font.SourceSansBold;
 					Color = Color3.fromRGB(45, 87, 255)
 				})
 			end
@@ -291,8 +291,8 @@ network:create("teleportPlayer_rune", "BindableFunction", "OnInvoke", function(p
 		spawn(function()
 
 			network:fireAllClients("signal_alertChatMessage", {
-				Text = playerName .. " departed towards " .. getPlaceName(destination) .. " using a magical rune."; 
-				Font = Enum.Font.SourceSansBold; 
+				Text = playerName .. " departed towards " .. getPlaceName(destination) .. " using a magical rune.";
+				Font = Enum.Font.SourceSansBold;
 				Color = Color3.fromRGB(45, 87, 255)
 			})
 
@@ -301,7 +301,6 @@ network:create("teleportPlayer_rune", "BindableFunction", "OnInvoke", function(p
 	return success, reason
 
 end)
-
 
 local function playerRequest_useTeleporter(player, teleporter)
 	if teleporter and teleporter:IsA("BasePart") and game.CollectionService:HasTag(teleporter, "teleportPart") and teleporter:FindFirstChild("teleportDestination") then
@@ -312,8 +311,8 @@ local function playerRequest_useTeleporter(player, teleporter)
 				spawn(function()
 
 					network:fireAllClients("signal_alertChatMessage", {
-						Text = playerName .. " departed towards " .. getPlaceName(teleporter.teleportDestination.Value) .. "."; 
-						Font = Enum.Font.SourceSansBold; 
+						Text = playerName .. " departed towards " .. getPlaceName(teleporter.teleportDestination.Value) .. ".";
+						Font = Enum.Font.SourceSansBold;
 						Color = Color3.fromRGB(45, 87, 255)
 					})
 
@@ -331,6 +330,7 @@ teleportService.TeleportInitFailed:connect(function(player, teleportResult, erro
 	network:invoke("reportError", player, "warning", "Player failed to teleport: "..errorMessage)
 end)
 
+network:create("signal_teleport", "RemoteEvent")
 network:create("saveDataForTeleportation", "RemoteFunction", "OnServerInvoke", saveDataForTeleport)
 network:create("playerRequest_savePlayerDataForTeleportation", "RemoteFunction", "OnServerInvoke", saveDataForTeleport)
 
