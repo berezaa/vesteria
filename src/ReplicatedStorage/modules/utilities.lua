@@ -1,7 +1,7 @@
 local module = {}
 
 local modules = require(game:GetService("ReplicatedStorage"):WaitForChild("modules"))
-local assets = require(game:GetService("ReplicatedStorage"):WaitForChild("assets"))
+local assets = require(game:GetService("ReplicatedStorage"):WaitForChild("assets_new"))
 local network = modules.load("network")
 local configuration = modules.load("configuration")
 
