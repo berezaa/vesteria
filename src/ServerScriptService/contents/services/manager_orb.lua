@@ -3,7 +3,7 @@ local collectionService = game:GetService("CollectionService")
 local modules = require(game.ReplicatedStorage.modules)
 local network = modules.load("network")
 
-local assetsFolder = game.ReplicatedStorage:WaitForChild("assetsFolder")
+local assetsFolder = game.ReplicatedStorage:WaitForChild("assets")
 
 local placeIdList do
 	-- main game

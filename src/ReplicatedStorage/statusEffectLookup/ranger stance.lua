@@ -1,4 +1,4 @@
-local abilityAnimations = game:GetService("ReplicatedStorage").assetsFolder:WaitForChild("abilityAnimations")
+local abilityAnimations = game:GetService("ReplicatedStorage").assets:WaitForChild("abilityAnimations")
 
 local modules = require(game:GetService("ReplicatedStorage"):WaitForChild("modules"))
 local network = modules.load("network")

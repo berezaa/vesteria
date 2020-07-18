@@ -11,7 +11,7 @@ local lookupTable = {} do
 
 		-- internal stuff
 		monsterData.module = monsterDataModule
-		monsterData.entity = replicatedStorage:WaitForChild("assetsFolder"):WaitForChild("monsters"):WaitForChild(monsterDataModule.name):WaitForChild("entity")
+		monsterData.entity = replicatedStorage:WaitForChild("assets"):WaitForChild("monsters"):WaitForChild(monsterDataModule.name):WaitForChild("entity")
 
 		local defaultStatesData = require(replicatedStorage.defaultMonsterState)
 		local statesData

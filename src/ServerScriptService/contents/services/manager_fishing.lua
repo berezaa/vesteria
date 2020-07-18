@@ -8,7 +8,7 @@ local network= modules.load("network")
 local placeSetup = modules.load("placeSetup")
 local physics = modules.load("physics")
 
-local assetsFolder = replicatedStorage.assetsFolder
+local assetsFolder = replicatedStorage.assets
 
 local httpService = game:GetService("HttpService")
 local itemLookupContainer = replicatedStorage.itemData

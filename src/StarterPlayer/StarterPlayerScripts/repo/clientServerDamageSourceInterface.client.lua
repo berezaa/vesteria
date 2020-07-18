@@ -36,7 +36,7 @@ local entityRenderCollectionFolder = placeSetup.awaitPlaceFolder("entityRenderCo
 local entityManifestCollectionFolder = placeSetup.awaitPlaceFolder("entityManifestCollection")
 local itemsFolder = placeSetup.awaitPlaceFolder("items")
 local entitiesFolder = placeSetup.awaitPlaceFolder("entities")
-local assetsFolder = replicatedStorage:WaitForChild("assetsFolder")
+local assetsFolder = replicatedStorage:WaitForChild("assets")
 
 local currentlyEquipped
 local currentWeaponManifest

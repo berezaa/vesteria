@@ -12,7 +12,7 @@ game.Players.LocalPlayer:WaitForChild("dataLoaded", 60)
 local treasureChests = {}
 local billboards = {}
 
-local assetsFolder = replicatedStorage:WaitForChild("assetsFolder")
+local assetsFolder = replicatedStorage:WaitForChild("assets")
 local assetFolder = script.Parent.Parent:WaitForChild("assets")
 local progressUi = assetFolder:WaitForChild("chestBillboard")
 

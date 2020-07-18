@@ -23,7 +23,7 @@ local placeSetup = modules.load("placeSetup")
 local projectile = modules.load("projectile")
 local configuration = modules.load("configuration")
 local events = modules.load("events")
-local replicatedStorageAssetFolder = replicatedStorage:WaitForChild("assetsFolder")
+local replicatedStorageAssetFolder = replicatedStorage:WaitForChild("assets")
 
 local bow_manager = require(coreRenderServices:WaitForChild("bow_manager"))
 local staff_manager = require(coreRenderServices:WaitForChild("staff_manager"))

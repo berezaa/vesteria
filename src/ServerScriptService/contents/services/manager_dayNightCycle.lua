@@ -11,7 +11,7 @@ local module = {}
 
 local dynamicParts = {}
 local ReplicatedStorage = game.ReplicatedStorage
-local assets = ReplicatedStorage.assetsFolder
+local assets = ReplicatedStorage.assets
 local sunRays = assets.misc.SunRays
 local depthOfField = assets.misc.DepthOfField
 local sky = assets.misc.Sky
