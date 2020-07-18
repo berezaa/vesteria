@@ -93,13 +93,12 @@ function module.timeToString(seconds)
 	return timestring
 end
 
-
 -- LOCATION: Part, Vector3 or CFrame
 -- location and duration are optional
 
-
 function module.playSound(soundName, location, duration, additionalInfo)
 	-- soundName can be an instance (deprecated)
+
 	local sound
 	if typeof(soundName) == "string" then
 		local soundData = assets.sounds[soundName]
@@ -151,9 +150,9 @@ function module.playSound(soundName, location, duration, additionalInfo)
 
 					sound = sound:Clone()
 
-				sound.Volume = additionalInfo and additionalInfo.volume or sound.Volume
-				sound.EmitterSize = additionalInfo and additionalInfo.emitterSize or sound.EmitterSize
-				sound.MaxDistance = additionalInfo and additionalInfo.maxDistance or sound.MaxDistance
+					sound.Volume = additionalInfo and additionalInfo.volume or sound.Volume
+					sound.EmitterSize = additionalInfo and additionalInfo.emitterSize or sound.EmitterSize
+					sound.MaxDistance = additionalInfo and additionalInfo.maxDistance or sound.MaxDistance
 					sound.Parent = soundPart
 
 					sound:Play()
@@ -167,7 +166,7 @@ function module.playSound(soundName, location, duration, additionalInfo)
 			end
 		else
 			-- no location provided, just play the root sound
-			if sound.Looped then
+			if sound:IsA("Sound") and sound.Looped then
 				sound:Play()
 			else
 				sound = sound:Clone()

@@ -5,7 +5,7 @@ local module = {}
 local runService = game:GetService("RunService")
 
 local promptOut
-local promptFrame = script.Parent
+local promptFrame = script.Parent.gameUI.leftBar.promptFrame
 local buttonCons = {}
 local currentDecision
 

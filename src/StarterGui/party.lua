@@ -2,8 +2,9 @@
 -- berezaa
 local module = {}
 
+local localPlayer = game:GetService("Players").LocalPlayer
+local gui = localPlayer.PlayerGui.gameUI.party
 
-local localPlayer = game.Players.LocalPlayer
 
 function module.init(Modules)
 	
@@ -25,37 +26,37 @@ function module.init(Modules)
 	end)
 
 	local function setInviteFrameSize()
-		-- script.Parent.contents.invite.Size = UDim2.new(0,250,0,50)
+		-- gui.contents.invite.Size = UDim2.new(0,250,0,50)
 		local xSize = 100
 		
-		if script.Parent.contents.invite.textBox.Visible then
+		if gui.contents.invite.textBox.Visible then
 			xSize = xSize + 150
 		end
-		if script.Parent.contents.invite.leave.Visible then
+		if gui.contents.invite.leave.Visible then
 			xSize = xSize + 50
 		end
 		
-		script.Parent.contents.invite.Size = UDim2.new(0,xSize,0,60)
+		gui.contents.invite.Size = UDim2.new(0,xSize,0,60)
 	end	
 
 	local function updateInviteButton()
-		if script.Parent.contents.invite.textBox.Visible then
-			script.Parent.contents.invite.button.Active = true
-			if game.Players:FindFirstChild(script.Parent.contents.invite.textBox.Text) then
-				script.Parent.contents.invite.button.ImageColor3 = Color3.fromRGB(82, 255, 71)
-				script.Parent.contents.invite.button.detail.Text = ">"
+		if gui.contents.invite.textBox.Visible then
+			gui.contents.invite.button.Active = true
+			if game.Players:FindFirstChild(gui.contents.invite.textBox.Text) then
+				gui.contents.invite.button.ImageColor3 = Color3.fromRGB(82, 255, 71)
+				gui.contents.invite.button.detail.Text = ">"
 			else
-				script.Parent.contents.invite.button.ImageColor3 = Color3.fromRGB(247, 138, 64)
-				script.Parent.contents.invite.button.detail.Text = "-"		
+				gui.contents.invite.button.ImageColor3 = Color3.fromRGB(247, 138, 64)
+				gui.contents.invite.button.detail.Text = "-"		
 			end					
 		else
-			script.Parent.contents.invite.button.detail.Text = "+"
+			gui.contents.invite.button.detail.Text = "+"
 			if module.currentPartyInfo == nil or #module.currentPartyInfo.members < 6 then
-				script.Parent.contents.invite.button.ImageColor3 = Color3.fromRGB(93, 249, 249)
-				script.Parent.contents.invite.button.Active = true
+				gui.contents.invite.button.ImageColor3 = Color3.fromRGB(93, 249, 249)
+				gui.contents.invite.button.Active = true
 			else
-				script.Parent.contents.invite.button.ImageColor3 = Color3.fromRGB(180,180,180)
-				script.Parent.contents.invite.button.Active = false
+				gui.contents.invite.button.ImageColor3 = Color3.fromRGB(180,180,180)
+				gui.contents.invite.button.Active = false
 			end	
 		end
 		setInviteFrameSize()
@@ -66,25 +67,25 @@ function module.init(Modules)
 	
 	local lastSelectedPartyManifest
 	
-	script.Parent.contents.invite.textBox.Changed:connect(updateInviteButton)
+	gui.contents.invite.textBox.Changed:connect(updateInviteButton)
 	
 
 	
-	script.Parent.contents.invite.leave.MouseButton1Click:connect(function()
-		script.Parent.contents.invite.leave.ImageColor3 = Color3.new(0.7,0.7,0.7)
+	gui.contents.invite.leave.MouseButton1Click:connect(function()
+		gui.contents.invite.leave.ImageColor3 = Color3.new(0.7,0.7,0.7)
 		network:invokeServer("playerRequest_leaveParty")
-		script.Parent.contents.invite.leave.ImageColor3 = Color3.fromRGB(246, 58, 63)
+		gui.contents.invite.leave.ImageColor3 = Color3.fromRGB(246, 58, 63)
 	end)
 	
 	local function closeInviteWindow()
 		Modules.focus.cleanup()
 		
-		local invite = script.Parent.contents.invite
+		local invite = gui.contents.invite
 		invite.button.Visible = true
 		invite.ImageLabel.Visible = true
 		
-		script.Parent.contents.invite.textBox.Visible = false
-		tween(script.Parent.contents.invite,{"ImageTransparency"},0.7,0.3)
+		gui.contents.invite.textBox.Visible = false
+		tween(gui.contents.invite,{"ImageTransparency"},0.7,0.3)
 		
 		if lastSelectedPartyManifest then
 			if lastSelectedPartyManifest and lastSelectedPartyManifest.Parent then
@@ -99,31 +100,31 @@ function module.init(Modules)
 	
 	local function openInviteWindow()
 		if module.currentPartyInfo == nil or #module.currentPartyInfo.members < 6 then
-			script.Parent.contents.invite.textBox.Text = ""
-			script.Parent.contents.invite.textBox.Visible = true
-			tween(script.Parent.contents.invite,{"ImageTransparency"},0,0.3)
+			gui.contents.invite.textBox.Text = ""
+			gui.contents.invite.textBox.Visible = true
+			tween(gui.contents.invite,{"ImageTransparency"},0,0.3)
 		end
 		if Modules.input.mode.Value == "xbox" then
-			if game.GuiService.SelectedObject and game.GuiService.SelectedObject:IsDescendantOf(script.Parent) then
+			if game.GuiService.SelectedObject and game.GuiService.SelectedObject:IsDescendantOf(gui) then
 				closeInviteWindow()
 			else
-				Modules.focus.change(script.Parent)
-				game.GuiService.SelectedObject = script.Parent.contents.invite				
+				Modules.focus.change(gui)
+				game.GuiService.SelectedObject = gui.contents.invite				
 			end
 		end
 		updateInviteButton()
 	end
 	
-	script.Parent.contents.invite.button.MouseButton1Click:connect(function()
-		if script.Parent.contents.invite.button.Active then
-			local buttonText = script.Parent.contents.invite.button.detail.Text
+	gui.contents.invite.button.MouseButton1Click:connect(function()
+		if gui.contents.invite.button.Active then
+			local buttonText = gui.contents.invite.button.detail.Text
 			if buttonText == ">" then
 				local success, reason = false, "Could not find player"
-				local targetPlayer = game.Players:FindFirstChild(script.Parent.contents.invite.textBox.Text)
+				local targetPlayer = game.Players:FindFirstChild(gui.contents.invite.textBox.Text)
 				if targetPlayer then
 					success, reason = network:invokeServer("playerRequest_invitePlayerToMyParty", targetPlayer)
 				end
-				local invite = script.Parent.contents.invite
+				local invite = gui.contents.invite
 				local duration = 1
 				if success then
 					Modules.notifications.alert({text = "Invited "..targetPlayer.Name.." to the party."}, 2)
@@ -136,7 +137,7 @@ function module.init(Modules)
 					local ribben = fx.statusRibbon(invite, "Party invite sent!", "success", duration, UDim2.new(0,0,0.5,0))
 					ribben.Size = UDim2.new(0,150,0,30)
 					invite.Size = UDim2.new(0,200,0,60)
-					--script.Parent.contents.invite.textBox.Text = ""
+					--gui.contents.invite.textBox.Text = ""
 					
 				elseif reason then
 					duration = 2
@@ -224,7 +225,7 @@ function module.init(Modules)
 		end
 		
 		module.currentPartyInfo = partyInfo
-		script.Parent.contents.invite.leave.Visible = partyInfo ~= nil
+		gui.contents.invite.leave.Visible = partyInfo ~= nil
 		
 		updateInviteButton()
 		
@@ -404,7 +405,7 @@ function module.init(Modules)
 					
 					playerCards[player] = playerCard
 					
-					manifest.Parent = script.Parent.contents
+					manifest.Parent = gui.contents
 					manifest.Visible = true
 				end
 				

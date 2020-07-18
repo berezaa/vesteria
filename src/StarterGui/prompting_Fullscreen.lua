@@ -4,8 +4,10 @@ local module = {}
 
 local runService = game:GetService("RunService")
 
+local player = game:GetService("Players").LocalPlayer
+
 local promptOut
-local promptFrame = script.Parent
+local promptFrame = player.PlayerGui.gameUI.promptFullscreen
 local buttonCons = {}
 local currentDecision
 

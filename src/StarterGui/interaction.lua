@@ -6,6 +6,9 @@ local module = {}
 local interactions = {}
 module.interactions = interactions
 
+local player = game:GetService("Players").LocalPlayer
+local gui = player.PlayerGui.gameUI.interactFrame
+
 local function isWorldPositionInFrame(worldPos)
 	local screenPos = workspace.CurrentCamera:WorldToScreenPoint(worldPos)
 	local max = workspace.CurrentCamera.ViewportSize
@@ -67,10 +70,10 @@ function module.init(Modules)
 	
 	module.currentInteraction = nil	
 	
-	local interactPrompt = script.Parent.interact	
+	local interactPrompt = gui.interact	
 	
 	function module.stopInteract()
-		interactPrompt.Parent = script.Parent
+		interactPrompt.Parent = gui
 		
 		local target = module.currentInteraction
 		if target and target.Parent then
@@ -131,8 +134,8 @@ function module.init(Modules)
 				end
 	
 				if dist <= nearDist + 1.5 then	
-					script.Parent.Adornee = module.currentInteraction
-					script.Parent.Enabled = true
+					gui.Adornee = module.currentInteraction
+					gui.Enabled = true
 					prompt = "Leave"
 					
 					if module.currentInteraction:FindFirstChild("interactScript") then
@@ -150,11 +153,11 @@ function module.init(Modules)
 					end
 					
 					Modules.interactShell.show(interactPrompt)
-					script.Parent.Enabled = false						
+					gui.Enabled = false						
 				else
 					module.stopInteract()
-					script.Parent.Adornee = nil
-					script.Parent.Enabled = false
+					gui.Adornee = nil
+					gui.Enabled = false
 				end
 			else 
 				local nearestDist = 999	
@@ -192,7 +195,7 @@ function module.init(Modules)
 					
 					if (nearestDist <= range or game.CollectionService:HasTag(nearest, "teleportPart") ) then
 					
-						script.Parent.Adornee = nearest
+						gui.Adornee = nearest
 						
 						prompt = "Interact"
 						if game.CollectionService:HasTag(nearest.Parent, "treasureChest") then
@@ -264,10 +267,10 @@ function module.init(Modules)
 							end								
 							
 							lastNearest = nearest
-							script.Parent.Enabled = true
+							gui.Enabled = true
 							
 						else
-							script.Parent.Enabled = false
+							gui.Enabled = false
 							lastNearest = nil
 						end
 						
@@ -277,14 +280,14 @@ function module.init(Modules)
 							lastNearest = nil
 						end
 					else
-						script.Parent.Enabled = false
+						gui.Enabled = false
 						if isPlayerTarget then
 							Modules.playerInteract.hide()
 						end
 						lastNearest = nil							
 					end
 				else
-					script.Parent.Enabled = false
+					gui.Enabled = false
 					if isPlayerTarget then
 						Modules.playerInteract.hide()
 					end
@@ -317,13 +320,13 @@ function module.init(Modules)
 	
 	
 	function module.interact()
-		local target = script.Parent.Adornee
+		local target = gui.Adornee
 		
 		if module.currentInteraction == target then
 			module.stopInteract()
 		else
 			module.currentInteraction = target
-			if (script.Parent.Enabled or isPlayerTarget) and target then
+			if (gui.Enabled or isPlayerTarget) and target then
 				if target:FindFirstChild("helloSound") then
 					Modules.utilities.playSound(target.helloSound.Value, target)
 				end

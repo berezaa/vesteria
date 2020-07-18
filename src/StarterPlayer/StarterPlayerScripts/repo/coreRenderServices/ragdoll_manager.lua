@@ -6,7 +6,6 @@ local modules		= require(replicatedStorage:WaitForChild("modules"))
 local physics 		= modules.load("physics")
 
 function ragdoll_manager.ragDollCharacter(entity, renderEntityData)
-
     local ragdoll = entity:Clone()
     ragdoll.Parent = entity.Parent
     entity:Destroy()
@@ -61,7 +60,7 @@ function ragdoll_manager.ragDollCharacter(entity, renderEntityData)
         end
         connection = game:GetService("RunService").Heartbeat:Connect(onHeartbeat)
     end
+
 end
 
-
-return ragoll_manager
+return ragdoll_manager

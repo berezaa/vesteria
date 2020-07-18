@@ -67,4 +67,4 @@ function staff_manager.PlayAnimation(animationToBePlayed,extraData,configuration
     end
 end
 
-return bow_manager
+return staff_manager

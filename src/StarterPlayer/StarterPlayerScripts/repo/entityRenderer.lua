@@ -6,15 +6,26 @@ local module = {}
 local client = game.Players.LocalPlayer
 
 local repo = script.Parent
-local coreRenderServices = repo:WaitForChild("coreRenderServices")
 
-local assetFolder = script.Parent.Parent:WaitForChild("assets")
+-- render services
+local coreRenderServices = require(repo:WaitForChild("coreRenderServices"))
 
+local bow_manager = coreRenderServices("bow_manager")
+local staff_manager = coreRenderServices("staff_manager")
+local melee_manager = coreRenderServices("melee_manager") 
+local appearance_manager = coreRenderServices("appearance_manager")
+local ragdoll_manager = coreRenderServices("ragdoll_manager")
+local item_manager = coreRenderServices("item_manager")
+
+-- services
+local assetFolder = repo.Parent:WaitForChild("assets")
 
 local runService = game:GetService("RunService")
 local httpService = game:GetService("HttpService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local modules = require(replicatedStorage:WaitForChild("modules"))
+
+-- load modules
 local network = modules.load("network")
 local tween = modules.load("tween")
 local utilities = modules.load("utilities")
@@ -23,14 +34,10 @@ local placeSetup = modules.load("placeSetup")
 local projectile = modules.load("projectile")
 local configuration = modules.load("configuration")
 local events = modules.load("events")
+
+-- assets
 local replicatedStorageAssetFolder = replicatedStorage:WaitForChild("assets")
 
-local bow_manager = require(coreRenderServices:WaitForChild("bow_manager"))
-local staff_manager = require(coreRenderServices:WaitForChild("staff_manager"))
-local melee_manager = require(coreRenderServices:WaitForChild("melee_manager"))
-local appearance_manager = require(coreRenderServices:WaitForChild("appearance_manager"))
-local ragdoll_manager = require(coreRenderServices:WaitForChild("ragdoll_manager"))
-local item_manager = require(coreRenderServices:WaitForChild("item_manager"))
 local defaultCharacterAppearance = require(replicatedStorage:WaitForChild("defaultCharacterAppearance"))
 local defaultMonsterStateStates = require(replicatedStorage.defaultMonsterState).states
 
@@ -43,7 +50,6 @@ local itemLookup = require(replicatedStorage.itemData)
 local monsterLookup = require(replicatedStorage.monsterLookup)
 local abilityLookup = require(replicatedStorage.abilityLookup)
 local statusEffectLookup = require(replicatedStorage.statusEffectLookup)
-
 local entitiesBeingRendered = {}
 
 -- builds a table of whats currently equipped on a renderCharacter,
@@ -53,6 +59,7 @@ local entitiesBeingRendered = {}
 local function getInventoryCountLookupTableByItemId()
 	local lookupTable = {}
 	local inventoryLastGot = network:invoke("getCacheValueByNameTag", "inventory")
+
 	if inventoryLastGot then
 		for i, inventorySlotData in pairs(inventoryLastGot) do
 			if lookupTable[inventorySlotData.id] then
@@ -197,137 +204,6 @@ local function dissassembleRenderEntityByManifest(entityManifest)
 	end
 end
 
--- Chat part setup
-
-local MAX_CHAT_BUBBLE_COUNT = 3
-
-local function getOldestChatBubble(chats)
-	local oldest
-	local lowestLayoutOrder = 99
-	for i, chat in pairs(chats) do
-		if chat:IsA("GuiObject") and chat.LayoutOrder < lowestLayoutOrder then
-			oldest = chat
-			lowestLayoutOrder = chat.LayoutOrder
-		end
-	end
-	return oldest
-end
-
-local function setPrimaryChatBubble(chatBubble)
-	if not chatBubble.titleFrame.Visible then
-		if game.Players.LocalPlayer.Character and chatBubble:IsDescendantOf(game.Players.LocalPlayer.Character) then
-			return false
-		end
-		local size = chatBubble.Size
-		if chatBubble.titleFrame.title.Text ~= "" then
-			chatBubble.titleFrame.Visible = true
-			chatBubble.Size = size + UDim2.new(0, 0, 0, 10)
-			chatBubble.contents.Position = chatBubble.contents.Position + UDim2.new(0, 0, 0, 5)
-			local dif = (chatBubble.titleFrame.AbsoluteSize.X + 20) - chatBubble.AbsoluteSize.X
-			if dif > 0 then
-				chatBubble.Size = size + UDim2.new(0, dif, 0, 0 )
-			end
-		end
-
-	end
-end
-
-local function getChatTagPartForEntity(entityContainer)
-	for i, chatTagPart in pairs(game.CollectionService:GetTagged("chatTag")) do
-		if chatTagPart.Parent == entityContainer then
-			return chatTagPart
-		end
-	end
-end
-
-network:create("getChatTagPartForEntity", "BindableFunction", "OnInvoke", getChatTagPartForEntity)
-
-local function createChatTagPart(entityContainer, offset, rangeMulti)
-	--[[
-	local chatTag 	= entityContainer.PrimaryPart:FindFirstChild("ChatTag") or assetFolder.ChatTag:Clone()
-	chatTag.Parent 	= entityContainer.PrimaryPart
-	]]
-
-	local chatTag = entityContainer:FindFirstChild("chatGui") or assetFolder.chatGui:Clone()
-	chatTag.Parent = entityContainer
-	chatTag.Adornee = entityContainer.PrimaryPart
-	chatTag.Enabled = true
-
-	local rangeMultiTag = Instance.new("NumberValue")
-	rangeMultiTag.Name = "rangeMulti"
-	rangeMultiTag.Value = rangeMulti or 1
-	rangeMultiTag.Parent = chatTag
-
-	offset = offset or Vector3.new()
-	local offsetTag = Instance.new("Vector3Value")
-	offsetTag.Name = "offset"
-	offsetTag.Value = offset
-	offsetTag.Parent = chatTag
-
-	chatTag.ExtentsOffsetWorldSpace = chatTag.ExtentsOffsetWorldSpace + offset
-
-	game.CollectionService:AddTag(chatTag,"chatTag")
-	return chatTag
-end
-
-network:create("createChatTagPart", "BindableFunction", "OnInvoke", createChatTagPart)
-
-local function displayChatMessageFromChatTagPart(chatTagPart, message, speakerName)
-	--local chatTag = chatTagPart:FindFirstChild("SurfaceGui")
-	local chatTag = chatTagPart
-	if chatTag then
-		local newChatBubble = chatTag.chatTemplate:clone()
-		newChatBubble.titleFrame.title.Text = speakerName or ""
-		local titleBounds = game.TextService:GetTextSize(newChatBubble.titleFrame.title.Text, newChatBubble.titleFrame.title.TextSize, newChatBubble.titleFrame.title.Font, Vector2.new()).X + 20
-		newChatBubble.titleFrame.Size = UDim2.new(0,titleBounds,0,32)
-
-		newChatBubble.titleFrame.Visible = false
-
-		local existingChatBubbles = {}
-		for i,chatBubble in pairs(chatTag.chat:GetChildren()) do
-			if chatBubble:IsA("GuiObject") then
-				chatBubble.LayoutOrder = chatBubble.LayoutOrder - 1
-				table.insert(existingChatBubbles, chatBubble)
-			end
-		end
-
-		if #existingChatBubbles >= MAX_CHAT_BUBBLE_COUNT then
-			local oldest = getOldestChatBubble(existingChatBubbles)
-			oldest:Destroy()
-		end
-
-		newChatBubble.LayoutOrder = 10
-		newChatBubble.Parent = chatTag.chat
-
-		local dialogueText, yOffset, xOffset = network:invoke("createTextFragmentLabels",newChatBubble.contents, {{text = message, textColor3 = Color3.fromRGB(200,200,200)}} )
-		if yOffset < 18 then
-			newChatBubble.Size = UDim2.new(0, xOffset + 20 , 0, yOffset + 26)
-		else
-			newChatBubble.Size = UDim2.new(1, 0, 0, yOffset + 26)
-		end
-
-		local newOldest = getOldestChatBubble(chatTag.chat:GetChildren())
-		if newOldest then
-			setPrimaryChatBubble(newOldest)
-		end
-
-		newChatBubble.Visible = true
-
-		spawn(function()
-			wait(15)
-			if newChatBubble and newChatBubble.Parent then
-				newChatBubble:Destroy()
-				local newOldest = getOldestChatBubble(chatTag.chat:GetChildren())
-				if newOldest then
-					setPrimaryChatBubble(newOldest)
-				end
-			end
-		end)
-	end
-end
-
-network:create("displayChatMessageFromChatTagPart", "BindableFunction", "OnInvoke", displayChatMessageFromChatTagPart)
-
 local playerXpTagPairing = {}
 
 local function int__connectEntityEvents(entityManifest, renderEntityData)
@@ -436,7 +312,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			end
 
 			if footStepSound and renderEntityData.entityContainer.PrimaryPart then
-				local newSound 	= utilities.soundFromMirror(footStepSound)
+				local newSound 	= utilities.playSound(footStepSound.Name)
 
 				newSound.Parent = renderEntityData.entityContainer.PrimaryPart
 				newSound.Looped = false
@@ -649,7 +525,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 			elseif entityManifest.entityType.Value == "character" then
 				local entity = renderEntityData.entityContainer and renderEntityData.entityContainer:FindFirstChild("entity")
 				if entity then
-					ragdoll_manager.RagDollCharacter(entity,renderEntityData)
+					ragdoll_manager.ragDollCharacter(renderEntityData.entityContainer,renderEntityData)
 				end
 			end
 		elseif newState == "gettingUp" and entityManifest.entityType.Value == "character" then
@@ -1763,29 +1639,6 @@ events:registerForEvent("playersXpGained", function(playerXpRewards)
 	end
 end)
 
-game.ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents").OnMessageDoneFiltering.OnClientEvent:connect(function(messageInfo, rio)
-
---  {"ExtraData":{"Tags":[],"ChatColor":null,"NameColor":null},"IsFiltered":true,"MessageType":"Message","IsFilterResult":true,
---	"Time":1539139847,"ID":0,"FromSpeaker":"berezaa","Message":"## #### ##### #### #### ##","OriginalChannel":"All","SpeakerUserId":5000861,
---  "MessageLength":26}
-
-	-- confirm
-	if messageInfo.IsFilterResult or runService:IsStudio() then
-		local player = game.Players:GetPlayerByUserId(messageInfo.SpeakerUserId)
-		local message = messageInfo.Message
-
-		if player and player.Character and player.Character.PrimaryPart and message then
-			local renderEntityData = entitiesBeingRendered[player.Character.PrimaryPart]
-			if not renderEntityData or not renderEntityData.entityContainer.PrimaryPart then return false end
-
-			local chatTag = renderEntityData.entityContainer:FindFirstChild("chatGui")
-			if chatTag then
-				displayChatMessageFromChatTagPart(chatTag, message, player.Name)
-			end
-		end
-	end
-end)
-
 local function int__updateMonsterNameTag(renderData)
 	local entityContainer = renderData.entityContainer
 
@@ -2473,7 +2326,7 @@ network:connect("signal_damage", "OnClientEvent", function(entityManifest, damag
 		local damageIndicator = container:FindFirstChild("damageIndicator")
 
 		if damageIndicator == nil then
-			damageIndicator = replicatedStorage.entities.damageIndicator:Clone()
+			damageIndicator = replicatedStorageAssetFolder.entities.damageIndicator:Clone()
 			local thickness = math.max((container.PrimaryPart.Size.X + container.PrimaryPart.Size.Z) / 2, 3)
 
 			damageIndicator.Size = UDim2.new(thickness, 50, 6, 75)
@@ -2705,6 +2558,7 @@ end
 
 
 local function main()
+	print("__________________ENTITYRENDERER______________________")
 	network:create("getMyClientCharacterContainer", "BindableFunction", "OnInvoke", function()
 		-- wait for character!
 --		while not myClientPlayerCharacterContainer do wait(0.1) end

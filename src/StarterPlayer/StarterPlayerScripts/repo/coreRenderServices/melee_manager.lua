@@ -1,6 +1,6 @@
 local melee_manager = {}
 
-function melee_manager.PlayAnimation(animationSequenceName, ...)
+function melee_manager.PlayAnimation(animationSequenceName, animationSequenceName, characterEntityAnimationTracks, animationName, animationToBePlayed, extraData)
     if
         animationSequenceName == "staffAnimations" or
         animationSequenceName == "swordAnimations" or
@@ -11,7 +11,7 @@ function melee_manager.PlayAnimation(animationSequenceName, ...)
         then
             local atkspd = (extraData and extraData.attackSpeed) or 0
 
-            CharacterEntityAnimationTracks[animationSequenceName][animationName]:Play(0.1, 1, (1 + atkspd))
+            characterEntityAnimationTracks[animationSequenceName][animationName]:Play(0.1, 1, (1 + atkspd))
         else
             if typeof(characterEntityAnimationTracks[animationSequenceName][animationName]) == "Instance" then
                 characterEntityAnimationTracks[animationSequenceName][animationName]:Play()

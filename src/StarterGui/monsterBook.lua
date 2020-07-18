@@ -2,8 +2,8 @@
 
 local module = {}
 
-
-local ui = script.Parent
+local player = game:GetService("Players").LocalPlayer
+local ui = player.PlayerGui.gameUI.monsterBook
 function module.close()
 	ui.Visible = false
 end
@@ -27,13 +27,13 @@ function module.init(Modules)
 		
 			local bountyBookButton = Modules.input.menuButtons["openMonsterBook"]
 		
-			local bookFrame = script.Parent
+			local bookFrame = ui
 			
 			local currentTab
 			
 			local monsterBookData = {}
 			
-			local pages = script.Parent.bookHolder.pages
+			local pages = ui.bookHolder.pages
 			
 			local monsterLookup = require(game.ReplicatedStorage.monsterLookup)
 			local itemLookup = require(game.ReplicatedStorage.itemData)
@@ -325,21 +325,21 @@ function module.init(Modules)
 			end
 			
 			function module.open()
-				if not script.Parent.Visible then
-					script.Parent.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
-					Modules.tween(script.Parent.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)
+				if not ui.Visible then
+					ui.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
+					Modules.tween(ui.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)
 				end
 				if currentTab then
 					updateTabPage()
 				end						
-				Modules.focus.toggle(script.Parent)
+				Modules.focus.toggle(ui)
 				pages.main.Visible = true
 				pages.monster.Visible = false		
 			end		
 			
 			function module.close()
-				if script.Parent.Visible then
-					Modules.focus.toggle(script.Parent)	
+				if ui.Visible then
+					Modules.focus.toggle(ui)	
 				end	
 			end
 			ui.close.Activated:connect(module.close)
@@ -424,7 +424,7 @@ function module.init(Modules)
 						
 					monsterBookDataUpdated(monsterBookData)
 					
-					if currentTab and script.Parent.Visible then
+					if currentTab and ui.Visible then
 						updateTabPage()
 					end
 				end

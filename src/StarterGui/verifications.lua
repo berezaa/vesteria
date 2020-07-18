@@ -1,16 +1,19 @@
 local module = {}
 
+local player = game:GetService("Players").LocalPlayer
+local gui = player.PlayerGui.gameUI.verify
+
 function module.init(Modules)
 	
 	local network = Modules.network
 	
 	game.Players.LocalPlayer.Chatted:Connect(function(text)
 		if text == "/verify" then
-			Modules.focus.toggle(script.Parent)
+			Modules.focus.toggle(gui)
 		end
 	end)
-	script.Parent.Frame.send.Activated:connect(function()
-		local success = network:invokeServer("playerRequest_redeemcode", script.Parent.Frame.code.TextBox.Text)
+	gui.Frame.send.Activated:connect(function()
+		local success = network:invokeServer("playerRequest_redeemcode", gui.Frame.code.TextBox.Text)
 		if success then
 			local textObject = {
 				text = "You have been verified!";
@@ -30,10 +33,10 @@ function module.init(Modules)
 			}
 			Modules.notifications.alert(textObject, 3)			
 		end
-		Modules.focus.toggle(script.Parent)
+		Modules.focus.toggle(gui)
 	end)
-	script.Parent.Frame.close.Activated:connect(function()
-		Modules.focus.toggle(script.Parent)
+	gui.Frame.close.Activated:connect(function()
+		Modules.focus.toggle(gui)
 	end)
 end
 

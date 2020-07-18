@@ -3,6 +3,9 @@
 
 local module = {}
 
+local player = game:GetService("Players").LocalPlayer
+local gui = player.PlayerGui.gameUI.bottomRight.money
+
 module.suffixes = {"k","M","B","T","qd","Qn","sx","Sp","O","N","de","Ud","DD","tdD","qdD","QnD","sxD","SpD","OcD","NvD","Vgn","UVg","DVg","TVg","qtV","QnV","SeV","SPG","OVG","NVG","TGN","UTG","DTG","tsTG","qtTG","QnTG","ssTG","SpTG","OcTG","NoTG","QdDR","uQDR","dQDR","tQDR","qdQDR","QnQDR","sxQDR","SpQDR","OQDDr","NQDDr","qQGNT","uQGNT","dQGNT","tQGNT","qdQGNT","QnQGNT","sxQGNT","SpQGNT", "OQQGNT","NQQGNT","SXGNTL"}                                              
 
 
@@ -173,7 +176,7 @@ function module.init(Modules)
 	
 	-- update any subscribed labels from before module.init
 	onDataChange("gold", network:invoke("getCacheValueByNameTag", "gold"))
-	module.subscribeToPlayerMoney(script.Parent)
+	module.subscribeToPlayerMoney(gui)
 	
 	network:connect("propogationRequestToSelf", "Event", onDataChange)	
 end

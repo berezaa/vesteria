@@ -2,7 +2,7 @@
 -- Will automatically scan and require ModuleScripts in the parented GUI object.
 -- Any module with module.init(Modules) defined will be initialization
 
-local player = game.Players.localPlayer
+local player = game:GetService("Players").LocalPlayer
 local playerGui = player.PlayerGui
 
 repeat wait() until playerGui:FindFirstChild("gameUI")
@@ -13,7 +13,7 @@ ui.Enabled = false
 local Modules = {}
 local currentProcess = "setup"
 
-wait(0.1)
+-- wait(0.1)
 
 --[[
 local replicatedStorage = game:GetService("ReplicatedStorage")
@@ -35,22 +35,10 @@ local Libs = {
 local Ignore = {}
 local currentModule
 
-local function printError(...)
-	local t = ...
-	spawn(function()
-		error(t)
-	end)
-end
-
 local function AddModule(Ins)
 	local Success, Error = pcall(function()
 		Modules[Ins.Name] = require(Ins)
 	end)
-
-	if not Success then
-		printError("Error requiring module "..Ins.Name.."! Module failed to load")
-		printError(Error)
-	end
 end
 
 local function scan(Ins)
@@ -79,10 +67,7 @@ local function Init()
 		if Module and Ignore[Name] == nil and Module["init"] then
 			currentProcess = "init"
 			currentModule = Name
-			local Success, Error = pcall(Module.init,Modules) -- Pass a table of all modules to each module
-			if not Success then
-				printError(Name.." Error: ".. Error)
-			end
+			Module.init(Modules)
 		end
 		if Module and Ignore[Name] == nil and Module["postInit"] then
 			postInits[Name] = Module["postInit"]

@@ -1,5 +1,8 @@
 local module = {}
 
+local player = game:GetService("Players").LocalPlayer
+local gui = player.PlayerGui.gameUI.serverBrowser
+
 function module.open()
 	
 end
@@ -13,23 +16,23 @@ function module.init(Modules)
 	
 	local network = Modules.network
 	
-	script.Parent.close.MouseButton1Click:connect(function()
-		Modules.focus.toggle(script.Parent)
+	gui.close.MouseButton1Click:connect(function()
+		Modules.focus.toggle(gui)
 	end)	
 	
-	script.Parent.header.serverId.Text = "This server's ID: "..string.sub(game.JobId, 1, 8)
+	gui.header.serverId.Text = "This server's ID: "..string.sub(game.JobId, 1, 8)
 	
 	function module.open()
-		if not script.Parent.Visible then
-			script.Parent.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
-			Modules.tween(script.Parent.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)
+		if not gui.Visible then
+			gui.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
+			Modules.tween(gui.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)
 		end				
-		Modules.focus.toggle(script.Parent)		
+		Modules.focus.toggle(gui)		
 	end
 	
 	local function updated()
 		servers = serversDataValue.Value ~= "" and httpService:JSONDecode(serversDataValue.Value) or {}
-		for i,child in pairs(script.Parent.servers:GetChildren()) do
+		for i,child in pairs(gui.servers:GetChildren()) do
 			if child:IsA("GuiObject") then
 				child:Destroy()
 			end
@@ -78,7 +81,7 @@ function module.init(Modules)
 				local success, err = network:invokeServer("playerRequest_teleportToJobId", jobId)
 			end)
 			
-			button.Parent = script.Parent.servers
+			button.Parent = gui.servers
 		end
 	end
 	
