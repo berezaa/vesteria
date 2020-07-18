@@ -1,4 +1,4 @@
--- this is the service that will handle data propogation between client and server, effectively acting as the gatekeeper for data 
+-- this is the service that will handle data propogation between client and server, effectively acting as the gatekeeper for data
 -- leaving the client to the server, and entering the client from the server.
 -- IMPORTANT! This can all be editted by the client, never assume the player's client cache data to be true. This will only have negative
 -- implications on players that do edit the cache (ie, a malicious player COULD edit their client cache inventory to include
@@ -26,7 +26,7 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 -- server will not spam this.
 local function onPropogateCacheDataRequestToClientReceived(propogationNameTag, propogationData)
 	cache[propogationNameTag] = propogationData
-	
+
 	network:fire("propogationRequestToSelf", propogationNameTag, propogationData)
 end
 
@@ -54,7 +54,7 @@ function module:getByPropogationNameTag(propogationNameTag)
 			return cache[propogationNameTag]
 		end
 	end
-	
+
 	return nil
 end
 
@@ -63,13 +63,13 @@ local function main()
 	network:create("propogationRequestReceived", "BindableEvent")
 	network:connect("propogateCacheDataRequest", "OnClientEvent", onPropogateCacheDataRequestToClientReceived)
 	network:connect("clientFlushPropogationCache", "OnClientEvent", onFlushPropogationCache)
-	
+
 	module:flushPropogationCache()
-	
+
 	network:create("getLocalPlayerDataCache", "BindableFunction", "OnInvoke", function()
 		return cache
 	end)
-	
+
 	network:create("getCacheValueByNameTag", "BindableFunction", "OnInvoke", function(nameTag)
 		return module:getByPropogationNameTag(nameTag)
 	end)
