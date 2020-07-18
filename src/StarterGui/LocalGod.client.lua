@@ -2,8 +2,13 @@
 -- Will automatically scan and require ModuleScripts in the parented GUI object.
 -- Any module with module.init(Modules) defined will be initialization
 
-repeat wait() until script.Parent:FindFirstChild("gameUI")
-script.Parent.gameUI.Enabled = false
+local player = game.Players.localPlayer
+local playerGui = player.PlayerGui
+
+repeat wait() until playerGui:FindFirstChild("gameUI")
+
+local ui = playerGui.gameUI
+ui.Enabled = false
 
 local Modules = {}
 local currentProcess = "setup"
@@ -16,7 +21,7 @@ local modules = require(replicatedStorage.modules)
 ]]
 
 --game.StarterGui:SetCore("TopbarEnabled", false)
-game.Players.LocalPlayer.PlayerGui:SetTopbarTransparency(1)
+playerGui:SetTopbarTransparency(1)
 
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local mods = require(replicatedStorage.modules)
@@ -106,6 +111,6 @@ if not Modules.HasFinished then
 	error("Module loading got stuck on ".. (currentModule or "???") .. " ".. currentProcess or "???")
 end
 
-script.Parent.gameUI.Enabled = true
+ui.Enabled = true
 
 wait(1)

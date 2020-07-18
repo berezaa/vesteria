@@ -362,7 +362,7 @@ function module.init(Modules)
 
 	local function updateLearnableAbilities()
 		abilityData = abilityData or network:invoke("getCacheValueByNameTag", "abilities")
-		for i, button in pairs(learnAbilitiesFrame.contents:GetChildren()) do
+		for _, button in pairs(learnAbilitiesFrame.contents:GetChildren()) do
 			if button:IsA("GuiObject") then
 				button:Destroy()
 			end
@@ -370,7 +370,7 @@ function module.init(Modules)
 		-- at this point shouldnt i just change how we store the data ;-;
 		local organizedAbilityData = {}
 
-		for i, abilitySlotData in pairs(abilityData) do
+		for _, abilitySlotData in pairs(abilityData) do
 			organizedAbilityData[abilitySlotData.id] = abilitySlotData
 		end
 		local learnableAbilities = {}
@@ -385,7 +385,7 @@ function module.init(Modules)
 			end
 		end
 		learnableAbilityCount = #learnableAbilities
-		for i, ability in pairs(learnableAbilities) do
+		for _, ability in pairs(learnableAbilities) do
 			local template = learnAbilitiesFrame.template:Clone()
 			local cost = ability.metadata.cost or 0
 			template.item.Image = ability.image
@@ -455,11 +455,10 @@ function module.init(Modules)
 							utilities.playSound("idolPickup")
 						end
 					end
-
 				end
 			end)
-
 		end
+
 		local rows = math.ceil(#learnableAbilities/4)
 		local grid = learnAbilitiesFrame.contents.UIGridLayout
 		local ySize = grid.CellPadding.Y.Offset + grid.CellSize.Y.Offset
@@ -503,11 +502,8 @@ function module.init(Modules)
 			local abilityPoints = level - 1
 			local unspentAbilityPoints = abilityPoints - getPlayerDataSpentAP(playerData)
 
-
 			menuUI.abilityPoints.Visible = unspentAbilityPoints > 0
 			menuUI.abilityPoints.amount.Text = tostring(unspentAbilityPoints) .. " AP"
-
-
 
 			local contents = {}
 			local n = 0
@@ -529,8 +525,6 @@ function module.init(Modules)
 					end
 				end
 			end
-
-
 
 			for i = 1, 20 do
 				local inventoryItem = ui.menu_inventory.inventoryItemTemplate:Clone()
