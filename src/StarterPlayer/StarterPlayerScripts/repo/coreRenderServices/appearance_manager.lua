@@ -1,7 +1,6 @@
 local appearence_manager = {}
 
 local replicatedStorage = game:GetService("ReplicatedStorage")
-
 local modules = require(replicatedStorage:WaitForChild("modules"))
 local mapping = modules.load("mapping")
 
@@ -28,6 +27,7 @@ end
 function appearence_manager.LoadAppearence(accessoryLookup, appearanceData, hatEquipmentData, itemLookup, renderCharacter)
 	--damien this took 5 min-=
 	-- cry me a river
+	print("RUNGAPPEARNCE")
 	local hairColor = accessoryLookup.hairColor:FindFirstChild(tostring(appearanceData.accessories.hairColorId or 1)).Value
 	local shirtColor = accessoryLookup.shirtColor:FindFirstChild(tostring(appearanceData.accessories.shirtColorId or 1)).Value
 
@@ -47,8 +47,8 @@ function appearence_manager.LoadAppearence(accessoryLookup, appearanceData, hatE
 			end
 		end
 
-		if replicatedStorage.accessoryLookup:FindFirstChild(accessoryType) then
-			local accessoryToLookIn = replicatedStorage.hairClipped:FindFirstChild(tostring(id)) or replicatedStorage.accessoryLookup[accessoryType]:FindFirstChild(tostring(id))
+		if accessoryLookup:FindFirstChild(accessoryType) then
+			local accessoryToLookIn = replicatedStorage.hairClipped:FindFirstChild(tostring(id)) or accessoryLookup[accessoryType]:FindFirstChild(tostring(id))
 
 			if accessoryToLookIn then
 				for _, accessoryPartContainer in pairs(accessoryToLookIn:GetChildren()) do
@@ -90,7 +90,8 @@ function appearence_manager.LoadAppearence(accessoryLookup, appearanceData, hatE
 				end
 			end
 		end
-    end
+	end
+
 end
 
 return appearence_manager

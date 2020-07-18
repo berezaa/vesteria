@@ -56,11 +56,11 @@ function module.init(mods)
 
 	local function inputUpdate()
 		if Modules.input.mode.Value == "mobile" then
-			script.Parent.interactionPrompts.Position = UDim2.new(1,-110,1,-200)
-			script.Parent.interactionPrompts.UIScale.Scale = Modules.input.menuScale or 1
+			ui.interactionPrompts.Position = UDim2.new(1,-110,1,-200)
+			ui.interactionPrompts.UIScale.Scale = Modules.input.menuScale or 1
 		else
-			script.Parent.interactionPrompts.Position = UDim2.new(1,-110,1,-130)
-			script.Parent.interactionPrompts.UIScale.Scale = 1
+			ui.interactionPrompts.Position = UDim2.new(1,-110,1,-130)
+			ui.interactionPrompts.UIScale.Scale = 1
 		end
 	end
 	inputUpdate()
@@ -1132,7 +1132,7 @@ local function getDropTarget(exclusion)
 		end
 	end
 
-	for i, gui in pairs(script.Parent:GetChildren()) do
+	for i, gui in pairs(ui:GetChildren()) do
 		recur(gui)
 	end
 

@@ -77,7 +77,7 @@ function module.init(Modules)
 		end
 	end
 
-	local responseOptionTemplate = script:WaitForChild("responseOption")
+	local responseOptionTemplate = dialogueFrameUI:WaitForChild("responseOption")
 
 	local dialogueHandler = {}
 		dialogueHandler.events = {}
@@ -490,7 +490,7 @@ function module.init(Modules)
 					local amount = inventoryTransferData_intermediate.stacks
 
 					if itemBaseData then
-						local itemLine_quest 	= script.itemLine_quest:Clone()
+						local itemLine_quest 	= dialogueFrameUI.itemLine_quest:Clone()
 						itemLine_quest.AutoLocalize = false
 
 						local itemName = localization.translate(itemBaseData.name, dialogueFrameUI.contents.rewards)
@@ -505,7 +505,7 @@ function module.init(Modules)
 				local expText = dialogueFrameUI.contents.rewards.chest.exp
 				expText.Visible = false
 				if (expMulti or 1) > 0 then
---					local itemLine_quest 	= script.itemLine_quest:Clone()
+--					local itemLine_quest 	= dialogueFrameUI.itemLine_quest:Clone()
 					expText.Visible = true
 					expText.Text = "+ "..math.floor(levels.getQuestEXPFromLevel(level or 1) * (expMulti or 1)) .. " EXP"
 
@@ -518,14 +518,14 @@ function module.init(Modules)
 					local reward = levels.getQuestGoldFromLevel(level or 1) * (goldMulti or 1)
 
 					--[[
-					local itemLine_quest 	= script.itemLine_quest:Clone()
+					local itemLine_quest 	= dialogueFrameUI.itemLine_quest:Clone()
 					itemLine_quest.Text 	= levels.getQuestGoldFromLevel(self.questData.level or 1) * (self.questData.goldMulti or 1) .. " Gold"
 
 					itemLine_quest.preview.Image = ""
 
 					itemLine_quest.Parent = dialogueFrameUI.contents.rewards.contents
 					]]
-					local itemLine_quest = script.itemLine_money:clone()
+					local itemLine_quest = dialogueFrameUI.itemLine_money:clone()
 					Modules.money.setLabelAmount(itemLine_quest, reward)
 					itemLine_quest.Parent = dialogueFrameUI.contents.rewards.contents
 				end

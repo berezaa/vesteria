@@ -6,7 +6,7 @@ local module = {}
 local menu = script.Parent.gameUI.guild
 
 function module.open()
-	menumenu.Visible = true
+	menu.Visible = true
 end
 
 local httpService = game:GetService("HttpService")
@@ -20,91 +20,88 @@ local guildRankValues = {
 
 
 function module.init(Modules)
-	
 	local network = Modules.network
-	
 
-	
 	function module.open()
-		if not menumenu.Visible then
-			menumenu.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
-			Modules.tween(menumenu.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)
-		end				
-		Modules.focus.toggle(menumenu)
+		if not menu.Visible then
+			menu.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
+			Modules.tween(menu.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)
+		end
+		Modules.focus.toggle(menu)
 	end
-	
-	menumenu.close.Activated:connect(function()
+
+	menu.close.Activated:connect(function()
 		module.open()
-	end)		
-	
+	end)
+
 	module.guildData = {}
-	
+
 	local function getGuildData(guid)
 		if guid == "" then
 			return nil
 		end
 		local guildDataFolder = game.ReplicatedStorage:FindFirstChild("guildDataFolder")
 		if guildDataFolder then
-			
+
 			local guildDataValue = guildDataFolder:WaitForChild(guid, 3)
 			if guildDataValue then
 				local guildData = httpService:JSONDecode(guildDataValue.Value)
 				return guildData
 			end
-		end		
+		end
 	end
-	
+
 	local function getGuildPlayerData(player, guid)
 		local guildData = getGuildData(guid)
 		if guildData == nil then
 			return false, "Guild data not found."
-		end	
+		end
 		local members = guildData.members
 		local guildPlayerData = members[tostring(player.userId)]
 		if guildPlayerData == nil then
 			return false, "Not a member of guild."
 		end
-		return guildPlayerData		
+		return guildPlayerData
 	end
-	
+
 	local function updatePlayerGuildData()
 		local guid = game.Players.LocalPlayer.guildId.Value
 		local guildData = getGuildData(guid)
 		module.guildData = guildData
 		local guildPlayerData = getGuildPlayerData(game.Players.LocalPlayer, guid)
-		menumenu.Parent.inspectPlayer.content.buttons.guild.Visible = false
+		menu.Parent.inspectPlayer.content.buttons.guild.Visible = false
 		if guildData and guildPlayerData then
 			local canInvite = guildPlayerData.rank == "leader" or guildPlayerData.rank == "officer" or guildPlayerData.rank == "general"
-			menumenu.Parent.inspectPlayer.content.buttons.guild.Visible = canInvite
-			menumenu.curve.Visible = true
-			menumenu.Parent.right.buttons.openGuild.Visible = true
-			menumenu.curve.intro.title.Text = guildData.name
-			menumenu.curve.intro.notice.value.Text = guildData.notice or "There is no notice at this time."
-			
+			menu.Parent.inspectPlayer.content.buttons.guild.Visible = canInvite
+			menu.curve.Visible = true
+			menu.Parent.right.buttons.openGuild.Visible = true
+			menu.curve.intro.title.Text = guildData.name
+			menu.curve.intro.notice.value.Text = guildData.notice or "There is no notice at this time."
+
 			local guildLeader = "no one!"
 			for userIdString, playerInfo in pairs(guildData.members) do
 				if playerInfo.rank == "leader" then
 					guildLeader = playerInfo.name
 				end
 			end
-			
-			menumenu.curve.intro.leader.Text = "led by "..guildLeader
-			
-			for i,guildMemberButton in pairs(menumenu.curve.side.members.list:GetChildren()) do
+
+			menu.curve.intro.leader.Text = "led by "..guildLeader
+
+			for i,guildMemberButton in pairs(menu.curve.side.members.list:GetChildren()) do
 				if guildMemberButton:IsA("GuiObject") then
 					guildMemberButton:Destroy()
 				end
 			end
 			local memberCount = 0
 			for memberString, memberData in pairs(guildData.members) do
-				local guildMemberButton = menumenu.curve.side.members.example:Clone()
+				local guildMemberButton = menu.curve.side.members.example:Clone()
 				guildMemberButton.content.username.Text = memberData.name
 				local level = guildMemberButton.content.level.value
 				level.Text = "Lvl. "..memberData.level
-				
+
 				local xSize = game.TextService:GetTextSize(level.Text, level.TextSize, level.Font, Vector2.new()).X + 16
-				level.Parent.Size = UDim2.new(0, xSize, 0, 20)				
-				
+				level.Parent.Size = UDim2.new(0, xSize, 0, 20)
+
 				local class = memberData.class
 				if class:lower() == "adventurer" then
 					guildMemberButton.content.level.emblem.Visible = false
@@ -113,34 +110,34 @@ function module.init(Modules)
 					guildMemberButton.content.level.emblem.Image = "rbxgameasset://Images/emblem_"..class:lower()
 				end
 
-				
+
 				local guildMemberRankValue = guildRankValues[memberData.rank] or 0
 				guildMemberButton.LayoutOrder = 5-guildMemberRankValue
-				
+
 				guildMemberButton.content.rank.Image = "rbxgameasset://Images/rank_"..memberData.rank:lower()
-				guildMemberButton.Parent = menumenu.curve.side.members.list
+				guildMemberButton.Parent = menu.curve.side.members.list
 				guildMemberButton.Visible = true
 				guildMemberButton.Name = memberString
 				memberCount = memberCount + 1
-				
+
 				guildMemberButton.Activated:connect(function()
 					if guildMemberButton.actions.Visible then
 						guildMemberButton.actions.Visible = false
 					else
-						for i,otherButton in pairs(menumenu.curve.side.members.list:GetChildren()) do
+						for i,otherButton in pairs(menu.curve.side.members.list:GetChildren()) do
 							if otherButton:IsA("GuiObject") then
 								otherButton.actions.Visible = false
 								otherButton.ZIndex = 1
 							end
 						end
 						guildMemberButton.actions.Visible = true
-						guildMemberButton.ZIndex = 2						
+						guildMemberButton.ZIndex = 2
 					end
 
 				end)
-				
+
 				local exile = guildMemberButton.actions.exile
-				
+
 				local clientRankValue = guildRankValues[getGuildPlayerData(game.Players.LocalPlayer, guid).rank]
 				if clientRankValue <= guildMemberRankValue then
 					exile.ImageColor3 = Color3.new(0.3,0.3,0.3)
@@ -159,18 +156,18 @@ function module.init(Modules)
 									exile.fail.Visible = true
 									wait(0.3)
 								end
-	
+
 							end
 							if exile and exile.Parent then
 								exile.Active = true
 								exile.success.Visible = false
 								exile.fail.Visible = false
-								exile.icon.Visible = true							
+								exile.icon.Visible = true
 							end
 						end
-					end)					
+					end)
 				end
-				
+
 				for rankName, rankValue in pairs(guildRankValues) do
 					local button = guildMemberButton.actions:FindFirstChild(rankName)
 					if button then
@@ -182,7 +179,7 @@ function module.init(Modules)
 							button.Activated:connect(function()
 								if button.Active then
 									button.Active = false
-									if Modules.prompting_Fullscreen.prompt("Are you sure you wish to rank "..memberData.name.." to "..rankName:upper().."?") then				
+									if Modules.prompting_Fullscreen.prompt("Are you sure you wish to rank "..memberData.name.." to "..rankName:upper().."?") then
 										button.icon.Visible = false
 										button.fail.Visible = false
 										button.success.Visible = false
@@ -193,35 +190,35 @@ function module.init(Modules)
 											wait(0.3)
 										end
 									end
-								
+
 									if button and button.Parent then
 										button.Active = true
 										button.success.Visible = false
 										button.fail.Visible = false
-										button.icon.Visible = true							
-									end								
-									
+										button.icon.Visible = true
+									end
+
 								end
 							end)
 						end
 					end
 				end
-				
 
-				
+
+
 			end
-			menumenu.curve.side.members.title.Text = memberCount .. " " .. (memberCount == 1 and "member" or "members")
-			
-			
+			menu.curve.side.members.title.Text = memberCount .. " " .. (memberCount == 1 and "member" or "members")
+
+
 		else
-			menumenu.curve.Visible = false
-			menumenu.Parent.right.buttons.openGuild.Visible = false
+			menu.curve.Visible = false
+			menu.Parent.right.buttons.openGuild.Visible = false
 		end
 	end
 	spawn(updatePlayerGuildData)
 	game.Players.LocalPlayer.guildId.Changed:connect(updatePlayerGuildData)
 	network:connect("signal_guildDataUpdated", "OnClientEvent", updatePlayerGuildData)
-	
+
 	-- Invited to join a guild.
 	network:connect("serverPrompt_playerInvitedToServer", "OnClientInvoke", function(invitingPlayer, guid)
 		local guildDataFolder = game.ReplicatedStorage:FindFirstChild("guildDataFolder")
@@ -233,11 +230,11 @@ function module.init(Modules)
 					return Modules.prompting.prompt(invitingPlayer.Name.." has invited you to join their Guild, " .. guildData.name .. ".")
 				end
 			end
-		end		
+		end
 		return false
 	end)
-	
-	menumenu.curve.intro.leave.Activated:connect(function()
+
+	menu.curve.intro.leave.Activated:connect(function()
 		if Modules.prompting_Fullscreen.prompt("Are you sure you wish to LEAVE the guild?") then
 			local success, reason = network:invokeServer("playerRequest_leaveMyGuild", false)
 			if not success then
@@ -246,14 +243,14 @@ function module.init(Modules)
 						success, reason = network:invokeServer("playerRequest_leaveMyGuild", true)
 					end
 				end
-				
+
 				if not success then
 					network:fire("alert", {text = reason; textColor3 = Color3.fromRGB(255, 100, 100);})
 				end
 			end
-		end	
+		end
 	end)
-		
+
 end
 
 

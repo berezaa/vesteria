@@ -12,7 +12,7 @@ local coreRenderServices = require(repo:WaitForChild("coreRenderServices"))
 
 local bow_manager = coreRenderServices("bow_manager")
 local staff_manager = coreRenderServices("staff_manager")
-local melee_manager = coreRenderServices("melee_manager") 
+local melee_manager = coreRenderServices("melee_manager")
 local appearance_manager = coreRenderServices("appearance_manager")
 local ragdoll_manager = coreRenderServices("ragdoll_manager")
 local item_manager = coreRenderServices("item_manager")
@@ -45,7 +45,7 @@ local entityManifestCollectionFolder = placeSetup.awaitPlaceFolder("entityManife
 local entityRenderCollectionFolder = placeSetup.awaitPlaceFolder("entityRenderCollection")
 
 local animationInterface
-local accessoryLookup = replicatedStorage.accessoryLookup
+local accessoryLookup = replicatedStorage.assets.accessories
 local itemLookup = require(replicatedStorage.itemData)
 local monsterLookup = require(replicatedStorage.monsterLookup)
 local abilityLookup = require(replicatedStorage.abilityLookup)
@@ -620,8 +620,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 				if characterEntityAnimationTracks.movementAnimations[animationNameToLookFor] or (currentlyEquipped["1"] and currentlyEquipped["1"].baseData.equipmentType and characterEntityAnimationTracks.movementAnimations[animationNameToLookFor .. "_" .. currentlyEquipped["1"].baseData.equipmentType .. weaponStateAppendment]) then
 
-					currentPlayingStateAnimation = item_manager.CheckForCurrentlyEquippedForAnim(animationNameToLookFor,weaponStateAppendment,characterEntityAnimationTracks,currentPlayingStateAnimation,renderEntityData.entityContainer.entity)
-
+					currentPlayingStateAnimation = item_manager.CheckForCurrentlyEquippedForAnim(animationNameToLookFor,weaponStateAppendment,characterEntityAnimationTracks,renderEntityData.entityContainer.entity)
 					if currentPlayingStateAnimation then
 						if previousKeyframeReached_event then
 							previousKeyframeReached_event:disconnect()
@@ -636,6 +635,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						animationInterface:stopPlayingAnimationsByAnimationCollectionName(characterEntityAnimationTracks, "emoteAnimations")
 
 						-- probably fix this.. i really hate that animations are two layered
+						print(currentlyPlayingAnimation)
 						if typeof(currentPlayingStateAnimation) == "Instance" then
 							previousKeyframeReached_event = currentPlayingStateAnimation.KeyframeReached:connect(onCharacterAnimationTrackKeyframeReached)
 							-- ber edit mess with weights here
@@ -673,6 +673,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 	end
 
 	function renderEntityData:playAnimation(animationSequenceName, animationName, extraData)
+
 		if characterEntityAnimationTracks[animationSequenceName] and characterEntityAnimationTracks[animationSequenceName][animationName] then
 			-- stop all emotes
 			animationInterface:stopPlayingAnimationsByAnimationCollectionName(characterEntityAnimationTracks, "emoteAnimations")
@@ -961,7 +962,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				end)
 			else
 				local animationToBePlayed = characterEntityAnimationTracks[animationSequenceName][animationName]
-
 				if animationSequenceName == "bowAnimations" then
 					bow_manager.PlayAnimation(animationSequenceName)
 				elseif animationSequenceName == "staffAnimations" then
@@ -969,6 +969,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				end
 
 				if animationToBePlayed then
+					print("plAYING" .. animationName)
 					melee_manager.PlayAnimation(animationSequenceName, CharacterEntityAnimationTracks, animationName, animationToBePlayed, extraData)
 				end
 			end
@@ -2739,7 +2740,6 @@ local function main()
 
 	-- initialize updates
 	spawn(int__updateNearbyEntities)
-
 end
 
 main()

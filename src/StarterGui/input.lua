@@ -17,6 +17,8 @@ local actions = {}
 
 module.actions = actions
 
+local gameUi = script.Parent.gameUI
+
 local mode = script.Parent.mode
 module.mode = mode
 
@@ -134,7 +136,7 @@ spawn(function()
 end)
 
 module.menuButtons = {}
-for _, button in pairs(script.Parent.gameUI.right.buttons:GetChildren()) do
+for _, button in pairs(gameUi.right.buttons:GetChildren()) do
 	if button:IsA("GuiButton") then
 		module.menuButtons[button.Name] = button
 	end
@@ -155,10 +157,10 @@ local function buttonSetup(button)
 		end)
 	end
 end
-for _, guiButton in pairs(script.Parent:GetDescendants()) do
+for _, guiButton in pairs(gameUi:GetDescendants()) do
 	buttonSetup(guiButton)
 end
-script.Parent.DescendantAdded:connect(function(guiButton)
+gameUi.DescendantAdded:connect(function(guiButton)
 	buttonSetup(guiButton)
 end)
 
@@ -179,7 +181,7 @@ end
 
 module.menuScale = 1
 
-local buttonsFrame = script.Parent.gameUI.right.buttons
+local buttonsFrame = gameUi.right.buttons
 
 function module.init(Modules)
 	local tween = Modules.tween
@@ -326,7 +328,7 @@ function module.init(Modules)
 		end
 	end
 
-	for i,guiObject in pairs(script.Parent.Parent:GetDescendants()) do
+	for i,guiObject in pairs(gameUi.Parent:GetDescendants()) do
 		processGuiObject(guiObject)
 	end
 
@@ -349,42 +351,42 @@ function module.init(Modules)
 		end
 		if mode.Value == "mobile" then
 			module.menuScale = 0.7
-			script.Parent.leftBar.UIScale.Scale = 0.65
---			script.Parent.leftBar.Position = UDim2.new(0, 5,1, -50)
+			gameUi.leftBar.UIScale.Scale = 0.65
+--			gameUi.leftBar.Position = UDim2.new(0, 5,1, -50)
 
-			script.Parent.bottomRight.UIScale.Scale = 0.65
-			script.Parent.bottomRight.Size = UDim2.new(1, 0,1.625, 0)
+			gameUi.bottomRight.UIScale.Scale = 0.65
+			gameUi.bottomRight.Size = UDim2.new(1, 0,1.625, 0)
 
-			if script.Parent.bottomRight.hotbarFrame.content:FindFirstChild("hotbarButton10") then
-				script.Parent.bottomRight.hotbarFrame.content:FindFirstChild("hotbarButton10").Visible = false
+			if gameUi.bottomRight.hotbarFrame.content:FindFirstChild("hotbarButton10") then
+				gameUi.bottomRight.hotbarFrame.content:FindFirstChild("hotbarButton10").Visible = false
 			end
-			if script.Parent.bottomRight.hotbarFrame.decor:FindFirstChild("10") then
-				script.Parent.bottomRight.hotbarFrame.decor:FindFirstChild("10").Visible = false
+			if gameUi.bottomRight.hotbarFrame.decor:FindFirstChild("10") then
+				gameUi.bottomRight.hotbarFrame.decor:FindFirstChild("10").Visible = false
 			end
-			script.Parent.bottomRight.AnchorPoint = Vector2.new(1,1)
-			script.Parent.bottomRight.Position = UDim2.new(1,0,1,0)
+			gameUi.bottomRight.AnchorPoint = Vector2.new(1,1)
+			gameUi.bottomRight.Position = UDim2.new(1,0,1,0)
 		else
 			module.menuScale = 1
 
-			script.Parent.leftBar.UIScale.Scale = 1
-			script.Parent.leftBar.Size = UDim2.new(0, 100,1, -250)
----			script.Parent.leftBar.Position = UDim2.new(0, 5,1, -110)
---			script.Parent.leftBar.Position = UDim2.new(0, 5,1, -200)
+			gameUi.leftBar.UIScale.Scale = 1
+			gameUi.leftBar.Size = UDim2.new(0, 100,1, -250)
+---			gameUi.leftBar.Position = UDim2.new(0, 5,1, -110)
+--			gameUi.leftBar.Position = UDim2.new(0, 5,1, -200)
 
-			script.Parent.bottomRight.UIScale.Scale = 1
-			script.Parent.bottomRight.Size = UDim2.new(1, 0, 1, 0)
-			script.Parent.bottomRight.AnchorPoint = Vector2.new(0.5,1)
-			script.Parent.bottomRight.Position = UDim2.new(0.5,0,1,0)
-			script.Parent.bottomRight.Size = UDim2.new(1, 0, 1, 0)
-			if script.Parent.bottomRight.hotbarFrame.content:FindFirstChild("hotbarButton10") then
-				script.Parent.bottomRight.hotbarFrame.content:FindFirstChild("hotbarButton10").Visible = true
+			gameUi.bottomRight.UIScale.Scale = 1
+			gameUi.bottomRight.Size = UDim2.new(1, 0, 1, 0)
+			gameUi.bottomRight.AnchorPoint = Vector2.new(0.5,1)
+			gameUi.bottomRight.Position = UDim2.new(0.5,0,1,0)
+			gameUi.bottomRight.Size = UDim2.new(1, 0, 1, 0)
+			if gameUi.bottomRight.hotbarFrame.content:FindFirstChild("hotbarButton10") then
+				gameUi.bottomRight.hotbarFrame.content:FindFirstChild("hotbarButton10").Visible = true
 			end
-			if script.Parent.bottomRight.hotbarFrame.decor:FindFirstChild("10") then
-				script.Parent.bottomRight.hotbarFrame.decor:FindFirstChild("10").Visible = true
+			if gameUi.bottomRight.hotbarFrame.decor:FindFirstChild("10") then
+				gameUi.bottomRight.hotbarFrame.decor:FindFirstChild("10").Visible = true
 			end
 			if mode.Value == "xbox" or game.GuiService:IsTenFootInterface() then
 				module.menuScale = 1.2
-				script.Parent.bottomRight.UIScale.Scale = 1.2
+				gameUi.bottomRight.UIScale.Scale = 1.2
 			end
 		end
 		network:fireServer("signal_inputChanged", mode.Value)
@@ -538,7 +540,7 @@ function module.postInit(Modules)
 	end)
 
 	--mobile stuff
-	local touchJoystick = script.Parent:WaitForChild("touchJoystick")
+	local touchJoystick = gameUi:WaitForChild("touchJoystick")
 
 	touchJoystick.Visible = false
 

@@ -1,44 +1,42 @@
 local module = {}
 
 local runService = game:GetService("RunService")
+local ui = script.Parent.gameUI.products
 
 function module.open()
-	script.Parent.Visible = not script.Parent.Visible
+	ui.Visible = not ui.Visible
 end
-
-
-
 
 -- module.remapTarget
 
 local userSettings
 
 function module.init(Modules)
-	
+
 	local network = Modules.network
-	
-	script.Parent.close.Activated:connect(function()
-		Modules.focus.toggle(script.Parent)
+
+	ui.close.Activated:connect(function()
+		Modules.focus.toggle(ui)
 	end)
-	
+
 	function module.open()
-		if not script.Parent.Visible then
-			script.Parent.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
-			Modules.tween(script.Parent.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)
-		end		
-		Modules.focus.toggle(script.Parent)
+		if not ui.Visible then
+			ui.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
+			Modules.tween(ui.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)
+		end
+		Modules.focus.toggle(ui)
 	end
-	
-	for i,product in pairs(script.Parent.contents:GetChildren()) do
+
+	for i,product in pairs(ui.contents:GetChildren()) do
 		if product:FindFirstChild("productId") and product:FindFirstChild("buy") then
 			product.buy.Activated:connect(function()
 				game.MarketplaceService:PromptProductPurchase(game.Players.LocalPlayer, product.productId.Value)
 			end)
 		end
-	end	
-	
+	end
+
 	--network:invokeServer("requestChangePlayerSetting", "clearingInteraction", true)
-	
+
 end
 
 return module

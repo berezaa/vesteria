@@ -1,56 +1,56 @@
 local module = {}
 
+local ui = script.Parent.gameUI.textInputPrompt
+
 function module.init(Modules)
-	
 	local network = Modules.network
-	
 	local connection
 	local currentPrompt
-	
+
 	function module.hide()
 		if connection then
 			connection:disconnect()
 			currentPrompt = nil
-		end		
-		
-		if script.Parent.Visible then
-			Modules.focus.toggle(script.Parent)
+		end
+
+		if ui.Visible then
+			Modules.focus.toggle(ui)
 		end
 	end
-	
+
 	function module.prompt(info)
-		
+
 		local prompt = info.prompt or "....."
-		
+
 		if connection then
 			connection:disconnect()
-		end		
+		end
 		currentPrompt = prompt
 
-		script.Parent.Frame.code.TextBox.Text = ""
-		script.Parent.Frame.code.TextBox.PlaceholderText = prompt
-		if not script.Parent.Visible then
-			Modules.focus.toggle(script.Parent)
+		ui.Frame.code.TextBox.Text = ""
+		ui.Frame.code.TextBox.PlaceholderText = prompt
+		if not ui.Visible then
+			Modules.focus.toggle(ui)
 		end
-		
+
 		local input
-		
-		connection = script.Parent.Frame.send.Activated:connect(function()
-			input = script.Parent.Frame.code.TextBox.Text
+
+		connection = ui.Frame.send.Activated:connect(function()
+			input = ui.Frame.code.TextBox.Text
 		end)
-		
+
 		repeat wait() until input or currentPrompt ~= prompt
-		
+
 		if input then
 			module.hide()
 			return input
 		end
-	
+
 	end
 
 	network:create("textInputPrompt", "BindableFunction", "OnInvoke", module.prompt)
 
-	script.Parent.Frame.close.Activated:connect(module.hide)
+	ui.Frame.close.Activated:connect(module.hide)
 end
 
 return module

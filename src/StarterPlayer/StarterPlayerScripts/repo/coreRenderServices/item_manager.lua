@@ -2,12 +2,13 @@ local item_manager = {}
 
 local replicatedStorage = game:GetService("ReplicatedStorage")
 
-local modules		= require(replicatedStorage:WaitForChild("modules"))
-local detection 	= modules.load("detection")
-local network 		= modules.load("network")
-local mapping 		= modules.load("mapping")
+local modules = require(replicatedStorage:WaitForChild("modules"))
+local detection = modules.load("detection")
+local network = modules.load("network")
+local mapping = modules.load("mapping")
 
-local itemLookup 			= require(replicatedStorage.itemData)
+local itemDataLookup = require(replicatedStorage.itemData)
+local itemLookup = replicatedStorage.assets.items
 
 function item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
 	local currentlyEquipped = {}
@@ -21,7 +22,7 @@ function item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
 				accessorySlot 	= tonumber(accessorySlot)
 
 				if accessoryType == "EQUIPMENT" then
-					local equipmentBaseData = itemLookup[tonumber(accessoryId)]
+					local equipmentBaseData = itemDataLookup[tonumber(accessoryId)]
 
 					currentlyEquipped[tostring(accessorySlot)] = {
 						baseData 	= equipmentBaseData;
@@ -38,7 +39,7 @@ end
 
 
 local function isCurrentlyEquipped(currentlyEquipped, equipmentSlotData)
-	local equipmentBaseData = itemLookup[equipmentSlotData.id]
+	local equipmentBaseData = itemDataLookup[equipmentSlotData.id]
 
 	if currentlyEquipped[equipmentBaseData.equipmentSlot] then
 		if equipmentSlotData.id == currentlyEquipped[tostring(equipmentBaseData.equipmentSlot)].baseData.id then
@@ -53,7 +54,7 @@ function item_manager.GetWeaponStateAppendment(renderEntityData)
     local weaponStateAppendment
     local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderEntityData.entityContainer.entity)
 
-    if currentlyEquipped["1"] and currentlyEquipped["1"].baseData.equipmentType then
+	if currentlyEquipped["1"] and currentlyEquipped["1"].baseData.equipmentType then
         -- weaponState weapons should never overlap with dual wielding (BOW IN PARTICULAR)
         if renderEntityData.weaponState then
             weaponStateAppendment = "_" .. renderEntityData.weaponState
@@ -66,21 +67,24 @@ function item_manager.GetWeaponStateAppendment(renderEntityData)
         end
     end
 
+
     return weaponStateAppendment
 end
 
-function item_manager.CheckForCurrentlyEquippedForAnim(animationNameToLookFor,weaponStateAppendment,characterEntityAnimationTracks,currentPlayingStateAnimation,renderCharacter)
+function item_manager.CheckForCurrentlyEquippedForAnim(animationNameToLookFor,weaponStateAppendment,characterEntityAnimationTracks,renderCharacter)
 	local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
 	local currentPlayingStateAnimation
 
-	if currentlyEquipped["1"] and currentlyEquipped["1"].baseData and currentlyEquipped["1"].baseData.equipmentType then
-		local fullAnimationName = animationNameToLookFor.."_"..currentlyEquipped["1"].baseData.equipmentType..weaponStateAppendment
+	if weaponStateAppendment then
+		if currentlyEquipped["1"] and currentlyEquipped["1"].baseData and currentlyEquipped["1"].baseData.equipmentType then
+			local fullAnimationName = animationNameToLookFor.."_"..currentlyEquipped["1"].baseData.equipmentType..weaponStateAppendment
 
-		currentPlayingStateAnimation =
-			characterEntityAnimationTracks.movementAnimations[fullAnimationName] or
-			characterEntityAnimationTracks.movementAnimations[animationNameToLookFor]
-	else
-		currentPlayingStateAnimation = characterEntityAnimationTracks.movementAnimations[animationNameToLookFor]
+			currentPlayingStateAnimation =
+				characterEntityAnimationTracks.movementAnimations[fullAnimationName] or
+				characterEntityAnimationTracks.movementAnimations[animationNameToLookFor]
+		else
+			currentPlayingStateAnimation = characterEntityAnimationTracks.movementAnimations[animationNameToLookFor]
+		end
 	end
 
 	return currentPlayingStateAnimation
@@ -111,12 +115,15 @@ function item_manager.EquipNewItem(appearanceData,renderCharacter,_entityManifes
 
     local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
 
-    for i, equipmentData in pairs(appearanceData.equipment) do
+	for i, equipmentData in pairs(appearanceData.equipment) do
+
 		if not isCurrentlyEquipped(currentlyEquipped, equipmentData) then
 			if equipmentData.position == mapping.equipmentPosition.weapon or equipmentData.position == mapping.equipmentPosition["offhand"] then
-				local weaponBaseData = itemLookup[equipmentData.id]
+				local weaponBaseData = itemDataLookup[equipmentData.id]
+				local weaponVisualFolder = itemLookup[(string.lower(weaponBaseData.name))]
 
-				if weaponBaseData and (weaponBaseData.module:FindFirstChild("manifest") or weaponBaseData.module:FindFirstChild("container")) then
+
+				if weaponBaseData and (weaponVisualFolder:FindFirstChild("manifest") or weaponVisualFolder:FindFirstChild("container")) then
 					local weaponManifest
 					local dye 							= equipmentData.dye
 					local weaponGripType 				= weaponBaseData.gripType or 1
@@ -127,7 +134,7 @@ function item_manager.EquipNewItem(appearanceData,renderCharacter,_entityManifes
 						weaponGripType = mapping.gripType.left
 					end
 
-					local container = weaponBaseData.module:FindFirstChild("container")
+					local container = weaponVisualFolder:FindFirstChild("container")
 					if container then
 						container = container:FindFirstChild("RightHand") or container:FindFirstChild("LeftHand")
 						container = container:Clone()
@@ -169,8 +176,8 @@ function item_manager.EquipNewItem(appearanceData,renderCharacter,_entityManifes
 							weaponManifest 				= weaponToCopy
 							gripContainerOverrideCFrame = weaponToCopy.PrimaryPart.CFrame:toObjectSpace(container.CFrame)
 						end
-					elseif weaponBaseData.module:FindFirstChild("manifest") then
-						weaponManifest = weaponBaseData.module.manifest:Clone()
+					elseif weaponVisualFolder:FindFirstChild("manifest") then
+						weaponManifest = weaponVisualFolder.manifest:Clone()
 						if dye then
 							-- yes im that lazy
 							local v = weaponManifest
@@ -408,7 +415,7 @@ function item_manager.iterateThroughappearanceData(appearanceData,renderCharacte
             local isBowEquipped = false do
                 for i, equip in pairs(appearanceData.equipment) do
                     if equip.position == mapping.equipmentPosition.weapon then
-                        if itemLookup[equip.id].equipmentType == "bow" then
+                        if itemDataLookup[equip.id].equipmentType == "bow" then
                             isBowEquipped = true
                         end
                     end
@@ -479,6 +486,7 @@ function item_manager.createNetworkConnections(client,entitiesBeingRendered)
 			end
 		end
     end)
+
 
 end
 

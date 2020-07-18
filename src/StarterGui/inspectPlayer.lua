@@ -3,6 +3,7 @@
 local module = {}
 
 local activePlayer
+local ui = script.Parent.gameUI.inspectPlayer
 
 local slotData = {}
 
@@ -11,13 +12,13 @@ function module.init(Modules)
 	local tween = Modules.tween
 	local network = Modules.network
 	local configuration = Modules.configuration
-	
+
 	local replicatedStorage = game:GetService("ReplicatedStorage")
-		local itemLookup = require(replicatedStorage:WaitForChild("itemData"))		
-		local itemAttributes = require(replicatedStorage:WaitForChild("itemAttributes"))	
-	
+		local itemLookup = require(replicatedStorage:WaitForChild("itemData"))
+		local itemAttributes = require(replicatedStorage:WaitForChild("itemAttributes"))
+
 	local slots = {}
-	
+
 	local currentPartyInfo
 
 	local function updatePartyInfo(partyInfo)
@@ -25,31 +26,31 @@ function module.init(Modules)
 			partyInfo = network:invokeServer("playerRequest_getMyPartyData")
 		end
 		if partyInfo then
-			for i,partyMemberInfo in pairs(partyInfo.members) do
-				
+			for _, partyMemberInfo in pairs(partyInfo.members) do
+
 				local player = partyMemberInfo.player
-				
+
 				if player == game.Players.LocalPlayer then
 					partyInfo.isClientPartyLeader = partyMemberInfo.isLeader
-				end		
-			end		
+				end
+			end
 		end
 		currentPartyInfo = partyInfo
 	end
-	
+
 	local function isPlayerInParty(player)
 		if currentPartyInfo and currentPartyInfo.members then
-			for i, entry in pairs(currentPartyInfo.members) do
-				if entry.player == player then 
+			for _, entry in pairs(currentPartyInfo.members) do
+				if entry.player == player then
 					return true
 				end
 			end
 		end
-	end		
-	
+	end
+
 	network:connect("signal_myPartyDataChanged", "OnClientEvent", function(partyInfo)
 		updatePartyInfo(partyInfo)
-		if script.Parent.Visible and activePlayer then
+		if ui.Visible and activePlayer then
 			module.open(activePlayer, true)
 		end
 	end)
@@ -57,7 +58,7 @@ function module.init(Modules)
 		updatePartyInfo()
 	end)
 
-	for i,slot in pairs(script.Parent.content.equipment:GetChildren()) do
+	for _, slot in pairs(ui.content.equipment:GetChildren()) do
 		if slot:IsA("ImageButton") or slot:IsA("ImageLabel") then
 			slot.item.Image = ""
 			slot.frame.Visible = false
@@ -66,41 +67,41 @@ function module.init(Modules)
 			slot.LayoutOrder = 99
 			slotData[slot] = {}
 			table.insert(slots, slot)
-			
+
 			local function show()
 				network:invoke("populateItemHoverFrame", itemLookup[slotData[slot].id], "inspect", slotData[slot])
 			end
 			local function hide()
 				network:invoke("populateItemHoverFrame")
 			end
-			
+
 			slot.item.MouseEnter:connect(show)
 			slot.item.SelectionGained:connect(show)
-			
+
 			slot.item.MouseLeave:connect(hide)
 			slot.item.SelectionLost:connect(hide)
 		end
-	end	
-	
+	end
+
 	function module.close()
-		if script.Parent.Visible then
-			Modules.focus.toggle(script.Parent)
+		if ui.Visible then
+			Modules.focus.toggle(ui)
 		end
 		network:invoke("populateItemHoverFrame")
-		script.Parent.Visible = false
+		ui.Visible = false
 		activePlayer = nil
 	end
-	
-	script.Parent.close.Activated:connect(module.close)
-	
+
+	ui.close.Activated:connect(module.close)
+
 	function module.open(player, isUpdate)
 
-		if script.Parent.Visible and player == activePlayer and not isUpdate then
+		if ui.Visible and player == activePlayer and not isUpdate then
 			module.close()
 			return
 		end
-		
-		for i,button in pairs(script.Parent.content.buttons:GetChildren()) do
+
+		for i,button in pairs(ui.content.buttons:GetChildren()) do
 			if button:FindFirstChild("fail") then
 				button.fail.Visible = false
 			end
@@ -111,59 +112,59 @@ function module.init(Modules)
 				button.icon.Visible = true
 			end
 		end
-		
-		
-		
-		local partyButton = script.Parent.content.buttons:FindFirstChild("request party")
+
+
+
+		local partyButton = ui.content.buttons:FindFirstChild("request party")
 		local isPartyMember = isPlayerInParty(player)
 		if isPartyMember then
-			
+
 			if player == game.Players.LocalPlayer then
 				if currentPartyInfo then
 					partyButton.ImageColor3 = Color3.fromRGB(247, 0, 4)
 					partyButton.tooltip.Value = "Leave Party"
-					partyButton.Active = true	
+					partyButton.Active = true
 				else
 					partyButton.ImageColor3 = Color3.fromRGB(95, 95, 95)
 					partyButton.tooltip.Value = "Not in Party"
-					partyButton.Active = false							
+					partyButton.Active = false
 				end
 			elseif currentPartyInfo and currentPartyInfo.isClientPartyLeader then
 				partyButton.ImageColor3 = Color3.fromRGB(247, 0, 4)
 				partyButton.tooltip.Value = "Kick from Party"
-				partyButton.Active = true					
+				partyButton.Active = true
 			else
 				partyButton.ImageColor3 = Color3.fromRGB(95, 95, 95)
 				partyButton.tooltip.Value = "Already in Party"
-				partyButton.Active = false						
+				partyButton.Active = false
 			end
 		else
 			partyButton.ImageColor3 = Color3.fromRGB(80, 247, 222)
 			partyButton.tooltip.Value = "Invite to Party"
 			partyButton.Active = true
 		end
-	
-		if not script.Parent.Visible then
-			Modules.focus.toggle(script.Parent)
+
+		if not ui.Visible then
+			Modules.focus.toggle(ui)
 		end
-		script.Parent.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
-		Modules.tween(script.Parent.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)			
+		ui.UIScale.Scale = (Modules.input.menuScale or 1) * 0.75
+		Modules.tween(ui.UIScale, {"Scale"}, (Modules.input.menuScale or 1), 0.5, Enum.EasingStyle.Bounce)
 
 
 		activePlayer = player
-		script.Parent.content.info.username.Text = player.Name
-		
+		ui.content.info.username.Text = player.Name
+
 		local class = player:FindFirstChild("class") and player.class.Value:lower() or "unknown"
 		local emblemVisible
 		if class:lower() ~= "adventurer" then
-			script.Parent.content.info.username.emblem.Image = "rbxgameasset://Images/emblem_"..class:lower()
-			script.Parent.content.info.username.emblem.Visible = true
+			ui.content.info.username.emblem.Image = "rbxgameasset://Images/emblem_"..class:lower()
+			ui.content.info.username.emblem.Visible = true
 			emblemVisible = true
 		else
-			script.Parent.content.info.username.emblem.Visible = false
-		end		
-		
-		for i,statText in pairs(script.Parent.content.stats:GetChildren()) do
+			ui.content.info.username.emblem.Visible = false
+		end
+
+		for i,statText in pairs(ui.content.stats:GetChildren()) do
 			if statText:IsA("TextLabel") then
 			local stat = player:FindFirstChild(statText.Name)
 				if stat then
@@ -171,39 +172,39 @@ function module.init(Modules)
 				else
 					statText.Text = statText.Name:upper()..": ???"
 				end
-				local textBounds = game:GetService("TextService"):GetTextSize(statText.Text, statText.TextSize, statText.Font, Vector2.new()).X 
+				local textBounds = game:GetService("TextService"):GetTextSize(statText.Text, statText.TextSize, statText.Font, Vector2.new()).X
 				statText.Size = UDim2.new(0, textBounds + 5, 1, 0)
 			end
-		end	
-		
+		end
+
 		local level = player:FindFirstChild("level") and player.level.Value or 0
-		script.Parent.content.level.Text = "Lvl. ".. level
-		
-		local label = script.Parent.content.info.level.value
+		ui.content.level.Text = "Lvl. ".. level
+
+		local label = ui.content.info.level.value
 		label.Text = "Lvl. "..level
-		
+
 		local xSize = game.TextService:GetTextSize(label.Text, label.TextSize, label.Font, Vector2.new()).X + 16
-		script.Parent.content.info.level.Size = UDim2.new(0, xSize, 0, 26)
-		
+		ui.content.info.level.Size = UDim2.new(0, xSize, 0, 26)
+
 		local referrals = player:FindFirstChild("referrals") and player.referrals.Value or 0
 		if referrals > 0 then
-			local label = script.Parent.content.info.referrals.value
+			local label = ui.content.info.referrals.value
 			label.Text = tostring(referrals)
-			
+
 			local xSize = game.TextService:GetTextSize(label.Text, label.TextSize, label.Font, Vector2.new()).X + 41
-			script.Parent.content.info.referrals.Size = UDim2.new(0, xSize, 0, 26)
-			
-			
-			script.Parent.content.info.referrals.Visible = true
+			ui.content.info.referrals.Size = UDim2.new(0, xSize, 0, 26)
+
+
+			ui.content.info.referrals.Visible = true
 		else
-			script.Parent.content.info.referrals.Visible = false
+			ui.content.info.referrals.Visible = false
 		end
-		
-		
+
+
 		local extend = (emblemVisible and 22) or 0
-		
-		local textSize = game:GetService("TextService"):GetTextSize(player.Name, script.Parent.content.info.username.TextSize, script.Parent.content.info.username.Font, Vector2.new()).X
-		script.Parent.content.info.username.Size = UDim2.new(0, textSize + 5 + (extend), 0, 30)
+
+		local textSize = game:GetService("TextService"):GetTextSize(player.Name, ui.content.info.username.TextSize, ui.content.info.username.Font, Vector2.new()).X
+		ui.content.info.username.Size = UDim2.new(0, textSize + 5 + (extend), 0, 30)
 
 		for i,slot in pairs(slots) do
 			slot.item.Image = ""
@@ -214,7 +215,7 @@ function module.init(Modules)
 			slot.stars.Visible = false
 			slot.attribute.Visible = false
 			Modules.fx.setFlash(slot.frame, false)
-		end	
+		end
 
 		if player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart:FindFirstChild("appearance") then
 			local data = game:GetService("HttpService"):JSONDecode(player.Character.PrimaryPart.appearance.Value)
@@ -228,11 +229,11 @@ function module.init(Modules)
 						if realItem then
 							slot.item.Image = realItem.image
 							slot.item.ImageColor3 = Color3.new(1,1,1)
-							
+
 							slot.frame.Visible = true
 							slot.shine.Visible = true
-							slot.ImageTransparency = 0				
-							
+							slot.ImageTransparency = 0
+
 							if equipment.attribute then
 								local attributeData = itemAttributes[equipment.attribute]
 								if attributeData and attributeData.color then
@@ -240,21 +241,21 @@ function module.init(Modules)
 									slot.attribute.Visible = true
 								end
 							end
-							
+
 							if equipment.dye then
-								slot.item.ImageColor3 = Color3.fromRGB(equipment.dye.r, equipment.dye.g, equipment.dye.b) 
+								slot.item.ImageColor3 = Color3.fromRGB(equipment.dye.r, equipment.dye.g, equipment.dye.b)
 							end
-							local titleColor, itemTier = Modules.itemAcquistion.getTitleColorForInventorySlotData(equipment) 
-							
+							local titleColor, itemTier = Modules.itemAcquistion.getTitleColorForInventorySlotData(equipment)
+
 							slot.frame.ImageColor3 = (itemTier and itemTier > 1 and titleColor) or Color3.fromRGB(106, 105, 107)
 							slot.shine.ImageColor3 = titleColor or Color3.fromRGB(179, 178, 185)
-							slot.shine.Visible = titleColor ~= nil and itemTier > 1					
-							
+							slot.shine.Visible = titleColor ~= nil and itemTier > 1
+
 							Modules.fx.setFlash(slot.frame, slot.shine.Visible)
-							
+
 							slotData[slot] = equipment
 							slot.LayoutOrder = equipment.position
-							
+
 							slot.stars.Visible = false
 							local upgrades = equipment.successfulUpgrades
 							if upgrades then
@@ -269,7 +270,7 @@ function module.init(Modules)
 								end
 								if upgrades <= 3 then
 									for i,star in pairs(slot.stars:GetChildren()) do
-										local score = tonumber(star.Name) 
+										local score = tonumber(star.Name)
 										if score then
 											star.Visible = score <= upgrades
 										end
@@ -281,64 +282,64 @@ function module.init(Modules)
 									slot.stars.exact.Text = upgrades
 								end
 								slot.stars.Visible = true
-								
-							end
-						
 
-							
+							end
+
+
+
 						end
 					end
 				end
 
 				-- yeet right here
-				
-				if script.Parent.character.ViewportFrame:FindFirstChild("entity") then
-					script.Parent.character.ViewportFrame.entity:Destroy()
+
+				if ui.character.ViewportFrame:FindFirstChild("entity") then
+					ui.character.ViewportFrame.entity:Destroy()
 				end
-				
-				if script.Parent.character.ViewportFrame:FindFirstChild("entity2") then
-					script.Parent.character.ViewportFrame.entity2:Destroy()
-				end		
-				
-				local camera = script.Parent.character.ViewportFrame.CurrentCamera
+
+				if ui.character.ViewportFrame:FindFirstChild("entity2") then
+					ui.character.ViewportFrame.entity2:Destroy()
+				end
+
+				local camera = ui.character.ViewportFrame.CurrentCamera
 				if camera == nil then
 					camera = Instance.new("Camera")
-					camera.Parent = script.Parent.character.ViewportFrame
-					script.Parent.character.ViewportFrame.CurrentCamera = camera
+					camera.Parent = ui.character.ViewportFrame
+					ui.character.ViewportFrame.CurrentCamera = camera
 				end
-				
-				local client = player	
-				local character = player.Character	
-				local mask = script.Parent.character.ViewportFrame.characterMask
-				
+
+				local client = player
+				local character = player.Character
+				local mask = ui.character.ViewportFrame.characterMask
+
 				local characterAppearanceData = {}
 				characterAppearanceData.equipment 	= data.equipment or {}
 				characterAppearanceData.accessories = data.accessories or {}
-						
+
 				local characterRender = network:invoke("createRenderCharacterContainerFromCharacterAppearanceData",mask, characterAppearanceData or {}, client)
 				characterRender.Parent = workspace.CurrentCamera
-				
+
 				local animationController = characterRender.entity:WaitForChild("AnimationController")
 				--[[
 				local track = animationController:LoadAnimation(mask.idle)
 				track.Looped = true
 				track.Priority = Enum.AnimationPriority.Idle
-				track:Play()		
+				track:Play()
 				]]
-		
-		
+
+
 				local currentEquipment = network:invoke("getCurrentlyEquippedForRenderCharacter", characterRender.entity)
-		
-				
+
+
 				local weaponType do
 					if currentEquipment["1"] then
 						weaponType = currentEquipment["1"].baseData.equipmentType
 					end
-				end		
-						
-						
+				end
+
+
 				local track = network:invoke("getMovementAnimationForCharacter", animationController, "idling", weaponType, nil)
-				
+
 				if track then
 					if typeof(track) == "Instance" then
 						track:Play()
@@ -347,11 +348,11 @@ function module.init(Modules)
 							obj:Play()
 						end
 					end
-					
+
 					spawn(function()
 						while true do
 							wait()
-							
+
 							if typeof(track) == "Instance" then
 								if track.Length > 0 then
 									break
@@ -363,22 +364,22 @@ function module.init(Modules)
 										isGood = false
 									end
 								end
-								
+
 								if isGood then
 									break
 								end
 							end
 						end
-						
+
 						if characterRender then
-							
-							if script.Parent.character.ViewportFrame:FindFirstChild("entity") then
-								script.Parent.character.ViewportFrame.entity:Destroy()
-							end							
-							
+
+							if ui.character.ViewportFrame:FindFirstChild("entity") then
+								ui.character.ViewportFrame.entity:Destroy()
+							end
+
 							local entity 	= characterRender.entity
-							entity.Parent 	= script.Parent.character.ViewportFrame
-							
+							entity.Parent 	= ui.character.ViewportFrame
+
 							characterRender:Destroy()
 							local focus 	= CFrame.new(entity.PrimaryPart.Position + entity.PrimaryPart.CFrame.lookVector * 6.3, entity.PrimaryPart.Position) * CFrame.new(3,0,0)
 							camera.CFrame 	= CFrame.new(focus.p + Vector3.new(0,1.5,0), entity.PrimaryPart.Position + Vector3.new(0,0.5,0))
@@ -388,37 +389,37 @@ function module.init(Modules)
 					local track = animationController:LoadAnimation(mask.idle)
 					track.Looped = true
 					track.Priority = Enum.AnimationPriority.Idle
-					track:Play()	
-				end			
-		
-		--[[	
-				
+					track:Play()
+				end
+
+		--[[
+
 				spawn(function()
 					wait()
 					if characterRender then
 						local entity = characterRender.entity
-						entity.Parent = script.Parent.character.ViewportFrame
-						
+						entity.Parent = ui.character.ViewportFrame
+
 						characterRender:destroy()
 						local focus = CFrame.new(entity.PrimaryPart.Position + entity.PrimaryPart.CFrame.lookVector * 6.3, entity.PrimaryPart.Position) * CFrame.new(3,0,0)
 						camera.CFrame = CFrame.new(focus.p + Vector3.new(0,1.5,0), entity.PrimaryPart.Position + Vector3.new(0,0.5,0))
 
-						
+
 					end
-				end)				
-		]]		
-				
+				end)
+		]]
+
 			end
 		end
-	end	
-	
+	end
+
 	function module.tradeRequest()
-		if activePlayer and script.Parent.Visible and script.Parent.content.buttons["request trade"].icon.Visible then
+		if activePlayer and ui.Visible and ui.content.buttons["request trade"].icon.Visible then
 			if not configuration.getConfigurationValue("isTradingEnabled") then
 				Modules.notifications.alert({text = "Trading is temporarily disabled."}, 2)
 			end
-			
-			local button = script.Parent.content.buttons["request trade"]
+
+			local button = ui.content.buttons["request trade"]
 			button.icon.Visible = false
 			local success = network:invokeServer("playerRequest_requestTrade", activePlayer)
 
@@ -428,35 +429,35 @@ function module.init(Modules)
 			else
 				button.fail.Visible = true
 			end
-			
+
 			spawn(function()
 				wait(1)
 				button.fail.Visible = false
 				button.success.Visible = false
 				button.icon.Visible = true
 			end)
-			
+
 		end
 	end
-	
 
-	
-	
-	
-	script.Parent.content.buttons["request trade"].Activated:Connect(module.tradeRequest)
+
+
+
+
+	ui.content.buttons["request trade"].Activated:Connect(module.tradeRequest)
 	network:invoke("addInputAction", "request trade", module.tradeRequest, "T", 6)
-	
-	
+
+
 	function module.guildRequest()
-		local button = script.Parent.content.buttons["guild"]
-		if activePlayer and script.Parent.Visible and button.Visible and button.icon.Visible then
+		local button = ui.content.buttons["guild"]
+		if activePlayer and ui.Visible and button.Visible and button.icon.Visible then
 			local activePlayerName = activePlayer.Name
 			Modules.notifications.alert({text = "Invited "..activePlayerName.." to your guild."}, 2)
-			
+
 			button.icon.Visible = false
 
 			local waiting = true
-			
+
 			button.loading.Visible = true
 			spawn(function()
 				while waiting do
@@ -468,8 +469,8 @@ function module.init(Modules)
 					wait(0.5)
 				end
 				button.loading.Visible = false
-			end)			
-			
+			end)
+
 			local success, status = network:invokeServer("playerRequest_invitePlayerToGuild", activePlayer)
 			button.loading.Visible = false
 			waiting = false
@@ -480,93 +481,93 @@ function module.init(Modules)
 			else
 				Modules.notifications.alert({text = status or "The guild invite failed."}, 2)
 				button.fail.Visible = true
-			end	
-			
+			end
+
 			spawn(function()
 				wait(1)
 				button.fail.Visible = false
 				button.success.Visible = false
 				button.icon.Visible = true
-			end)			
-		end	
+			end)
+		end
 	end
-	
-	script.Parent.content.buttons["guild"].Activated:connect(module.guildRequest)	
-	
-	function module.partyRequest()
-		if activePlayer and script.Parent.Visible and script.Parent.content.buttons["request party"].icon.Visible then
-			
 
-			local button = script.Parent.content.buttons["request party"]
-			button.icon.Visible = false		
-			
-			local target = activePlayer	
-			local success, reason 
-			
+	ui.content.buttons["guild"].Activated:connect(module.guildRequest)
+
+	function module.partyRequest()
+		if activePlayer and ui.Visible and ui.content.buttons["request party"].icon.Visible then
+
+
+			local button = ui.content.buttons["request party"]
+			button.icon.Visible = false
+
+			local target = activePlayer
+			local success, reason
+
 			if button.tooltip.Value == "Kick from Party" then
 				pcall(function()
 					success, reason = network:invokeServer("playerRequest_leaveParty", target)
-				end)				
+				end)
 			elseif button.tooltip.Value == "Leave Party" then
 				pcall(function()
 					success, reason = network:invokeServer("playerRequest_leaveParty")
-				end)	
+				end)
 				if success then
 					button.success.Visible = true
 					Modules.notifications.alert({text = "Left the party."}, 2)
 				elseif reason then
 					button.fail.Visible = true
 					Modules.notifications.alert({text = reason or "Error occured"}, 2)
-				end									
+				end
 			else
 				pcall(function()
 					success, reason = network:invokeServer("playerRequest_invitePlayerToMyParty", target)
-				end)						
+				end)
 				if success then
 					button.success.Visible = true
 					Modules.notifications.alert({text = "Invited "..target.Name.." to the party."}, 2)
 				elseif reason then
 					button.fail.Visible = true
 					Modules.notifications.alert({text = reason or "Error occured"}, 2)
-				end					
-			end			
-			
-			
-			
+				end
+			end
+
+
+
 			local waiting = true
-			
-			
-			
 
-			waiting = false	
-				
 
-			
+
+
+			waiting = false
+
+
+
 
 			spawn(function()
 				wait(1)
 				button.fail.Visible = false
 				button.success.Visible = false
 				button.icon.Visible = true
-			end)			
-			
-		end	
-	end
-		
-	script.Parent.content.buttons["request party"].Activated:Connect(module.partyRequest)	
-	network:invoke("addInputAction", "request party", module.partyRequest, "P", 6)
-	
-	function module.duelRequest()
-		if activePlayer and script.Parent.Visible and script.Parent.content.buttons["request duel"].icon.Visible then
-			
+			end)
 
-			local button = script.Parent.content.buttons["request duel"]
-			button.icon.Visible = false			
-			
+		end
+	end
+
+	ui.content.buttons["request party"].Activated:Connect(module.partyRequest)
+	network:invoke("addInputAction", "request party", module.partyRequest, "P", 6)
+
+	function module.duelRequest()
+		if activePlayer and ui.Visible and ui.content.buttons["request duel"].icon.Visible then
+
+
+			local button = ui.content.buttons["request duel"]
+			button.icon.Visible = false
+
 			local target = activePlayer
 			local success = network:invokeServer("playerRequest_requestChallenge", target)
-			
-			
+
+
 			if success then
 				button.success.Visible = true
 				Modules.notifications.alert({text = "Sent "..target.Name.." a duel challenge."}, 2)
@@ -578,14 +579,14 @@ function module.init(Modules)
 				button.fail.Visible = false
 				button.success.Visible = false
 				button.icon.Visible = true
-			end)			
+			end)
 		end
 	end
-	script.Parent.content.buttons["request duel"].Activated:Connect(module.duelRequest)	
-	network:invoke("addInputAction", "request duel", module.duelRequest, "U", 6)	
+	ui.content.buttons["request duel"].Activated:Connect(module.duelRequest)
+	network:invoke("addInputAction", "request duel", module.duelRequest, "U", 6)
 end
-	
-	
+
+
 
 return module
 

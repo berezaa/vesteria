@@ -8,16 +8,14 @@ local itemData = require(replicatedStorage.itemData)
 
 -- todo: remove this disgusting absolute reference
 
-
 local player = game.Players.LocalPlayer
 local playerGui = player.PlayerGui
-
 local ui = playerGui.gameUI.menu_storage
 
 local content = ui.Frame.content
 
 local lastStorageDataReceived = nil
-local storageSlotPairing 		= {}
+local storageSlotPairing = {}
 
 local lastSelected
 
@@ -25,7 +23,6 @@ local lastSelected
 local animationInterface = require(game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("repo"):WaitForChild("animationInterface"))
 
 function module.init(Modules)
-
 	local uiCreator = Modules.uiCreator
 
 	local function onStorageItemMouseEnter(storageItem)
@@ -46,7 +43,7 @@ function module.init(Modules)
 		end
 	end
 
-	local storageItemTemplate = script:WaitForChild("storageItemTemplate")
+	local storageItemTemplate = ui:WaitForChild("storageItemTemplate")
 
 	local function onStorageItemDoubleClicked(storageItem)
 		if storageSlotPairing[storageItem] then
@@ -142,7 +139,7 @@ function module.init(Modules)
 
 			for i = 1, 20 do
 				if not content:FindFirstChild(tostring(i)) then
-					local storageItem 				= script.storageItemTemplate:Clone()
+					local storageItem 				= ui.storageItemTemplate:Clone()
 					storageItem.item.duplicateCount.Text 	= ""
 					storageItem.item.Image = ""
 					storageItem.item.Visible = true
