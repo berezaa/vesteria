@@ -138,7 +138,7 @@ local function int__equipWeapon(weaponData)
 	if itemBaseData and itemBaseData.isEquippable and itemBaseData.equipmentType and itemBaseData.equipmentSlot == mapping.equipmentPosition.weapon then
 		if not currentlyEquipped and assetFolder.damageInterfaces:FindFirstChild(itemBaseData.equipmentType) then
 			curWeaponType = itemBaseData.equipmentType
-			
+
 			-- check for dual swords and sword and shield
 			if clientCharacterContainer and clientCharacterContainer:FindFirstChild("entity") then
 				local currentEquipment = network:invoke("getCurrentlyEquippedForRenderCharacter", clientCharacterContainer.entity)
@@ -152,7 +152,7 @@ local function int__equipWeapon(weaponData)
 				end
 			end
 		end
-		
+
 		if curWeaponType then
 			currentlyEquipped = require(assetFolder.damageInterfaces[curWeaponType])
 			currentlyEquipped:equip()
@@ -260,7 +260,6 @@ local function onInputBegan(input, absorbed)
 
 			events:fireEventAll("playerWillUseBasicAttack", player)
 			currentlyEquipped:attack(input)
-
 			network:fire("stopChannels", "attack")
 			network:fire("signalBasicAttacking", true)
 
@@ -474,11 +473,11 @@ local function main()
 	end
 	network:connect("myClientCharacterContainerChanged", "Event", onMyClientCharacterContainerChanged)
 	-- get player character --
-	
+
 	if player.Character then
 		onCharacterAdded(player.Character)
 	end
-	
+
 	player.CharacterAdded:connect(onCharacterAdded)
 
 	userInputService.InputBegan:connect(onInputBegan)

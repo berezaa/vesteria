@@ -968,7 +968,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				end
 
 				if animationToBePlayed then
-					melee_manager.PlayAnimation(animationSequenceName, CharacterEntityAnimationTracks, animationName, animationToBePlayed, extraData)
+					melee_manager.PlayAnimation(animationSequenceName, characterEntityAnimationTracks, animationName, animationToBePlayed, extraData)
 				end
 			end
 		end

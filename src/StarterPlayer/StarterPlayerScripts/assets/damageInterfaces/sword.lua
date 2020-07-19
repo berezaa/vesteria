@@ -160,7 +160,6 @@ function sword:attack()
 	elseif animationsForAnimationController.swordAnimations.strike3.IsPlaying then
 		return
 	end
-
 	-- have to do it this way for now, no reference to ability animations  in animationsForAnimationController
 	local animController = myClientCharacterContainer.entity.AnimationController
 	for i, track in pairs(animController:GetPlayingAnimationTracks()) do
@@ -234,7 +233,6 @@ function sword:attack()
 			slashAnimationKeyframeConnection = animationsForAnimationController.swordAnimations.strike1.KeyframeReached:connect(onSlashAnimationKeyframeReached)
 
 			animationInterface:replicateClientAnimationSequence("swordAnimations", "strike1")
-
 			-- start damage sequence
 			currentDamageGUID = httpService:GenerateGUID(false)
 			spawn(startDamageSequencePolling)
