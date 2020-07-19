@@ -12,8 +12,8 @@ local userInputService = game:GetService("UserInputService")
 local collectionService = game:GetService("CollectionService")
 local httpService = game:GetService("HttpService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
-
 local modules = require(replicatedStorage.modules)
+
 local network = modules.load("network")
 local utilities = modules.load("utilities")
 local placeSetup = modules.load("placeSetup")
@@ -29,7 +29,6 @@ local ability_utilities	= modules.load("ability_utilities")
 
 local itemData = require(replicatedStorage.itemData)
 local abilityLookup = require(replicatedStorage.abilityLookup)
-
 local ResourceController = require(script.Parent.Resources)
 
 local entityRenderCollectionFolder = placeSetup.awaitPlaceFolder("entityRenderCollection")
@@ -132,12 +131,14 @@ local function handleRequestEntityDamageRequest(serverHitbox, damagePosition, so
 end
 
 local curWeaponType
+
 local function int__equipWeapon(weaponData)
+
 	local itemBaseData = itemData[weaponData.id]
 	if itemBaseData and itemBaseData.isEquippable and itemBaseData.equipmentType and itemBaseData.equipmentSlot == mapping.equipmentPosition.weapon then
 		if not currentlyEquipped and assetFolder.damageInterfaces:FindFirstChild(itemBaseData.equipmentType) then
 			curWeaponType = itemBaseData.equipmentType
-
+			
 			-- check for dual swords and sword and shield
 			if clientCharacterContainer and clientCharacterContainer:FindFirstChild("entity") then
 				local currentEquipment = network:invoke("getCurrentlyEquippedForRenderCharacter", clientCharacterContainer.entity)
@@ -151,12 +152,13 @@ local function int__equipWeapon(weaponData)
 				end
 			end
 		end
-
+		
 		if curWeaponType then
 			currentlyEquipped = require(assetFolder.damageInterfaces[curWeaponType])
 			currentlyEquipped:equip()
 		end
 	end
+
 end
 
 local function int__unequipWeapon()
@@ -167,7 +169,9 @@ local function int__unequipWeapon()
 	end
 end
 
+
 local function int_checkIfEquipWeaponFromEquipment(equipment)
+
 	if equipment then
 		local weaponEquipmentData
 		for i, equipmentData in pairs(equipment) do
@@ -190,6 +194,8 @@ local function int_checkIfEquipWeaponFromEquipment(equipment)
 		end
 	else
 	end
+
+
 end
 
 local function onPropogationRequestToSelf(propogationNameTag, propogationValue)
@@ -292,6 +298,7 @@ local function onAttackInteractionSoundPlayed(position, soundName)
 
 	utilities.playSound(soundName, position)
 end
+
 network:connect("attackInteractionSoundPlayed", "OnClientEvent", onAttackInteractionSoundPlayed)
 
 local function onAttackInteractionAttackableAttacked(attackingPlayer, part, hitPosition)
@@ -304,8 +311,8 @@ local function onAttackInteractionAttackableAttacked(attackingPlayer, part, hitP
 	module = require(module)
 	module.onAttackedClient(attackingPlayer)
 end
-network:connect("attackInteractionAttackableAttacked", "OnClientEvent", onAttackInteractionAttackableAttacked)
 
+network:connect("attackInteractionAttackableAttacked", "OnClientEvent", onAttackInteractionAttackableAttacked)
 
 local function shake(model)
 	if model and model:IsA("Model") then
@@ -393,6 +400,7 @@ local function doAttackInteractions(guid)
 			attackInteraction(interaction, part)
 		end
 	end
+
 end
 
 local hitDebounceTable = {}
@@ -443,6 +451,7 @@ end
 -- returns to NOTHING if we use an event
 
 local function main()
+
 	network:create("getCurrentlyEquippedEquipmentType", "BindableFunction", "OnInvoke", int_getCurrentlyEquippedEquipmentType)
 	network:create("setCanPlayerBasicAttack", "BindableFunction", "OnInvoke", onSetCanPlayerBasicAttack)
 	network:create("requestEntityDamageDealt", "BindableEvent", "Event", handleRequestEntityDamageRequest)
@@ -457,18 +466,19 @@ local function main()
 	local equipment = network:invoke("getCacheValueByNameTag", "equipment")
 
 	-- render character listener --
+
 	local newMyClientCharacterContainer = network:invoke("getMyClientCharacterContainer")
+
 	if newMyClientCharacterContainer then
 		onMyClientCharacterContainerChanged(newMyClientCharacterContainer)
 	end
-
 	network:connect("myClientCharacterContainerChanged", "Event", onMyClientCharacterContainerChanged)
-
 	-- get player character --
+	
 	if player.Character then
 		onCharacterAdded(player.Character)
 	end
-
+	
 	player.CharacterAdded:connect(onCharacterAdded)
 
 	userInputService.InputBegan:connect(onInputBegan)

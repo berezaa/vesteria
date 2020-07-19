@@ -215,6 +215,7 @@ local function main()
 				if RunService:IsServer() and (method == "invoke" or method == "fire") then
 					parent = game.ServerStorage.serverNetwork
 				end
+				
 				parent:WaitForChild(objName, 60)
 				report(objName, method)
 --				if method == "fireClient" or method == "fireAllClients" or method == "fireServer" then

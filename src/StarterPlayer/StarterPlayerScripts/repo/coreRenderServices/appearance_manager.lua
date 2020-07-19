@@ -27,7 +27,6 @@ end
 function appearence_manager.LoadAppearence(accessoryLookup, appearanceData, hatEquipmentData, itemLookup, renderCharacter)
 	--damien this took 5 min-=
 	-- cry me a river
-	print("RUNGAPPEARNCE")
 	local hairColor = accessoryLookup.hairColor:FindFirstChild(tostring(appearanceData.accessories.hairColorId or 1)).Value
 	local shirtColor = accessoryLookup.shirtColor:FindFirstChild(tostring(appearanceData.accessories.shirtColorId or 1)).Value
 

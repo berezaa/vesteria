@@ -432,7 +432,7 @@ function item_manager.iterateThroughappearanceData(appearanceData,renderCharacte
 end
 
 function item_manager.createNetworkConnections(client,entitiesBeingRendered)
-    network:create("item_manager.getCurrentlyEquippedForRenderCharacter", "BindableFunction", "OnInvoke", function(renderCharacter)
+    network:create("getCurrentlyEquippedForRenderCharacter", "BindableFunction", "OnInvoke", function(renderCharacter)
 		return item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
     end)
 

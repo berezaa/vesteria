@@ -636,7 +636,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						-- probably fix this.. i really hate that animations are two layered
 
 						if typeof(currentPlayingStateAnimation) == "Instance" then
-						print("Animation!")
 							previousKeyframeReached_event = currentPlayingStateAnimation.KeyframeReached:connect(onCharacterAnimationTrackKeyframeReached)
 							-- ber edit mess with weights here
 							if animationNameToLookFor == "walking" then
@@ -969,7 +968,6 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				end
 
 				if animationToBePlayed then
-					print("plAYING" .. animationName)
 					melee_manager.PlayAnimation(animationSequenceName, CharacterEntityAnimationTracks, animationName, animationToBePlayed, extraData)
 				end
 			end
@@ -2559,7 +2557,6 @@ end
 
 
 local function main()
-	print("__________________ENTITYRENDERER______________________")
 	network:create("getMyClientCharacterContainer", "BindableFunction", "OnInvoke", function()
 		-- wait for character!
 --		while not myClientPlayerCharacterContainer do wait(0.1) end
