@@ -277,7 +277,6 @@ end
 
 local function main()
 	onPropogationRequestToSelf("abilities", network:invoke("getCacheValueByNameTag", "abilities"))
-	print("swordmainsetup")
 	network:connect("propogationRequestToSelf", "Event", onPropogationRequestToSelf)
 	network:connect("characterStateChanged", "Event", onCharacterStateChanged)
 end
