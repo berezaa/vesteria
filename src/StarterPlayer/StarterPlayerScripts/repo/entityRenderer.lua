@@ -619,8 +619,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderEntityData.entityContainer.entity)
 
 				if characterEntityAnimationTracks.movementAnimations[animationNameToLookFor] or (currentlyEquipped["1"] and currentlyEquipped["1"].baseData.equipmentType and characterEntityAnimationTracks.movementAnimations[animationNameToLookFor .. "_" .. currentlyEquipped["1"].baseData.equipmentType .. weaponStateAppendment]) then
-
-					currentPlayingStateAnimation = item_manager.CheckForCurrentlyEquippedForAnim(animationNameToLookFor,weaponStateAppendment,characterEntityAnimationTracks,renderEntityData.entityContainer.entity)
+					currentPlayingStateAnimation = item_manager.GetCurrentlyPlayingAnimation(animationNameToLookFor,weaponStateAppendment,characterEntityAnimationTracks,renderEntityData.entityContainer.entity)
 					if currentPlayingStateAnimation then
 						if previousKeyframeReached_event then
 							previousKeyframeReached_event:disconnect()
@@ -635,8 +634,9 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						animationInterface:stopPlayingAnimationsByAnimationCollectionName(characterEntityAnimationTracks, "emoteAnimations")
 
 						-- probably fix this.. i really hate that animations are two layered
-						print(currentlyPlayingAnimation)
+
 						if typeof(currentPlayingStateAnimation) == "Instance" then
+						print("Animation!")
 							previousKeyframeReached_event = currentPlayingStateAnimation.KeyframeReached:connect(onCharacterAnimationTrackKeyframeReached)
 							-- ber edit mess with weights here
 							if animationNameToLookFor == "walking" then

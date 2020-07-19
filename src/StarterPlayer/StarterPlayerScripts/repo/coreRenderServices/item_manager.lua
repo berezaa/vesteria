@@ -71,7 +71,7 @@ function item_manager.GetWeaponStateAppendment(renderEntityData)
     return weaponStateAppendment
 end
 
-function item_manager.CheckForCurrentlyEquippedForAnim(animationNameToLookFor,weaponStateAppendment,characterEntityAnimationTracks,renderCharacter)
+function item_manager.GetCurrentlyPlayingAnimation(animationNameToLookFor,weaponStateAppendment,characterEntityAnimationTracks,renderCharacter)
 	local currentlyEquipped = item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
 	local currentPlayingStateAnimation
 
@@ -85,6 +85,8 @@ function item_manager.CheckForCurrentlyEquippedForAnim(animationNameToLookFor,we
 		else
 			currentPlayingStateAnimation = characterEntityAnimationTracks.movementAnimations[animationNameToLookFor]
 		end
+	else
+		currentPlayingStateAnimation = characterEntityAnimationTracks.movementAnimations[animationNameToLookFor]
 	end
 
 	return currentPlayingStateAnimation
