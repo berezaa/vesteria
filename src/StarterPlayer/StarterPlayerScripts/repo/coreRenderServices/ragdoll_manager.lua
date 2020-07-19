@@ -9,7 +9,7 @@ function ragdoll_manager.ragDollCharacter(entity, renderEntityData)
     local ragdoll = entity:Clone()
     ragdoll.Parent = entity.Parent
     entity:Destroy()
-
+    print("REMOVEDENTITY")
     local motorNames = {"Root", "Neck", "RightShoulder", "LeftShoulder", "RightElbow", "LeftElbow", "Waist", "RightWrist", "LeftWrist", "RightHip", "LeftHip", "RightKnee", "LeftKnee", "RightAnkle", "LeftAnkle"}
     for _, motorName in pairs(motorNames) do
         ragdoll:FindFirstChild(motorName, true):Destroy()
