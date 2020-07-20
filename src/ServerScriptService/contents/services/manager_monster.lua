@@ -2308,7 +2308,6 @@ local function onMonsterDamageRequestReceived(player, monsterManifest, damageDat
 		end
 
 		network:fireAllClients("signal_damage", monster.manifest, damageData)
-
 		if monster.health <= 0 then
 			-- trigger the rewards
 			if not monster.deathRewardsApplied then
@@ -2316,7 +2315,7 @@ local function onMonsterDamageRequestReceived(player, monsterManifest, damageDat
 			end
 
 
-
+			print("KILLMONSTER! >:)")
 			-- monster died. kill it.
 			monster.stateMachine:forceStateChange("dead")
 		else

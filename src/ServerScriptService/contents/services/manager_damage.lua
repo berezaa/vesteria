@@ -19,6 +19,7 @@ local events = modules.load("events")
 local serverStorage 		= game:GetService("ServerStorage")
 local itemLookupContainer 	= replicatedStorage.itemData
 local itemLookup 			= require(itemLookupContainer)
+local itemFolderLookup = replicatedStorage.assets:WaitForChild("items")
 local perkLookup			= require(replicatedStorage.perkLookup)
 local abilityLookup 		= require(replicatedStorage.abilityLookup)
 local monsterLookup 		= require(replicatedStorage.monsterLookup)
@@ -167,6 +168,7 @@ network:create("signal_playerKilledByPlayer", "RemoteEvent")
 
 -- called when killing damage is applied to any entity
 local function processEntityKillingBlow(serverHitbox, killer, damageData)
+	print("X_X")
 	local killedMonster
 	local killedPlayer
 	if serverHitbox.entityType.Value == "monster" then
@@ -316,7 +318,6 @@ local function playerDamageRequest_server(sourcePlayer, serverHitbox, damageData
 	if not serverHitbox:FindFirstChild("health") or not serverHitbox:FindFirstChild("maxHealth") then return false end
 
 	-- sourcePlayer, serverHitbox, damageToDeal, sourceType, sourceId
-
 	if serverHitbox.health.Value > 0 and serverHitbox:FindFirstChild("killingBlow") == nil then
 		local player = game.Players:GetPlayerFromCharacter(serverHitbox.Parent)
 		if player then
@@ -344,7 +345,6 @@ local function playerDamageRequest_server(sourcePlayer, serverHitbox, damageData
 			killingBlowSource.Parent = killingBlowTag
 
 			killingBlowTag.Parent = serverHitbox
-
 			processEntityKillingBlow(serverHitbox, killer, damageData)
 		end
 
@@ -475,7 +475,6 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 		return false
 	end
 	local stats = playerData.nonSerializeData.statistics_final
-
 	if player.Character and player.Character.PrimaryPart and playerData and serverHitbox and (serverHitbox:IsDescendantOf(entityManifestCollectionFolder) or serverHitbox:IsDescendantOf(entityManifestCollectionFolder)) then
 		-- can this person even attack the target...?
 		if sourceType ~= "monster" and not damage.canPlayerDamageTarget(player, serverHitbox) then
@@ -485,10 +484,8 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 		if serverHitbox:FindFirstChild("isDamageImmune") and serverHitbox.isDamageImmune.Value then
 			return false
 		end
-
 		local damageData, attackerStats, defenderStats
 		local isServerHitboxPlayer = (serverHitbox.entityType.Value == "character")
-
 		local abilityDamageMulti = 1
 		local hitsDoneToEntityManifestBySourceTag = 0
 
@@ -557,7 +554,6 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 								}
 							end
 						end
-
 						abilityDamageMulti  = abilityStatistics.damageMultiplier or 1
 						-- note: this stuff does literally nothing with the dmg changes
 						local baseDamage = calculatePlayerDamage(player, abilityDamageType, targetLevel, isServerHitboxPlayer)
@@ -671,6 +667,7 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 				local equipmentData = network:invoke("getPlayerEquipmentDataByEquipmentPosition", player, mapping.equipmentPosition.weapon)
 				if equipmentData then
 					local weaponBaseData = itemLookup[equipmentData.id]
+					local weaponManfiestFolder = itemFolderLookup[string.lower(weaponBaseData.name)]
 					if weaponBaseData and weaponBaseData.module then
 
 						local DAMAGE_TYPE_OVERRIDE
@@ -720,15 +717,13 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 									end
 								end
 							else
-								local manifest = weaponBaseData.module:FindFirstChild("manifest")
-
-								if not manifest and weaponBaseData.module:FindFirstChild("container") then
-									local container = weaponBaseData.module.container:FindFirstChild("RightHand") or weaponBaseData.module.container:FindFirstChild("LeftHand")
+								local manifest = weaponManfiestFolder:FindFirstChild("manifest")
+								if not manifest and weaponManfiestFolder:FindFirstChild("container") then
+									local container = weaponManfiestFolder.container:FindFirstChild("RightHand") or weaponManfiestFolder.container:FindFirstChild("LeftHand")
 									if container then
 										manifest = container:FindFirstChild("manifest") or container.PrimaryPart
 									end
 								end
-
 								if manifest then
 									local diameter 			= math.max(manifest.Size.X, manifest.Size.Y, manifest.Size.Z) + 6 -- add 6 to pad for laggy players
 									local adjusted_position = detection.projection_Box(serverHitbox.CFrame, serverHitbox.Size, player.Character.PrimaryPart.Position)
@@ -740,7 +735,6 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 								end
 							end
 						end
-
 						if passesSecurityCheck then
 							local EQUIPMENT_DAMAGE_TYPE = DAMAGE_TYPE_OVERRIDE or "physical"
 
@@ -836,9 +830,7 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 				--]]
 			end
 		end
-
 		-- damageData, attackerStats, defenderStats
-
 		if damageData then
 			local ATK = attackerStats.damage--(damageData.damageType == "magical" and attackerStats.magicalDamage) or attackerStats.physicalDamage
 			local DEF = defenderStats.defense--(damageData.damageType == "magical" and defenderStats.magicalDefense) or defenderStats.physicalDefense
@@ -909,7 +901,6 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 					end
 				end
 			end
-
 			damageData.position = damagePosition
 
 			-- ranged damage bonus?
@@ -922,7 +913,6 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 					end
 				end
 			end
-
 			-- CRIT!
 			if attackerStats.criticalStrikeChance and attackerStats.criticalStrikeChance > 0 and attackerStats.criticalStrikeChance >= critChanceRandom:NextNumber() then
 				damageData.damage 		= damageData.damage * CRIT_DAMAGE_MULTIPLIER
@@ -975,7 +965,6 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 					end
 				end
 			end
-
 			-- PARRY
 			if damageData.category then
 				local targetPlayer = sourceType == "monster" and player or game.Players:GetPlayerFromCharacter(serverHitbox.Parent)
@@ -1032,7 +1021,6 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 					end
 				end
 			end
-
 			if attackerData and attackerData.nonSerializeData.statistics_final.damageGivenMulti then
 				damageData.damage = damageData.damage * attackerData.nonSerializeData.statistics_final.damageGivenMulti
 			end
@@ -1081,7 +1069,6 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 				local loss = damageLossPerMultiHit ^ (arrowMultiHitCache[guid][targetManifest] - 1)
 				damageData.damage = damageData.damage * loss
 			end
-
 			-- ranger's stance damage implementation
 			if (damageData.equipmentType == "bow") and sourceTag == "ranger stance" then
 				if not player.Character then return end
@@ -1105,11 +1092,9 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 					damageData.damage = damageData.damage * rangerStanceStatus.statusEffectModifier.damageBonus
 				end
 			end
-
 			-- fire out on the event system to let other things modify the damage at will
 			damageData.target = serverHitbox
 			events:fireEventLocal("playerWillDealDamage", player, damageData)
-
 			local successfullyDealtDamage do
 				if sourceType == "monster" then
 					-- monster is damaging player

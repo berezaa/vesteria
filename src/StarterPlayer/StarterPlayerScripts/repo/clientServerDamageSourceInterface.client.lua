@@ -122,10 +122,7 @@ local function handleRequestEntityDamageRequest(serverHitbox, damagePosition, so
 
 	-- check if is descendant
 	if damage.canPlayerDamageTarget(player, serverHitbox) then
-
-
 		network:fire("monsterDamagedAtPosition", damagePosition)
-
 		network:fireServer("playerRequest_damageEntity", serverHitbox, damagePosition, sourceType, sourceId, sourceTag, GUID)
 	end
 end
@@ -424,10 +421,8 @@ local function performClientDamageCycle(sourceType, sourceId, guid)
 				if not hitDebounceTable[guid][entityManifest] then
 					local boxcastOriginCF 	= currentWeaponManifest.CFrame
 					local boxProjection_serverHitbox = detection.projection_Box(entityManifest.CFrame, entityManifest.Size, boxcastOriginCF.p)
-
 					if detection.boxcast_singleTarget(boxcastOriginCF, currentWeaponManifest.Size * Vector3.new(3 + sizeIncrease, 2 + sizeIncrease, 3 + sizeIncrease), boxProjection_serverHitbox) then
 						hitDebounceTable[guid][entityManifest] = true
-
 						network:fire("requestEntityDamageDealt", entityManifest, boxProjection_serverHitbox, sourceType, sourceId, guid)
 					end
 				end
