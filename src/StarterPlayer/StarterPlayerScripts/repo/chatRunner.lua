@@ -11,17 +11,16 @@ network:connect("signal_alertChatMessage", "OnClientEvent", function(messageTabl
 end)
 
 network:connect("signal_playerKilledByPlayer", "OnClientEvent", function(deadPlayer, killer, damageInfo, verb)
-						
 	if killer and verb then
-		
-
 		-- you did this!
 		if killer == game.Players.LocalPlayer then
 			utilities.playSound("kill", deadPlayer.Character and deadPlayer.Character.PrimaryPart)
-			network:fire("alert", {text = "You " .. verb ..  " " ..deadPlayer.Name.."!"; textColor3 = Color3.fromRGB(255, 93, 61);})
+			network:fire("alert", {
+				text = "You " .. verb ..  " " ..deadPlayer.Name.."!";
+				textColor3 = Color3.fromRGB(255, 93, 61);
+			})
 		end
-				
-	end	
+	end
 end)
 
 return module

@@ -283,7 +283,7 @@ function module.init(Modules)
 								local padding
 								local existingPadding = guiObject:FindFirstChild("UIPadding")
 								if existingPadding == nil then
-									padding = script.clickPadding:Clone()
+									padding = script.Parent.effects.clickPadding:Clone()
 									padding.Parent = guiObject
 								else
 									existingPadding.PaddingTop = UDim.new(existingPadding.PaddingTop.Scale, existingPadding.PaddingTop.Offset + 4)
@@ -301,7 +301,7 @@ function module.init(Modules)
 								-- old buttons
 								local dark = guiObject:FindFirstChild("activationDark")
 								if dark == nil then
-									dark = script.activationDark:Clone()
+									dark = script.Parent.effects.activationDark:Clone()
 									dark.Parent = guiObject
 								end
 								tween(dark, {"ImageTransparency"}, 0.5, 0.15)
@@ -328,14 +328,14 @@ function module.init(Modules)
 		end
 	end
 
-	for i,guiObject in pairs(gameUi.Parent:GetDescendants()) do
+	for _, guiObject in pairs(gameUi.Parent:GetDescendants()) do
 		processGuiObject(guiObject)
 	end
 
-	script.Parent.Parent.DescendantAdded:connect(processGuiObject)
+	script.Parent.DescendantAdded:connect(processGuiObject)
 
 	local function setInputObjectsVisible(visible)
-		for i,inputObject in pairs(inputObjects) do
+		for _, inputObject in pairs(inputObjects) do
 			if inputObject then
 				inputObject.Visible = visible
 			end

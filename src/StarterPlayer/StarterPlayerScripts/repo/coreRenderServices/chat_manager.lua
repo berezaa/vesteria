@@ -6,10 +6,13 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 local modules = require(replicatedStorage:WaitForChild("modules"))
 local network = modules.load("network")
 
+local runService = game:GetService("RunService")
+local assetFolder = replicatedStorage:WaitForChild("assets")
+
 local function getOldestChatBubble(chats)
 	local oldest
 	local lowestLayoutOrder = 99
-	for i, chat in pairs(chats) do
+	for _, chat in pairs(chats) do
 		if chat:IsA("GuiObject") and chat.LayoutOrder < lowestLayoutOrder then
 			oldest = chat
 			lowestLayoutOrder = chat.LayoutOrder
@@ -38,7 +41,7 @@ local function setPrimaryChatBubble(chatBubble)
 end
 
 local function getChatTagPartForEntity(entityContainer)
-	for i, chatTagPart in pairs(game.CollectionService:GetTagged("chatTag")) do
+	for _, chatTagPart in pairs(game.CollectionService:GetTagged("chatTag")) do
 		if chatTagPart.Parent == entityContainer then
 			return chatTagPart
 		end
@@ -137,16 +140,16 @@ game.ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents").OnMessageDone
 	--  {"ExtraData":{"Tags":[],"ChatColor":null,"NameColor":null},"IsFiltered":true,"MessageType":"Message","IsFilterResult":true,
 	--	"Time":1539139847,"ID":0,"FromSpeaker":"berezaa","Message":"## #### ##### #### #### ##","OriginalChannel":"All","SpeakerUserId":5000861,
 	--  "MessageLength":26}
-	
+
 	-- confirm
 	if messageInfo.IsFilterResult or runService:IsStudio() then
 		local player = game.Players:GetPlayerByUserId(messageInfo.SpeakerUserId)
 		local message = messageInfo.Message
-	
+
 		if player and player.Character and player.Character.PrimaryPart and message then
 			local renderEntityData = entitiesBeingRendered[player.Character.PrimaryPart]
 			if not renderEntityData or not renderEntityData.entityContainer.PrimaryPart then return false end
-	
+
 			local chatTag = renderEntityData.entityContainer:FindFirstChild("chatGui")
 			if chatTag then
 				displayChatMessageFromChatTagPart(chatTag, message, player.Name)

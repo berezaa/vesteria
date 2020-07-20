@@ -757,6 +757,7 @@ function module.init(Modules)
 				inventoryItem.Name = tostring(i)
 				inventoryItem.LayoutOrder = i
 				inventoryItem.Parent = content
+				inventoryItem.Visible = true
 			end
 
 
