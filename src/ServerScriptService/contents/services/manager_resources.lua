@@ -134,8 +134,10 @@ local function calcDamageForNode(node, player)
 			end
 		end
 		
-		if weaponItem.resourceDamageModifier[nodeTypeMetadata.NodeCategory] then
-			return weaponItem.resourceDamageModifier[nodeTypeMetadata.NodeCategory]
+		if weaponItem.resourceDamageModifier then
+			if weaponItem.resourceDamageModifier[nodeTypeMetadata.NodeCategory] then
+				return weaponItem.resourceDamageModifier[nodeTypeMetadata.NodeCategory]
+			end
 		end
 	end
 		
