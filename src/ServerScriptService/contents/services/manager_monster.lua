@@ -86,12 +86,6 @@ monsterClass.burstCooldown = 0 --
 local LAST_MONSTER_UPDATE_CYCLE = tick()
 local LAST_MONSTER_UPDATE_CYCLE_END = tick()
 
-local function DEBUG__PRINT(monster, ...)
-	if monster.manifest:FindFirstChild("ParticleEmitter") then
-		print("***", ...)
-	end
-end
-
 local httpService = game:GetService("HttpService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
 local modules = require(replicatedStorage.modules)
@@ -100,13 +94,10 @@ local utilities = modules.load("utilities")
 local physics = modules.load("physics")
 local placeSetup = modules.load("placeSetup")
 local projectile = modules.load("projectile")
-local mapping = modules.load("mapping")
-local levels = modules.load("levels")
-local pathfinding = modules.load("pathfinding")
+
 local configuration = modules.load("configuration")
 local events = modules.load("events")
 
-local itemData = require(replicatedStorage.itemData)
 local monsterLookup = require(replicatedStorage.monsterLookup)
 local defaultMonsterState = require(replicatedStorage.defaultMonsterState)
 
@@ -114,77 +105,43 @@ local defaultMonsterState = require(replicatedStorage.defaultMonsterState)
 -- to each class are redirected to the
 monsterClass.__index = monsterClass
 
--- amount of time monster will sleep between cycles
-local MONSTER_MICRO_SLEEP_TIME 	= 1 / 10
-
--- if there are no players within this amount of range
--- monster will fall asleep (wont be updated for min amount of time)
-local MONSTER_SLEEP_RANGE 				= 150
-
--- time monster is asleep before another check happens
-local MONSTER_SLEEP_TIME 				= 10
-
--- time between monster roams (roaming involves a bit of raycasting
--- so we don't wanna overdue it)
-local MONSTER_ROAMING_TIME 				= 3
-
--- how often the monster will refresh to find the nearest player
---local MONSTER_PLAYER_CHECK_TIME			= 5
-
--- the margin of error when approaching a target position
--- we cant get it right on the dot for performance reasons
-local MONSTER_END_POSITION_ALPHA 		= 1
-
-local MONSTER_DEATH_TIME  				= 5
+local MONSTER_DEATH_TIME = 5
 
 -- how much it scales down the monster's hitbox from the model size
 -- todo: make this a monster stat, some monster might have odd dilutions
-local MONSTER_HITBOX_DILUTION 	= 0.96
+local MONSTER_HITBOX_DILUTION = 0.96
 
-local MONSTER_SPAWN_CYCLE_TIME 			= 10
+local MONSTER_SPAWN_CYCLE_TIME = 10
 
-local MONSTER_COLLECTION 				= {}
+local MONSTER_COLLECTION = {}
 
+local itemLookupContainer = replicatedStorage.itemData
+local itemLookup = require(itemLookupContainer)
 
--- disabled cus pathfinding on roblox terrain is awful
--- todo: maybe fix this, maybe remove it.
-local IS_MONSTER_PATHFINDING_ENABLED = true
+local runService = game:GetService("RunService")
 
-local itemLookupContainer 	= replicatedStorage.itemData
-local itemLookup 			= require(itemLookupContainer)
+local collectionService = game:GetService("CollectionService")
 
-local runService 	= game:GetService("RunService")
-local serverStorage = game:GetService("ServerStorage")
+local spawnRegionCollectionsFolder = placeSetup.getPlaceFolder("spawnRegionCollections")
+local entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
+local entityRenderCollectionFolder = placeSetup.getPlaceFolder("entityRenderCollection")
+local itemsFolder = placeSetup.getPlaceFolder("items")
+local entitiesFolder = placeSetup.getPlaceFolder("entities")
+local foilage = placeSetup.getPlaceFolder("foilage")
 
-local replicatedStorage 	= game:GetService("ReplicatedStorage")
-local pathfindingService 	= game:GetService("PathfindingService")
-local collectionService 	= game:GetService("CollectionService")
-
-local SHOW_DEBUG = false
-
-local spawnRegionCollectionData = require(serverStorage.spawnRegionCollectionData)
-
-local spawnRegionCollectionsFolder 		= placeSetup.getPlaceFolder("spawnRegionCollections")
-local entityManifestCollectionFolder 	= placeSetup.getPlaceFolder("entityManifestCollection")
-local entityRenderCollectionFolder 		= placeSetup.getPlaceFolder("entityRenderCollection")
-local itemsFolder 						= placeSetup.getPlaceFolder("items")
-local entitiesFolder 					= placeSetup.getPlaceFolder("entities")
-local foilage							= placeSetup.getPlaceFolder("foilage")
-local activeMonsterLures				= placeSetup.getPlaceFolder("activeMonsterLures")
-
-
-local MONSTER_RAYCAST_IGNORE_LIST 		= {spawnRegionCollectionsFolder, entityManifestCollectionFolder, entityRenderCollectionFolder, itemsFolder, entitiesFolder, foilage}
-
--- collection of all monsterStats loaded
-local monsterDataCollection = {}
-
--- collection of the spawnRegion each monster can spawn in
-local monsterSpawnRegionCollection = {}
+local MONSTER_RAYCAST_IGNORE_LIST = {
+	spawnRegionCollectionsFolder,
+	entityManifestCollectionFolder,
+	entityRenderCollectionFolder,
+	itemsFolder,
+	entitiesFolder,
+	foilage
+}
 
 network:create("signal_damage", "RemoteEvent")
 
 network:create("showDebugFor", "RemoteEvent", "OnServerEvent", function(client, part)
-	for i,v in pairs(entityManifestCollectionFolder:GetChildren()) do
+	for _, v in pairs(entityManifestCollectionFolder:GetChildren()) do
 		if v:FindFirstChild("ParticleEmitter") then
 			v.ParticleEmitter:Destroy()
 		end
@@ -203,11 +160,11 @@ local function _isTargetEntityInVisionCone(monster)
 	if not targetEntity then return false, "no HRP" end
 
 	-- point a cframe in the direction of the part, and get the lookVector
-	local rLookVector 	= CFrame.new(monster.manifest.Position, targetEntity.Position).lookVector
+	local rLookVector = CFrame.new(monster.manifest.Position, targetEntity.Position).lookVector
 
 	-- find out the degree difference in where the part is facing
 	-- to the vector that points directly to the target part from the main part
-	local res 			= math.acos(rLookVector:Dot(monster.manifest.CFrame.lookVector))
+	local res = math.acos(rLookVector:Dot(monster.manifest.CFrame.lookVector))
 
 	-- return true if vectors are 30 degrees off each other at maximum
 	-- (for either side, giving a cone of 60 degrees)
@@ -223,7 +180,6 @@ function monsterClass:isTargetEntityInLineOfSight(overrideSightRange, useVisionC
 			targetEntity = predictiveTargetEntity
 		end
 	end
-
 
 	local function wasHit(targetEntity)
 		if not targetEntity then return false, "no target HRP" end
@@ -397,10 +353,6 @@ local function getEntityDensity(monster)
 	}
 end
 
-local function _debugShowPath(monster, waypoints)
-
-end
-
 ---------------------
 -- CLASS FUNCTIONS --
 ---------------------
@@ -427,7 +379,14 @@ function monsterClass:dropItem(dropInformation, physItem, lootMulti)
 	physItem = physItem or nil
 	lootMulti = lootMulti or 1
 
-	local item = network:invoke("spawnItemOnGround",dropInformation.lootDropData, dropInformation.dropPosition, dropInformation.itemOwners)
+	local item = network:invoke(
+		"spawnItemOnGround",
+		dropInformation.lootDropData,
+		dropInformation.dropPosition,
+		dropInformation.itemOwners,
+		physItem
+	)
+
 	if item == nil then return false end
 
 	-- monster idol
@@ -438,34 +397,17 @@ function monsterClass:dropItem(dropInformation, physItem, lootMulti)
 		monsterNameTag.Parent = item
 	end
 
-	-- apply random enchantments to drops:
-
-
-
-	if lootMulti > 1 then
-		--[[
-			local tag = Instance.new("BoolValue")
-			tag.Name = "singleOwnerPickup"
-			tag.Parent = item
-		]]
-	end
-
-	local attachmentTarget
-
 	local velo = Vector3.new((randoGen:NextNumber() - 0.5) * 24, (2 + randoGen:NextNumber()) * 30, (randoGen:NextNumber() - 0.5) * 24)
 	velo = velo * (1 + ((lootMulti - 1) / 27))
 
 	if item:IsA("BasePart") then
 		item.Velocity = velo
-		attachmentTarget = item
 	elseif item:IsA("Model") and (item.PrimaryPart or item:FindFirstChild("HumanoidRootPart")) then
 		local primaryPart = item.PrimaryPart or item:FindFirstChild("HumanoidRootPart")
 		if primaryPart then
 			primaryPart.Velocity = velo
-			attachmentTarget = primaryPart
 		end
 	end
-
 
 	return true, item
 end
@@ -1590,20 +1532,16 @@ local function triggerMonsterRewardsSequence(monster, playerWhoKilled, damageDat
 	local goldMulti = 1
 
 	local totalDamageDealt 	= 0
-	local adjustedTotalDamageDealt = 0
 	local damageDealers = 0
-
 	for player, damageDealt in pairs(monster.damageTable) do
 		if player and damageDealt > 1 then
 			local char = player.Character and player.Character.PrimaryPart
 			if char and char:FindFirstChild("state") and char.state.Value ~= "dead" then
 				totalDamageDealt = totalDamageDealt + damageDealt
-				adjustedTotalDamageDealt = adjustedTotalDamageDealt + damageDealt ^ (1/2)
 				damageDealers = damageDealers + 1
 			end
 		end
 	end
-
 	local playerInvolvementMulti = damageDealers ^ (1/3)
 	XPMulti = XPMulti * playerInvolvementMulti
 	goldMulti = goldMulti * playerInvolvementMulti
@@ -1612,17 +1550,13 @@ local function triggerMonsterRewardsSequence(monster, playerWhoKilled, damageDat
 	local totalEXP 	= monster.EXP * XPMulti
 
 	local owners = {}
-	local expResults = {}
 	-- award EXP
-
 	for player, damageDealt in pairs(monster.damageTable) do
 		if player and player.Parent and damageDealt > 0 then
 			local playerData = network:invoke("getPlayerData", player)
 			if playerData then
-
 				if totalEXP > 0 then
-					local xp = (totalEXP / damageDealers) * playerData.nonSerializeData.statistics_final.wisdom
-
+					local xp = (totalEXP / damageDealers) * (playerData.nonSerializeData.statistics_final.wisdom or 1)
 					-- party bonus
 					local partyData = network:invoke("getPartyDataByPlayer", player)
 					if partyData and partyData.members then
@@ -1635,21 +1569,8 @@ local function triggerMonsterRewardsSequence(monster, playerWhoKilled, damageDat
 
 					xp = math.ceil(xp)
 
-					-- up to 2x exp for mobs 10 levels higher, 0.5x exp for mobs 5 levels lower
-					-- no effect on mobs within 1 level of you
-					--[[
-					local levelDifference = monster.level - playerData.level
-					if math.abs(levelDifference) > 1 then
-						xp = xp * math.clamp(1 + levelDifference/10, 0.5, 2)
-					end
-					]]
-
 					playerData.nonSerializeData.incrementPlayerData("exp",xp)
-					expResults[player.Name] = xp
-
 				end
-
-				-- give quest trigger to anyone who damages enemy
 
 				local monsterReference = {}
 				for i,v in pairs(monster) do
@@ -1657,8 +1578,12 @@ local function triggerMonsterRewardsSequence(monster, playerWhoKilled, damageDat
 						monsterReference[i] = v
 					end
 				end
-
-				network:fire("questTriggerOccurred", player, "monster-killed", {["monsterName"] = monster.monsterName; ["monster"] = monsterReference})
+				network:fire(
+					"questTriggerOccurred",
+					player,
+					"monster-killed",
+					{["monsterName"] = monster.monsterName; ["monster"] = monsterReference}
+				)
 
 				if monster.module.Name == "Spider Queen" then
 					spawn(function()
@@ -1671,34 +1596,24 @@ local function triggerMonsterRewardsSequence(monster, playerWhoKilled, damageDat
 		end
 
 	end
-
-	if totalEXP > 0 then
---				events:fireEventAll("playersXpGained", expResults)
-	end
-
 	-- drop item loot
 
 	-- super hacky todo: dont do this xD
 
-
-
-	local damageTable = monster.damageTable
 	local lootDrops = utilities.copyTable(monster.lootDrops)
 
-	local level = monster.level
 	local dropPosition = monster.manifest.Position
 	local monsterName = monster.manifest.Name
 
 	if monster.additionalLootDrops then
-		for i, lootDrop in pairs(monster.additionalLootDrops) do
+		for _, lootDrop in pairs(monster.additionalLootDrops) do
 			table.insert(lootDrops, lootDrop)
 		end
 	end
-
 	if not monster.dropsDisabled then
 		spawn(function()
 			for n = 1, math.ceil(lootMulti) do
-				for i, lootDrop in pairs(lootDrops) do
+				for _, lootDrop in pairs(lootDrops) do
 					if n <= math.floor(lootMulti) or rand:NextNumber() < (lootMulti - math.floor(lootMulti)) then
 
 						local lootSpawnChance = lootDrop.spawnChance or 0.001
@@ -1719,10 +1634,8 @@ local function triggerMonsterRewardsSequence(monster, playerWhoKilled, damageDat
 
 							local itemOwners = {}
 
-							local ownerCount = #owners
-
 							-- ber: equal loot drop
-							for i,owner in pairs(owners) do
+							for _, owner in pairs(owners) do
 								table.insert(itemOwners, owner)
 							end
 
@@ -1803,11 +1716,7 @@ local function triggerMonsterRewardsSequence(monster, playerWhoKilled, damageDat
 							if #dropInformation.itemOwners > 0 then
 								-- drop the item!
 								local success = monster:dropItem(dropInformation, physItem, lootMulti)
-
-								if not success then
-									-- we error, stop spawning drops?
-									break
-								end
+								assert(success, "failed to drop monster loot")
 							end
 						end
 					end
@@ -1816,374 +1725,6 @@ local function triggerMonsterRewardsSequence(monster, playerWhoKilled, damageDat
 			wait()
 		end)
 	end
-	----------------
-	----------------
-	----------------
-	----------------
-
---	if playerWhoKilled then
---		network:fire("playerKilledMonster", playerWhoKilled, monster.manifest, damageData.sourceType, damageData.sourceId)
---	end
---
---	local XPMulti 			= monster.bonusXPMulti or 1
---	local totalEXP 			= levels.getMonsterEXPFromLevel(monster.level) * XPMulti
---	local totalDamageDealt 	= 0
---
---	for playerCheck, damageDealt in pairs(monster.damageTable) do
---		local playerData 		= network:invoke("getPlayerData", playerCheck)
---		local equipmentSlotData = network:invoke("getPlayerEquipmentDataByEquipmentPosition", playerCheck, 1)
---		-- we need to seriously re-eval our anti-exploit strategy. This was coming up too often in testing -ber
---		--[[
---		if playerData and equipmentSlotData and itemLookup[equipmentSlotData.id] and itemLookup[equipmentSlotData.id].equipmentType ~= "bow" then
---			if playerLastMonsterKill[playerCheck] then
---				local currentMonsterKill 	= {position = monsterManifest.Position; timestamp = tick()}
---
---				local timeDelta 	= currentMonsterKill.timestamp - playerLastMonsterKill[playerCheck].timestamp
---				local positionDelta = currentMonsterKill.position - playerLastMonsterKill[playerCheck].position
---
---				if configuration.getConfigurationValue("doCheckMonsterKillDistanceChangeForEXPAndLoot") then
---					if not monster.playersWithAbilityUse or not monster.playersWithAbilityUse[playerCheck.userId] then
---						--warn("pos dif in", math.floor(timeDelta * 100) / 100, "sec --", positionDelta.magnitude, "expected", playerData.nonSerializeData.statistics_final.walkspeed * 2 * timeDelta)
---						if positionDelta.magnitude <= 5 + playerData.nonSerializeData.statistics_final.walkspeed * 2 * timeDelta then
---							-- do nothing, they're good :)
---						else
---							-- player got here much faster than expected..
---							warn(playerCheck, "GOT HERE WAY TOO QUICKLY FROM LAST MONSTER, NO REWARDS FOR THEM.")
---							monster.damageTable[playerCheck] = nil
---							-- network:invoke("incrementPlayerArcadeScore", playerCheck, 1)
---						end
---					else
---						-- used ability, they're probably fine
---					end
---				end
---
---				playerLastMonsterKill[playerCheck] = currentMonsterKill
---			else
---				playerLastMonsterKill[playerCheck] 	= {position = monsterManifest.Position; timestamp = tick()}
---			end
---		end
---		]]
---		totalDamageDealt = totalDamageDealt + damageDealt
---	end
---
---	local owners = {}
---	local expResults = {}
---	-- award EXP
---
---	for player,damageDealt in pairs(monster.damageTable) do
---		if player and damageDealt > 0 then
---			local playerData = network:invoke("getPlayerData", player)
---			if playerData then
---				local share = damageDealt / totalDamageDealt
---
---				if totalEXP > 0 then
---
---					local adjustEXP = share * totalEXP
---					local xp =  math.clamp(math.floor(adjustEXP + 0.5), 1, totalEXP) * playerData.nonSerializeData.statistics_final.wisdom
---
---
---					-- party bonus
---					local partyData = network:invoke("getPartyDataByPlayer", player)
---					if partyData and partyData.members then
---						if #partyData.members >= 6 then
---							xp = xp * 1.2
---						elseif #partyData.members > 1 then
---							xp = xp * 1.1
---						end
---					end
---
---					playerData.nonSerializeData.incrementPlayerData("exp",xp)
---					expResults[player.Name] = xp
---
---				end
---
---				-- give quest trigger to anyone who damages enemy
---
---				local monsterReference = {}
---				for i,v in pairs(monster) do
---					if typeof(i) == "string" and typeof(v) ~= "table" then
---						monsterReference[i] = v
---					end
---				end
---
---				network:fire("questTriggerOccurred", player, "monster-killed", {["monsterName"] = monster.monsterName; ["monster"] = monsterReference})
---
---				if monster.module.Name == "Spider Queen" then
---					spawn(function()
---						game.BadgeService:AwardBadge(player.userId, 2124454074)
---					end)
---				end
---
---				table.insert(owners, player)
---			end
---		end
---
---	end
---
---	if totalEXP > 0 then
-----		events:fireEventAll("playersXpGained", expResults)
---	end
---
---	-- drop item loot
---
---	-- super hacky todo: dont do this xD
---
---	local lootMulti = monster.bonusLootMulti or 1
---
---	local damageTable = monster.damageTable
---	local lootDrops = utilities.copyTable(monster.lootDrops)
---	local goldMulti = monster.goldMulti
---	local level = monster.level
---	local dropPosition = monster.manifest.Position
---	local monsterName = monster.manifest.Name
---
---	if monster.additionalLootDrops then
---		for i, lootDrop in pairs(monster.additionalLootDrops) do
---			table.insert(lootDrops, lootDrop)
---		end
---	end
---
---	if not monster.dropsDisabled then
---		spawn(function()
---			for n = 1, lootMulti do
---
---				for i, lootDrop in pairs(lootDrops) do
---					local lootSpawnChance = lootDrop.spawnChance or 0.001
---					while lootSpawnChance > rand:NextNumber() do
---						lootSpawnChance = lootSpawnChance - 1
---
---						local itemInfo
---						if lootDrop.itemName then
---							local real = game.ReplicatedStorage.itemData:FindFirstChild(lootDrop.itemName)
---							if real then
---								itemInfo = require(real)
---								lootDrop.id = itemInfo.id
---							end
---						end
---						if itemInfo == nil then
---							itemInfo = itemLookup[lootDrop.id]
---						end
---
---						-- assign attributes
---						local equipSlot = itemInfo.equipmentSlot
---						if equipSlot then
---							local rarity = itemInfo.rarity or "Common"
---							local attribute
---							if equipSlot == 1 or equipSlot == 8 then
---								local r = rand:NextInteger(1,1000)
---								if rarity == "Common" then
---									if r == 777 then
---										attribute = "legendary"
---									elseif r <= 30 then
---										attribute = "pristine"
---									elseif r <= 300 then
---										-- sorry
---										attribute = ({"keen", "fierce", "swift", "vibrant"})[rand:NextInteger(1,4)]
---									elseif r > 600 then
---										if equipSlot == 1 then
---											attribute = "dull"
---										elseif equipSlot == 8 then
---											attribute = "tattered"
---										end
---									end
---								else
---									if r == 777 then
---										attribute = "legendary"
---									elseif r <= 10 then
---										attribute = "pristine"
---									elseif r <= 300 then
---										-- sorry
---										attribute = ({"keen", "fierce", "swift", "vibrant"})[rand:NextInteger(1,4)]
---									end
---								end
---							end
---							if attribute then
---								lootDrop.attribute = attribute
---							end
---						end
---
---
---						--local itemOwners = owners
---						local itemOwners = {}
---
---						local ownerCount = #owners
---
---						for i,owner in pairs(owners) do
---							local share = (damageTable and damageTable[owner] or 0) / totalDamageDealt
---
---							local minSecureShare = 1/ownerCount
---
---							if share >= minSecureShare then
---								table.insert(itemOwners, owner)
---							else
---								if math.clamp(share/minSecureShare,0,1) <= rand:NextNumber() then
---									table.insert(itemOwners, owner)
---								end
---							end
---						end
---
---						-- do a lottery for soulbound drops (note: different than the actual soulbound field)
---						if itemInfo and (itemInfo.rarity and (itemInfo.rarity == "Rare" or itemInfo.rarity == "Legendary")) or (itemInfo.category and itemInfo.category == "equipment") then
---							local lottery = {}
---							for i,owner in pairs(itemOwners) do
---								local ownerData = network:invoke("getPlayerData", owner)
---								local share = (damageTable and damageTable[owner] or 0) / totalDamageDealt
---								if owner then
---									--local shares = math.floor(share * 20 * (ownerData.nonSerializeData.statistics_final.luckEffectiveness * ownerData.nonSerializeData.statistics_final.luck))
---
---									local luckMulti = 1 + ownerData.nonSerializeData.statistics_final.luck / 100
---									-- !!!!!!!!!!!!warning: right now there are a pair of boots in the game that have a +15 luck bonus as an enchantment. make sure to clear these items from players invs if changes to luck are made
---									-- dont give them +1500% luck
---									-- right now: one point of luck = +1%
---
---
---
---
---
---									local shares   = math.floor(share * 20 * luckMulti)
---									for i=1,shares do
---										table.insert(lottery, owner)
---									end
---								end
---							end
---							local owner = lottery[rand:NextInteger(1,#lottery)]
---							if owner and owner.Parent == game.Players then
---								-- todo: alert the player they've got a soulbound drop
---
---								itemOwners = {owner}
---
---							end
---						end
---
---						--assign value for gold
---						if lootDrop.id == 1 then
---							local baseMulti = (goldMulti or 1) * rand:NextInteger(8,12)/10
---
---
---
---							lootDrop.value = math.ceil(baseMulti * levels.getMonsterGoldForLevel(level or 1))
---							lootDrop.source = "monster:"..monsterName:lower()
---						end
---
---						-- remove itemName and other non-important values from being saved
---						local lootDropClone = utilities.copyTable(lootDrop)
---							lootDropClone.itemName 		= nil
---							lootDropClone.spawnChance 	= nil
---
---						local dropInformation = {
---							itemOwners = itemOwners;
---							dropPosition = dropPosition;
---							lootDropData = lootDropClone;
---						}
---
---						if lootDrop.dropCircumstance then
---							dropInformation = lootDrop.dropCircumstance(dropInformation, {network = network})
---						end
---
---						local physItem
---						if lootDrop.id == 181 then
---							local monsterIdolModel = monsterIdolModelCache:FindFirstChild(monster.module.Name)
---
---							if monsterIdolModel == nil then
---								print("$skip cache")
---
---								if game.ReplicatedStorage.monsterLookup:FindFirstChild(monster.module.Name):FindFirstChild("displayEntity") then
---								monsterIdolModel = game.ReplicatedStorage.monsterLookup:FindFirstChild(monster.module.Name).displayEntity:Clone()
---								else
---									monsterIdolModel = game.ReplicatedStorage.monsterLookup:FindFirstChild(monster.module.Name).entity:Clone()
---								end
---
---								local extents = monsterIdolModel:GetExtentsSize()
---								local min = math.min(extents.X, extents.Y, extents.Z)
---								local max = math.max(extents.X, extents.Y, extents.Z)
---								local reductionFactor = 4/(min+max)
---
---								utilities.scale(monsterIdolModel, reductionFactor)
---								local primary = monsterIdolModel.PrimaryPart
---								primary.Name = "manifest"
---								for i,v in pairs(monsterIdolModel:GetChildren()) do
---									if v:IsA("BasePart") then
---										v.Material = Enum.Material.Glass
---										v.Reflectance = v.Reflectance + 0.2
---										v.Transparency = v.Transparency + 0.1
---										if v ~= primary then
---											v.Parent = primary
---											v.Massless = true
---										end
---									end
---								end
---								local oldModel = monsterIdolModel
---								primary.Size = Vector3.new(2.2,2.2,2.2)
---								primary.Name = monster.module.Name
---								primary.Parent = monsterIdolModelCache
---								monsterIdolModel = primary
---								oldModel:Destroy()
---
---							end
---
---							physItem = monsterIdolModel:Clone()
---						end
---
---						if #dropInformation.itemOwners > 0 then
---							local item = network:invoke("spawnItemOnGround",dropInformation.lootDropData, dropInformation.dropPosition, dropInformation.itemOwners, physItem)
---							if item == nil then break end
---
---							-- monster idol
---							if lootDrop.id == 181 then
---								local monsterNameTag = Instance.new("StringValue")
---								monsterNameTag.Name = "monsterName"
---								monsterNameTag.Value = monster.module.Name
---								monsterNameTag.Parent = item
---							end
---
---							-- apply random enchantments to drops:
---
---
---
---							if lootMulti > 1 then
---								--[[
---									local tag = Instance.new("BoolValue")
---									tag.Name = "singleOwnerPickup"
---									tag.Parent = item
---								]]
---							end
---
---							local attachmentTarget
---
---							local velo = Vector3.new((rand:NextNumber() - 0.5) * 30, rand:NextNumber() * 65, (rand:NextNumber() - 0.5) * 30)
---							velo = velo * (1 + ((lootMulti - 1) / 27))
---
---							if item:IsA("BasePart") then
---								item.Velocity = velo
---								attachmentTarget = item
---							elseif item:IsA("Model") and (item.PrimaryPart or item:FindFirstChild("HumanoidRootPart")) then
---								local primaryPart = item.PrimaryPart or item:FindFirstChild("HumanoidRootPart")
---								if primaryPart then
---									primaryPart.Velocity = velo
---									attachmentTarget = primaryPart
---								end
---							end
---
---							if attachmentTarget then
---								local topAttachment = Instance.new("Attachment", attachmentTarget)
---									topAttachment.Position = Vector3.new(0, attachmentTarget.Size.Y / 2, 0)
---
---								local bottomAttachment = Instance.new("Attachment", attachmentTarget)
---									bottomAttachment.Position = Vector3.new(0, -attachmentTarget.Size.Y / 2, 0)
---
---								local trail = script.Trail:Clone()
---									trail.Attachment0 	= topAttachment
---									trail.Attachment1 	= bottomAttachment
---									trail.Enabled 		= true
---									trail.Parent 		= attachmentTarget
---							end
---						end
---					end
---				end
---			end
---			wait()
---		end)
---	end
 end
 
 -- give api function to drop rewards for a monster
@@ -2292,14 +1833,6 @@ local function onMonsterDamageRequestReceived(player, monsterManifest, damageDat
 					if not monster.targetEntity and player.Character.PrimaryPart then
 						if statesData.states["attacked-by-player"] and statesData.states["idling"] and statesData.states["following"] then
 							monster.entityMonsterWasAttackedBy = player.Character.PrimaryPart
-							print("FORCE STATE CHANGE! :D")
-							monster.stateMachine:forceStateChange("attacked-by-player")
-						end
-
-					-- PLS DON'T GET RID OF ME I AM IMPORTANT FOR THIS MOB
-					elseif monster.manifest.Name == "Bandit Skirmisher"  then -- needed this for the skirmisher mob
-						monster.entityMonsterWasAttackedBy = player.Character.PrimaryPart
-						if monster.state ~= "attacking" then
 							monster.stateMachine:forceStateChange("attacked-by-player")
 						end
 					end
@@ -2313,9 +1846,6 @@ local function onMonsterDamageRequestReceived(player, monsterManifest, damageDat
 			if not monster.deathRewardsApplied then
 				triggerMonsterRewardsSequence(monster, player, damageData)
 			end
-
-
-			print("KILLMONSTER! >:)")
 			-- monster died. kill it.
 			monster.stateMachine:forceStateChange("dead")
 		else
@@ -2461,10 +1991,6 @@ local function monsterHasAttribute(monster, attribute)
 end
 
 local function main()
---	for i, monsterStatModule in pairs(replicatedStorage.monsterData:GetChildren()) do
---		monsterDataCollection[monsterStatModule.Name] = require(monsterStatModule)
---	end
-
 	-- register for variants --
 	events:registerForEvent("entityDiedTakingDamage", function(sourcePlayer, entityHitboxDamaged, damageData)
 		if not configuration.getConfigurationValue("doSpawnNightTimeVariants") then return end

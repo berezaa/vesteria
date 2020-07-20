@@ -19,7 +19,6 @@ local localization = modules.load("localization")
 
 local itemData = require(replicatedStorage:WaitForChild("itemData"))
 local itemAttributes = require(replicatedStorage:WaitForChild("itemAttributes"))
-local abilityLookup = require(replicatedStorage.abilityLookup)
 
 local BASE_TWEEN_INFO = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0)
 
@@ -41,7 +40,8 @@ local menu_storage = ui.menu_storage
 local menu_equipment = ui.menu_equipment
 
 local interactionPromptsFrame = ui.interactionPrompts
-local notifcationsFrame = ui.notifcationsFrame
+
+local effects = script.Parent.effects
 
 local dragDropMask = ui.dragDropMask
 
@@ -80,7 +80,7 @@ function module.showCurrency(amount)
 
 	utilities.playSound("coins")
 
-	local template = --[[interactionPromptsFrame:FindFirstChild("moneyObtained") or]] script.moneyObtained:Clone()
+	local template = effects.moneyObtained:Clone()
 
 	local count = template:FindFirstChild("count")
 
@@ -128,8 +128,8 @@ function module.showCurrency(amount)
 			iconAmount = 2
 		end
 	end
-	for i=1, iconAmount do
-		local coin = script.coin:Clone()
+	for _ = 1, iconAmount do
+		local coin = effects.coin:Clone()
 		local finalPosition = UDim2.new(0.5, math.random(-100,100), 0.5, math.random(-50,50))
 		coin.Parent = template
 		coin.Visible = true
@@ -185,7 +185,7 @@ end
 
 function module.showLootUnlock(monsterViewport, realItem, tabColor, flareColor)
 	flareColor = flareColor or tabColor
-	local template = script.monsterBook:Clone()
+	local template = effects.monsterBook:Clone()
 	template.backdrop.contents.thumbnail.Image = realItem.image
 	template.backdrop.contents.holder:ClearAllChildren()
 	monsterViewport:Clone().Parent = template.backdrop.contents.holder
@@ -245,14 +245,8 @@ function module.showItemPickup(realItem, amount, metadata)
 		end
 	end
 
-	local frameExisted
-	local template --= interactionPromptsFrame:FindFirstChild(itemname)
-	if template then
-		frameExisted = true
-	else
-		template = script.itemObtained:Clone()
-		template.Size = UDim2.new(0,0,0,60)
-	end
+	local template = effects.itemObtained:Clone()
+	template.Size = UDim2.new(0,0,0,60)
 
 	template.Name = itemname
 
@@ -271,12 +265,6 @@ function module.showItemPickup(realItem, amount, metadata)
 	local currentAmount = template.amount.Value
 	template.backdrop.contents.item.thumbnail.duplicateCount.Text = currentAmount
 	template.backdrop.contents.item.thumbnail.duplicateCount.Visible = currentAmount > 1
-
-	if frameExisted then
-		template.backdrop.UIScale.Scale = 1.15 + math.clamp(currentAmount/150,0,0.75)
-		tween(template.backdrop.UIScale, {"Scale"}, 1, 0.5)
-	end
-
 
 	local titleColor, itemTier
 	if itemData then
@@ -356,9 +344,7 @@ function module.showItemPickup(realItem, amount, metadata)
 		end
 
 	end
-	if not frameExisted then
-		tween(template,{"Size"},goalSize,0.5)
-	end
+	tween(template,{"Size"},goalSize,0.5)
 	spawn(function()
 		wait(duration)
 		if indicator then
@@ -374,7 +360,7 @@ function module.showItemPickup(realItem, amount, metadata)
 	end)
 end
 
-local interactionPromptTextLabelTemplate = ui.Parent.effects:WaitForChild("interactionPromptTextLabel")
+local interactionPromptTextLabelTemplate = effects:WaitForChild("interactionPromptTextLabel")
 
 function module.createTextFragmentLabels(parent, textFragments)
 	local textOffsetX 	= 0
@@ -628,7 +614,7 @@ local function buildInteractionPromptText(promptInteractionInterface, textFragme
 	end
 end
 
-local interactionPromptTemplate = ui.Parent.effects:WaitForChild("interactionPrompt")
+local interactionPromptTemplate = effects:WaitForChild("interactionPrompt")
 function module.createInteractionPrompt(properties, ...)
 	properties = properties or {}
 	local promptId = properties.itemName or properties.promptId
