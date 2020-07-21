@@ -2,7 +2,7 @@ local network = require(game:GetService("ReplicatedStorage"):WaitForChild("modul
 local items = require(game:GetService("ReplicatedStorage"):WaitForChild("itemData"))
 
 local localPlayer = game.Players.LocalPlayer
-local folder = localPlayer.PlayerGui.gameUI.dataRecovery
+local folder = localPlayer.PlayerGui:WaitForChild("gameUI"):WaitForChild("dataRecovery")
 
 local menu = folder:WaitForChild("menu")
 local equipment = menu:WaitForChild("equipment")

@@ -1,4 +1,4 @@
-local resetUI = script.Parent.resetUI
+local resetUI = script.Parent:WaitForChild("resetUI")
 
 resetUI.Enabled = false
 resetUI.saveMe.Visible = false

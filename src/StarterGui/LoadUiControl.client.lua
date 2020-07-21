@@ -1,4 +1,4 @@
-local loadUI = script.Parent.loadUI
+local loadUI = script.Parent:WaitForChild("loadUI")
 
 if game.Players.LocalPlayer:FindFirstChild("DataLoaded") then
 	loadUI.Enabled = false
