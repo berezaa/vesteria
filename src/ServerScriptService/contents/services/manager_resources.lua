@@ -61,7 +61,8 @@ local function newNodeData(node)
 	local dropPoints = node:FindFirstChild("DropPoints")
 	
 	n.HarvestsLeft = nodeTypeMetadata.Harvests
-	n.Durability = 0
+	-- n.Durability = 0
+	n.Durability = nodeTypeMetadata.Durability
 	n.DropPoints = dropPoints and dropPoints:GetChildren() or {}
 	return n
 end
@@ -199,7 +200,8 @@ function ResourceManager:ResourceNodeReplenished(node, player)
 	local dropPoints = node:FindFirstChild("DropPoints")
 	
 	nodeData.HarvestsLeft = nodeTypeMetadata.Harvests
-	nodeData.Durability = 0
+	-- nodeData.Durability = 0
+	nodeData.Durability = nodeTypeMetadata.Durability
 	nodeData.DropPoints = dropPoints and dropPoints:GetChildren() or {}
 	
 	if isNodeGlobal then
@@ -225,7 +227,7 @@ function ResourceManager:ResourceNodeDepleted(node, player)
 	local nodeData = isGlobal and getGlobalDataForNode(node) or getNodeDataForPlayer(node, player)
 	
 	if nodeTypeMetadata.Replenish ~= 0 then
-		Thread.Delay(nodeTypeMetadata.Replenish, function(n, p) self:ResourceNodeReplenished(n, p) end, node, player)
+		Thread.Delay(nodeTypeMetadata.Replenish, self.ResourceNodeReplenished, self, node, player)
 	end
 	
 	if isGlobal then
@@ -272,66 +274,63 @@ function ResourceManager:HarvestResource(node, player)
 					local durability = nodeData.Durability
 					
 					local damage = calcDamageForNode(node, player)
-					
+					nodeData.Durability = math.max(durability - damage, 0)
+
 					if harvestsLeft > 0 then
-						local numHarvests, durability = calcNumHarvests(damage, node, nodeData)
-
-						if numHarvests > 0 then
+						if durability == 0 then
 							local rng = Random.new()
-							nodeData.HarvestsLeft -= numHarvests
-							nodeData.Durability = durability
-
-							for i = 1, numHarvests do
-								-- Contingency: If harvest > num drop points we will run out of drop points
-								-- If this happens, item will drop on node's primary part position
-								local dropPointNum = rng:NextInteger(1, #nodeData.DropPoints)
-								local dropPoint = nodeData.DropPoints[dropPointNum]
-								local dropPosition = dropPoint and dropPoint.Value.DropAttachment.WorldPosition or
-													node.PrimaryPart.Position + Vector3.new(0, node.PrimaryPart.Size.Y / 2 + 0.5, 0)
-								
-								TableUtil.FastRemove(nodeData.DropPoints, dropPointNum)
-								
-								if isNodeGlobal then
-									Network:fireAllClients(RESOURCE_HARVESTED_CLIENT_EVENT, node, dropPoint and dropPoint.Value or nil)
-								else
-									Network:fireClient(RESOURCE_HARVESTED_CLIENT_EVENT, player, node, dropPoint and dropPoint.Value or nil)
-								end
-								
-								for i = 1, numDrops do
-									local itemDrop = rollLootTable(nodeTypeMetadata.LootTable.Items)
-									local numToDrop = itemDrop:Amount()
-									
-									for i = 1, numToDrop do
-										local itemModifiers = itemDrop:Modifiers()
-										local velocity = dropPoint and CFrame.new(Vector3.new(node.PrimaryPart.Position.X, 0, node.PrimaryPart.Position.Z), Vector3.new(dropPosition.X, 5, dropPosition.Z)).LookVector * 32 or
-														CFrame.new(Vector3.new(0, 0, 0), Vector3.new(rng:NextNumber(-1, 1), 2, rng:NextNumber(-1, 1))).LookVector * 32
-										
-										itemModifiers.id = itemDrop.ID
-										
-										local item = Network:invoke(
-											"spawnItemOnGround",
-											itemModifiers,
-											dropPosition,
-											not isNodeGlobal and {player} or {}
-										)
-										
-										applyVelocityToItem(item, velocity)
-									end
-								end
-									
-								return dropPoint and dropPoint.Value or nil
+							
+							-- Contingency: If harvest > num drop points we will run out of drop points
+							-- If this happens, item will drop on node's primary part position
+							local dropPointNum = rng:NextInteger(1, #nodeData.DropPoints)
+							local dropPoint = nodeData.DropPoints[dropPointNum]
+							local dropPosition = dropPoint and dropPoint.Value.DropAttachment.WorldPosition or
+												 node.PrimaryPart.Position + Vector3.new(0, node.PrimaryPart.Size.Y / 2 + 0.5, 0)
+							
+							TableUtil.FastRemove(nodeData.DropPoints, dropPointNum)
+							harvestsLeft = harvestsLeft - 1
+							nodeData.HarvestsLeft = harvestsLeft
+							nodeData.Durability = nodeTypeMetadata.Durability
+							
+							if isNodeGlobal then
+								Network:fireAllClients(RESOURCE_HARVESTED_CLIENT_EVENT, node, dropPoint and dropPoint.Value or nil)
+							else
+								Network:fireClient(RESOURCE_HARVESTED_CLIENT_EVENT, player, node, dropPoint and dropPoint.Value or nil)
 							end
-
+							
 							if harvestsLeft == 0 then
 								self:ResourceNodeDepleted(node, player)
 							end
+							
+							for i = 1, numDrops do
+								local itemDrop = rollLootTable(nodeTypeMetadata.LootTable.Items)
+								local numToDrop = itemDrop:Amount()
+								
+								for i = 1, numToDrop do
+									local itemModifiers = itemDrop:Modifiers()
+									local velocity = dropPoint and CFrame.new(Vector3.new(node.PrimaryPart.Position.X, 0, node.PrimaryPart.Position.Z), Vector3.new(dropPosition.X, 5, dropPosition.Z)).LookVector * 32 or
+													 CFrame.new(Vector3.new(0, 0, 0), Vector3.new(rng:NextNumber(-1, 1), 2, rng:NextNumber(-1, 1))).LookVector * 32
+									
+									itemModifiers.id = itemDrop.ID
+									
+									local item = Network:invoke(
+										"spawnItemOnGround",
+										itemModifiers,
+										dropPosition,
+										not isNodeGlobal and {player} or {}
+									)
+									
+									applyVelocityToItem(item, velocity)
+								end
+							end
+								
+							return dropPoint and dropPoint.Value or nil
 						else
 							if isNodeGlobal then
 								Network:fireAllClients(RESOURCE_HARVESTED_CLIENT_EVENT, node)
 							else
 								Network:fireClient(RESOURCE_HARVESTED_CLIENT_EVENT, player, node)
 							end
-							nodeData.Durability = durability + 1
 						end
 					end
 				end
@@ -341,9 +340,7 @@ function ResourceManager:HarvestResource(node, player)
 end
 
 
-function ResourceManager:Start()
-	
-	
+function ResourceManager:Start()	
 	
 end
 
