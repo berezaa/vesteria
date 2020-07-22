@@ -21,6 +21,8 @@ local itemsFolder = placeSetup.getPlaceFolder("items")
 
 local assetFolder = replicatedStorage:FindFirstChild("assets")
 local itemManfiests = assetFolder.items
+local particleStorage = assetFolder.particles
+local entityStorage = assetFolder.entities
 
 local function getItemBaseDataFromItemsPart(itemPart)
 	local itemDataModule = itemLookupContainer:FindFirstChild(itemPart.Name)
@@ -332,11 +334,11 @@ local function generateItemManifest(itemDropData, physItem)
 			local attach = script.rareItem.Attachment:Clone()
 			attach.Parent = physItem
 			]]
-			for _, child in pairs(script.rareItem:GetChildren()) do
+			for _, child in pairs(entityStorage.rareItem:GetChildren()) do
 				child:Clone().Parent = physItem
 			end
 		else
-			local rays = script.Rays:Clone()
+			local rays = particleStorage.Rays:Clone()
 			local attach = Instance.new("Attachment")
 			attach.Axis = Vector3.new(1,0,0)
 			attach.SecondaryAxis = Vector3.new(0,1,0)
@@ -344,7 +346,7 @@ local function generateItemManifest(itemDropData, physItem)
 			attach.Parent = physItem
 			rays.Size = NumberSequence.new(size * 1.3)
 
-			local sparkles = script.Sparkles:Clone()
+			local sparkles = particleStorage.Sparkles:Clone()
 			sparkles.Parent = attach
 		end
 
@@ -370,7 +372,7 @@ local function generateItemManifest(itemDropData, physItem)
 		local bottomAttachment = Instance.new("Attachment", physItem)
 			bottomAttachment.Position = Vector3.new(0, -itemMask.Size.Y / 2, 0)
 
-		local trail = script.Trail:Clone()
+		local trail = assetFolder.misc.Trail:Clone()
 		trail.Attachment0 = topAttachment
 		trail.Attachment1 = bottomAttachment
 		trail.Enabled = true
