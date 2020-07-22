@@ -1511,22 +1511,21 @@ function module.init(Modules)
 				representation.CanCollide = false
 
 				local sound
-				if game.ReplicatedStorage:FindFirstChild("sounds") then
-					if representation.Name == "monster idol" and game.ReplicatedStorage.sounds:FindFirstChild("idolPickup") then
-						sound = utilities.playSound("idolPickup", representation)
-					elseif representation:FindFirstChild("Legendary") and representation.Legendary.Enabled and game.ReplicatedStorage.sounds:FindFirstChild("legendaryItemPickup") then
-						sound = utilities.playSound("legendaryItemPickup", representation)
-					elseif representation:FindFirstChild("Rare") and representation.Rare.Enabled and game.ReplicatedStorage.sounds:FindFirstChild("rareItemPickup") then
-						sound = utilities.playSound("rareItemPickup", representation)
-					elseif game.ReplicatedStorage.sounds:FindFirstChild("pickup") then
-					 	sound = utilities.playSound("pickup", representation)
-					end
+				if representation.Name == "monster idol" then
+					sound = utilities.playSound("idolPickup")
+				elseif representation:FindFirstChild("Legendary") and representation.Legendary.Enabled then
+					sound = utilities.playSound("legendaryItemPickup")
+				elseif representation:FindFirstChild("Rare") and representation.Rare.Enabled then
+					sound = utilities.playSound("rareItemPickup")
+				else
+					sound = utilities.playSound("pickup")
 				end
+
 
 				if representation:IsA("BasePart") then
 					representation.CanCollide = false
 				end
-				for i,descend in pairs(representation:GetDescendants()) do
+				for _, descend in pairs(representation:GetDescendants()) do
 					if descend:IsA("BasePart") then
 						descend.CanCollide = false
 					end
@@ -1560,13 +1559,9 @@ function module.init(Modules)
 			if realItem then
 				onPickUpItemRequestFromServer(item, true, (item.value or item.stacks), true)
 				if (realItem.rarity and realItem.rarity == "Legendary") then
-					if game.ReplicatedStorage.sounds:FindFirstChild("legendaryItemPickup") then
-						utilities.playSound("legendaryItemPickup")
-					end
+					utilities.playSound("legendaryItemPickup")
 				elseif (realItem.rarity and realItem.rarity == "Rare") or (realItem.category and realItem.category == "equipment") then
-					if game.ReplicatedStorage.sounds:FindFirstChild("rareItemPickup") then
-						utilities.playSound("rareItemPickup")
-					end
+					utilities.playSound("rareItemPickup")
 				end
 			end
 		end

@@ -4603,7 +4603,7 @@ local function main()
 	network:create("tradeItemsBetweenPlayerAndNPC", "BindableFunction", "OnInvoke", int__tradeItemsBetweenPlayerAndNPC)
 	network:create("playerAnimationReplicated", "BindableEvent")
 	network:create("setStamina", "RemoteEvent")
-
+	network:create("signal_exp", "RemoteEvent")
 
 	-- random teleport crap
 	network:create("externalTeleport", "RemoteEvent")

@@ -1550,6 +1550,7 @@ local function triggerMonsterRewardsSequence(monster, playerWhoKilled, damageDat
 	local totalEXP 	= monster.EXP * XPMulti
 
 	local owners = {}
+	local EXPTable = {}
 	-- award EXP
 	for player, damageDealt in pairs(monster.damageTable) do
 		if player and player.Parent and damageDealt > 0 then
@@ -1567,6 +1568,7 @@ local function triggerMonsterRewardsSequence(monster, playerWhoKilled, damageDat
 						end
 					end
 
+					EXPTable[player.Name] = xp
 					xp = math.ceil(xp)
 
 					playerData.nonSerializeData.incrementPlayerData("exp",xp)
@@ -1596,6 +1598,8 @@ local function triggerMonsterRewardsSequence(monster, playerWhoKilled, damageDat
 		end
 
 	end
+
+	network:fireAllClients("signal_exp", EXPTable, monster.manifest)
 	-- drop item loot
 
 	-- super hacky todo: dont do this xD

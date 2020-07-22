@@ -34,6 +34,7 @@ local placeSetup = modules.load("placeSetup")
 local projectile = modules.load("projectile")
 local configuration = modules.load("configuration")
 local events = modules.load("events")
+local levels = modules.load("levels")
 
 -- assets
 local replicatedStorageAssetFolder = replicatedStorage:WaitForChild("assets")
@@ -51,6 +52,8 @@ local monsterLookup = require(replicatedStorage.monsterLookup)
 local abilityLookup = require(replicatedStorage.abilityLookup)
 local statusEffectLookup = require(replicatedStorage.statusEffectLookup)
 local entitiesBeingRendered = {}
+
+local rand  = Random.new()
 
 -- builds a table of whats currently equipped on a renderCharacter,
 -- id rather do this than store what every renderCharacter is wearing and
@@ -435,8 +438,8 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 				deathSound:Play()
 
-				local effect 	= assetFolder.Death:Clone()
-				effect.Parent 	= deathPart
+				local effect = assetFolder.Death:Clone()
+				effect.Parent = deathPart
 
 				deathPart.Parent = workspace.CurrentCamera
 
@@ -444,6 +447,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 				effect:Emit(3 * math.sqrt(size.X * size.Y * size.Z ))
 
 				game.Debris:AddItem(deathPart,3)
+
 			end
 
 			for i, animationTrack in pairs(renderEntityData.entityContainer.entity.AnimationController:GetPlayingAnimationTracks()) do
@@ -1240,7 +1244,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 					healthUI.Visible = false
 				end
 			else
-				if entityManifest.maxHealth.Value > newHealth and renderEntityData.entityContainer.Name ~= "Chicken" then
+				if entityManifest.maxHealth.Value > newHealth then
 					if associatePlayer then
 						monsterNameUI.Enabled = true
 					else

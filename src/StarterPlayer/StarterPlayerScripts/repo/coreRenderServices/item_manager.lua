@@ -122,7 +122,7 @@ function item_manager.EquipNewItem(appearanceData,renderCharacter,_entityManifes
 		if not isCurrentlyEquipped(currentlyEquipped, equipmentData) then
 			if equipmentData.position == mapping.equipmentPosition.weapon or equipmentData.position == mapping.equipmentPosition["offhand"] then
 				local weaponBaseData = itemDataLookup[equipmentData.id]
-				local weaponVisualFolder = itemLookup[(string.lower(weaponBaseData.name))]
+				local weaponVisualFolder = itemLookup[weaponBaseData.module.Name]
 
 
 				if weaponBaseData and (weaponVisualFolder:FindFirstChild("manifest") or weaponVisualFolder:FindFirstChild("container")) then
@@ -371,7 +371,7 @@ function item_manager.IterateThroughItems(renderCharacter,appearanceData)
 end
 
 function item_manager.iterateThroughappearanceData(appearanceData,renderCharacter,bow_manager,hatEquipmentData,inventoryCountLookup)
-    for i, equipmentSlotData in pairs(appearanceData.equipment) do
+    for _, equipmentSlotData in pairs(appearanceData.equipment) do
         if equipmentSlotData.position == mapping.equipmentPosition.upper or equipmentSlotData.position == mapping.equipmentPosition.lower or equipmentSlotData.position == mapping.equipmentPosition.head then
 
             local dye = equipmentSlotData.dye
@@ -379,16 +379,17 @@ function item_manager.iterateThroughappearanceData(appearanceData,renderCharacte
             if equipmentSlotData.position == mapping.equipmentPosition.head then
                 hatEquipmentData = equipmentSlotData
             end
-
-            if itemLookup[equipmentSlotData.id].module:FindFirstChild("container") then
-                for i, accessoryPartContainer in pairs(itemLookup[equipmentSlotData.id].module.container:GetChildren()) do
+			local equipmentData = itemDataLookup[equipmentSlotData.id]
+			local equipmentFolder = itemLookup[equipmentData.module.Name]
+            if equipmentFolder:FindFirstChild("container") then
+                for _, accessoryPartContainer in pairs(equipmentFolder.container:GetChildren()) do
                     if renderCharacter:FindFirstChild(accessoryPartContainer.Name) then
 
                         if accessoryPartContainer:FindFirstChild("colorOverride") then
                             renderCharacter[accessoryPartContainer.Name].Color = accessoryPartContainer.Color
                         end
 
-                        for i, accessoryPart in pairs(accessoryPartContainer:GetChildren()) do
+                        for _, accessoryPart in pairs(accessoryPartContainer:GetChildren()) do
                             if accessoryPart:IsA("BasePart") then
                                 local accessory = accessoryPart:Clone()
                                     accessory.Anchored 		= false
