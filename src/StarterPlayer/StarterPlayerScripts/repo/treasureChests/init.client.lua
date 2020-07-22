@@ -158,13 +158,7 @@ local function openTreasureChest(treasureChest)
 		local chestModel = chestInfo.chestModel
 		local glow = chestModel:FindFirstChild("Glow")
 
-		if game.ReplicatedStorage.sounds:FindFirstChild("chest_unlock") then
---			local sound = game.ReplicatedStorage.sounds.chest_unlock:Clone()
---			sound.Parent = chestModel.PrimaryPart
---			sound:Play()
---			game.Debris:AddItem(sound,10)
-			utilities.playSound("chest_unlock", chestModel.PrimaryPart)
-		end
+		utilities.playSound("chest_unlock", chestModel.PrimaryPart)
 
 		local lock = chestModel:FindFirstChild("Lock")
 		if lock then
@@ -199,16 +193,8 @@ local function openTreasureChest(treasureChest)
 							glow.ParticleEmitter:Emit(50)
 						end
 					end
-					--network:invoke("displayRewards", rewards)
-					if game.ReplicatedStorage.sounds:FindFirstChild("chest_reward") then
-						--[[
-						local sound = game.ReplicatedStorage.sounds.chest_reward:Clone()
-						sound.Parent = script.Parent
-						sound:Play()
-						game.Debris:AddItem(sound,10)
-						]]
-						utilities.playSound("chest_reward", glow)
-					end
+
+					utilities.playSound("chest_reward", glow)
 				end
 			end)
 	--		addBillboardToChest(chestModel)

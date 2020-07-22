@@ -76,7 +76,14 @@ local function lightingUpdate()
 		step = tick() - lastUpdate
 	end
 
-	tween(game.Lighting, {"ClockTime"}, game.ReplicatedStorage.timeOfDay.Value, step, easing)
+	local newTime = game.ReplicatedStorage.timeOfDay.Value
+
+	if newTime < ClockTime then
+		game.Lighting.ClockTime = newTime
+	else
+		tween(game.Lighting, {"ClockTime"}, newTime, step, easing)
+	end
+
 
 	if Brightness ~= PreviousBrightness then
 		local dayFogColor = light and light:FindFirstChild("dayFogColor") and light.dayFogColor.Value or Color3.fromRGB(151, 213, 214)
