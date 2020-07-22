@@ -41,13 +41,13 @@ local function loadassets()
 	end
 
 	local contentList = {}
-
+	local assets = game.ReplicatedStorage:WaitForChild("assets")
 	table.insert(contentList, game.ReplicatedStorage:WaitForChild("characterAnimations"))
-	table.insert(contentList, game.ReplicatedStorage:WaitForChild("sounds"))
+	table.insert(contentList, assets:WaitForChild("sounds"))
 	table.insert(contentList, game:GetService("StarterGui"))
 --	table.insert(contentList, game.ReplicatedStorage:WaitForChild("itemData"))
 --	table.insert(contentList, game.ReplicatedStorage:WaitForChild("abilityLookup"))
-	table.insert(contentList, game.ReplicatedStorage:WaitForChild("accessoryLookup"))
+	table.insert(contentList, assets:WaitForChild("accessories"))
 
 	spawn(function()
 		script.Parent.spinner.Visible = true
@@ -220,7 +220,6 @@ function noticeskip()
 		game.GuiService.SelectedObject = input.getBestButton(script.Parent.main.Frame)
 	end
 
-	script.swoosh:Play()
 --	network:invoke("lockCameraPosition",script.Parent.CameraMainPos.Value,0.5)
 --	if blur then
 --		tween(blur, {"Size"}, 0, 0.5)
@@ -879,7 +878,6 @@ local function playButtonActivated()
 			end
 
 --			tween(workspace.CurrentCamera, {"FieldOfView"}, 30, 0.5)
-			script.swoosh:Play()
 
 			wait(0.7)
 			cameraTarget = script.Parent.CameraTablePos.Value
