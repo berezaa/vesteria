@@ -641,6 +641,7 @@ local function onPlayerRequest_buyItemFromShop(player, inventorySlotData, stacks
 					0,
 					source
 				)
+				return success, reason
 			elseif confirmedCostInfo.costType == "ethyr" then
 				local globalData 		= playerData.globalData
 				local stacksBeingBought = math.clamp(stacksBeingRequested, 1, itemBaseData.stackSize or 99)
@@ -656,24 +657,23 @@ local function onPlayerRequest_buyItemFromShop(player, inventorySlotData, stacks
 						end)
 					end
 				end
-
-
+				return success, reason
 			end
-		else
-
-			local coinCostReduction = 1 - math.clamp(playerData.nonSerializeData.statistics_final.merchantCostReduction, 0, 1)
-
-			itemBeingBought.stacks = stacksBeingRequested
-			success, reason = network:invoke(
-				"tradeItemsBetweenPlayerAndNPC",
-				player,
-				{},
-				math.clamp((itemBaseData.buyValue or 1) * coinCostReduction, 1, math.huge) * stacksBeingRequested,
-				{itemBeingBought},
-				0,
-				source
-			)
 		end
+
+		local coinCostReduction = 1 - math.clamp(playerData.nonSerializeData.statistics_final.merchantCostReduction, 0, 1)
+
+		itemBeingBought.stacks = stacksBeingRequested
+		success, reason = network:invoke(
+			"tradeItemsBetweenPlayerAndNPC",
+			player,
+			{},
+			math.clamp((itemCost or itemBaseData.buyValue or 1) * coinCostReduction, 1, math.huge) * stacksBeingRequested,
+			{itemBeingBought},
+			0,
+			source
+		)
+
 
 		return success, reason
 	end
