@@ -11,7 +11,8 @@ return {
 	--> equipment information <--
 	isEquippable = true;
 	equipmentSlot = 1;
-	equipmentType = "axe";
+	-- equipmentType = "axe";
+	equipmentType = "sword";
 	gripCFrame = CFrame.Angles(math.pi / 2, 0, 0) * CFrame.new(0, -0.2, 2);
 	minLevel = 5;
 	

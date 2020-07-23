@@ -269,12 +269,13 @@ function ResourceManager:HarvestResource(node, player)
 					local isNodeGlobal = nodeTypeMetadata.IsGlobal
 					local numDrops = nodeTypeMetadata.LootTable.Drops
 					
+					local damage = calcDamageForNode(node, player)
 					local nodeData = isNodeGlobal and getGlobalDataForNode(node) or getNodeDataForPlayer(node, player)		
 					local harvestsLeft = nodeData.HarvestsLeft
 					local durability = nodeData.Durability
 					
-					local damage = calcDamageForNode(node, player)
-					nodeData.Durability = math.max(durability - damage, 0)
+					durability = math.max(durability - damage, 0)
+					nodeData.Durability = durability
 
 					if harvestsLeft > 0 then
 						if durability == 0 then
