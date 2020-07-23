@@ -34,7 +34,7 @@ local TESTING = false
 -- do not change for fun!
 --local datastoreVersion = 21
 
-local datastoreVersion = 31
+local datastoreVersion = 33
 
 -- 21: main production
 

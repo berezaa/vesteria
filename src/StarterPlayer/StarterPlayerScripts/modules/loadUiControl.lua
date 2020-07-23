@@ -23,15 +23,10 @@ spawn(function()
 end)
 ]]
 
-local function loadassets()
-	local replicatedStorage = game:GetService("ReplicatedStorage")
-	local modules = require(replicatedStorage.modules)
-		local network 	= modules.load("network")
-		local levels    = modules.load("levels")
-		local tween		= modules.load("tween")
+local assets = game.ReplicatedStorage:WaitForChild("assets")
 
+local function loadassets()
 	local contentProvider 	= game:GetService("ContentProvider")
-	local runService 		= game:GetService("RunService")
 	local teleService		= game:GetService("TeleportService")
 
 	-- no need to load assets if you are arriving from a teleport
@@ -41,7 +36,7 @@ local function loadassets()
 	end
 
 	local contentList = {}
-	local assets = game.ReplicatedStorage:WaitForChild("assets")
+
 	table.insert(contentList, game.ReplicatedStorage:WaitForChild("characterAnimations"))
 	table.insert(contentList, assets:WaitForChild("sounds"))
 	table.insert(contentList, game:GetService("StarterGui"))
@@ -277,7 +272,7 @@ script.Parent:WaitForChild("CameraOrigin")
 --network:invoke("lockCameraPosition",script.Parent.CameraMainPos.Value)
 
 local runService = game:GetService("RunService")
-local lookup
+local lookup = assets:WaitForChild("accessories")
 local coolCamera = true
 --[[
 spawn(function()
@@ -716,7 +711,6 @@ end)
 
 local function displayCategory(categoryName)
 	renderedItems:ClearAllChildren()
-	lookup = game.ReplicatedStorage:WaitForChild("accessoryLookup")
 	local items = lookup:FindFirstChild(categoryName)
 	if items then
 		local x = 0
@@ -795,7 +789,6 @@ local function playButtonActivated()
 				game.GuiService.SelectedObject = input.getBestButton(script.Parent.customize)
 			end
 
-			local lookup = game.ReplicatedStorage:WaitForChild("accessoryLookup")
 			characterTable.accessories = {}
 			for i,category in pairs(lookup:GetChildren()) do
 				local children = category:GetChildren()
