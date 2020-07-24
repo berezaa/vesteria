@@ -667,7 +667,7 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 				local equipmentData = network:invoke("getPlayerEquipmentDataByEquipmentPosition", player, mapping.equipmentPosition.weapon)
 				if equipmentData then
 					local weaponBaseData = itemLookup[equipmentData.id]
-					local weaponManfiestFolder = itemFolderLookup[string.lower(weaponBaseData.name)]
+					local weaponManfiestFolder = itemFolderLookup[weaponBaseData.module.Name]
 					if weaponBaseData and weaponBaseData.module then
 
 						local DAMAGE_TYPE_OVERRIDE

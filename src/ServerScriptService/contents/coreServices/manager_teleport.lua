@@ -5,10 +5,14 @@ local teleportService = game:GetService("TeleportService")
 local modules = require(game:GetService("ReplicatedStorage"):WaitForChild("modules"))
 local network = modules.load("network")
 local utilities = modules.load("utilities")
+local configuration = modules.load("configuration")
 
 local function preparePlayerToTeleport(player, destination)
 	if player:FindFirstChild("DataSaveFailed") then
-		network:fireClient("alertPlayerNotification", player, {text = "Cannot teleport during a DataStore outage."; textColor3 = Color3.fromRGB(255, 57, 60)})
+		network:fireClient("alertPlayerNotification", player, {
+			text = "Cannot teleport during a DataStore outage.";
+			textColor3 = Color3.fromRGB(255, 57, 60)
+		})
 		return false
 	end
 	if player:FindFirstChild("Teleporting") or player:FindFirstChild("teleporting") then
@@ -17,9 +21,8 @@ local function preparePlayerToTeleport(player, destination)
 	if player:FindFirstChild("DataLoaded") == nil then
 		return false
 	end
---	network:fireClient("signal_teleport", destination)
 	destination = utilities.placeIdForGame(destination)
-	local timestamp = saveDataForTeleport(player)
+	local timestamp = network:invoke("saveDataForTeleport", player)
 	if timestamp then
 		local teleportData = {}
 		teleportData.arrivingFrom = game.PlaceId
@@ -38,7 +41,6 @@ local function preparePlayerToTeleport(player, destination)
 		return false
 	end
 end
-network:create("getPlayerTeleportData", "BindableFunction", "OnInvoke", preparePlayerToTeleport)
 
 local function createPartyTeleportData(playersToTeleport, destination, partyLeaderUserId, spawnLocation)
 
@@ -59,7 +61,7 @@ local function createPartyTeleportData(playersToTeleport, destination, partyLead
 	end
 
 	local playersSuccessfullySaved = {}
-	for i,player in pairs(playersToTeleport) do
+	for _, player in pairs(playersToTeleport) do
 		local playerTeleportData = preparePlayerToTeleport(player, destination)
 		warn(player.Name, "teleport data", game.HttpService:JSONEncode(playerTeleportData))
 		if playerTeleportData and playerTeleportData.partyData then
@@ -94,7 +96,8 @@ local function getReserveServerKeyForMirrorDestination(destination)
 	destination = utilities.placeIdForGame(destination)
 	local reserveServerKey
 	local success, err = pcall(function()
-		local mirrorWorldStore = game:GetService("DataStoreService"):GetDataStore("mirrorWorld"..configuration.getConfigurationValue("mirrorWorldVersion"))
+		local mwv = configuration.getConfigurationValue("mirrorWorldVersion")
+		local mirrorWorldStore = game:GetService("DataStoreService"):GetDataStore("mirrorWorld"..mwv)
 		reserveServerKey = mirrorWorldStore:GetAsync(tostring(destination))
 		if reserveServerKey == nil then
 			reserveServerKey = teleportService:ReserveServer(destination)
@@ -146,9 +149,7 @@ local function teleportPlayersToReserveServer(players, destination, spawnLocatio
 		end)
 	end
 end
-network:create("teleportPlayersToReserveServer", "BindableFunction", "OnInvoke", teleportPlayersToReserveServer)
 
-network:create("createPartyTeleportData", "BindableFunction", "OnInvoke", createPartyTeleportData)
 
 local function teleportParty(playersToTeleport, destination, partyLeaderUserId, spawnLocation)
 	destination = utilities.placeIdForGame(destination)
@@ -181,7 +182,7 @@ local function teleportParty(playersToTeleport, destination, partyLeaderUserId, 
 		spawn(function()
 
 			network:fireAllClients("signal_alertChatMessage", {
-				Text = playerstring .. " departed towards " .. getPlaceName(destination) .. ".";
+				Text = playerstring .. " departed towards " .. utilities.getPlaceName(destination) .. ".";
 				Font = Enum.Font.SourceSansBold;
 				Color = Color3.fromRGB(45, 87, 255)
 			})
@@ -192,7 +193,6 @@ local function teleportParty(playersToTeleport, destination, partyLeaderUserId, 
 	return false, "Failed to teleport"
 end
 
-network:create("teleportParty", "BindableFunction", "OnInvoke", teleportParty)
 
 local function teleportPlayerToJobId(player, destination, jobId, spawnLocation)
 	destination = utilities.placeIdForGame(destination)
@@ -226,7 +226,6 @@ local function teleportPlayerToJobId(player, destination, jobId, spawnLocation)
 	return false, "failed to prepare teleportdata"
 end
 
-network:create("teleportPlayerToJobId", "BindableFunction", "OnInvoke", teleportPlayerToJobId)
 
 local function teleportPlayer(player, destination, spawnLocation, realm, teleportType)
 	destination = utilities.placeIdForGame(destination)
@@ -266,7 +265,7 @@ local function teleportPlayer(player, destination, spawnLocation, realm, telepor
 			end)
 			if teleportType == "death" and not player:FindFirstChild("disconnected") then
 				network:fireAllClients("signal_alertChatMessage", {
-					Text = playerName .. " escaped to " .. getPlaceName(destination) .. ".";
+					Text = playerName .. " escaped to " .. utilities.getPlaceName(destination) .. ".";
 					Font = Enum.Font.SourceSansBold;
 					Color = Color3.fromRGB(45, 87, 255)
 				})
@@ -281,9 +280,7 @@ local function teleportPlayer(player, destination, spawnLocation, realm, telepor
 end
 
 
-network:create("teleportPlayer", "BindableFunction", "OnInvoke", teleportPlayer)
-
-network:create("teleportPlayer_rune", "BindableFunction", "OnInvoke", function(player, destination)
+local function teleportPlayer_rune(player, destination)
 	destination = utilities.placeIdForGame(destination)
 	local playerName = player.Name
 	local success, reason = teleportPlayer(player, destination, nil, nil, "rune")
@@ -291,7 +288,7 @@ network:create("teleportPlayer_rune", "BindableFunction", "OnInvoke", function(p
 		spawn(function()
 
 			network:fireAllClients("signal_alertChatMessage", {
-				Text = playerName .. " departed towards " .. getPlaceName(destination) .. " using a magical rune.";
+				Text = playerName .. " departed towards " .. utilities.getPlaceName(destination) .. " using a magical rune.";
 				Font = Enum.Font.SourceSansBold;
 				Color = Color3.fromRGB(45, 87, 255)
 			})
@@ -300,7 +297,7 @@ network:create("teleportPlayer_rune", "BindableFunction", "OnInvoke", function(p
 	end
 	return success, reason
 
-end)
+end
 
 local function playerRequest_useTeleporter(player, teleporter)
 	if teleporter and teleporter:IsA("BasePart") and game.CollectionService:HasTag(teleporter, "teleportPart") and teleporter:FindFirstChild("teleportDestination") then
@@ -311,7 +308,7 @@ local function playerRequest_useTeleporter(player, teleporter)
 				spawn(function()
 
 					network:fireAllClients("signal_alertChatMessage", {
-						Text = playerName .. " departed towards " .. getPlaceName(teleporter.teleportDestination.Value) .. ".";
+						Text = playerName .. " departed towards " .. utilities.getPlaceName(teleporter.teleportDestination.Value) .. ".";
 						Font = Enum.Font.SourceSansBold;
 						Color = Color3.fromRGB(45, 87, 255)
 					})
@@ -324,15 +321,24 @@ local function playerRequest_useTeleporter(player, teleporter)
 	return false
 end
 
-network:create("playerRequest_useTeleporter", "RemoteFunction", "OnServerInvoke", playerRequest_useTeleporter)
+
 
 teleportService.TeleportInitFailed:connect(function(player, teleportResult, errorMessage)
 	network:invoke("reportError", player, "warning", "Player failed to teleport: "..errorMessage)
 end)
 
-network:create("signal_teleport", "RemoteEvent")
-network:create("saveDataForTeleportation", "RemoteFunction", "OnServerInvoke", saveDataForTeleport)
-network:create("playerRequest_savePlayerDataForTeleportation", "RemoteFunction", "OnServerInvoke", saveDataForTeleport)
+local function main()
+	network:create("getPlayerTeleportData", "BindableFunction", "OnInvoke", preparePlayerToTeleport)
+	network:create("teleportPlayersToReserveServer", "BindableFunction", "OnInvoke", teleportPlayersToReserveServer)
+	network:create("createPartyTeleportData", "BindableFunction", "OnInvoke", createPartyTeleportData)
+	network:create("teleportParty", "BindableFunction", "OnInvoke", teleportParty)
+	network:create("teleportPlayerToJobId", "BindableFunction", "OnInvoke", teleportPlayerToJobId)
+	network:create("teleportPlayer", "BindableFunction", "OnInvoke", teleportPlayer)
+	network:create("teleportPlayer_rune", "BindableFunction", "OnInvoke", teleportPlayer_rune)
+	network:create("playerRequest_useTeleporter", "RemoteFunction", "OnServerInvoke", playerRequest_useTeleporter)
+	network:create("signal_teleport", "RemoteEvent")
+end
 
+spawn(main)
 
 return module

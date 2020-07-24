@@ -26,6 +26,24 @@ function module.copyTable(tableToCopy)
 	return tableCopy
 end
 
+
+local mapNameCache = {}
+
+function module.getPlaceName(destination)
+	if mapNameCache[tostring(destination)] then
+		return mapNameCache[tostring(destination)]
+	else
+		local placeInfo = game.MarketplaceService:GetProductInfo(destination,Enum.InfoType.Asset)
+		local placeName = placeInfo.Name
+		if placeName then
+			placeName = string.gsub(placeName, " %(Demo%)", "")
+			mapNameCache[tostring(destination)] = placeName
+			return placeName
+		end
+	end
+	return "???"
+end
+
 local function addComas(str)
 	return #str % 3 == 0 and str:reverse():gsub("(%d%d%d)", "%1,"):reverse():sub(2) or str:reverse():gsub("(%d%d%d)", "%1,"):reverse()
 end

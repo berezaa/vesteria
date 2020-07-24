@@ -56,7 +56,7 @@ local function getPlayerData_remote(callingPlayer, ...)
 end
 
 -- GLOBAL DATA HOOKUP
-network:create("getPlayerGlobalData", "BindableFunction", "OnInvoke", function(player)
+local function getPlayerGlobalData(player)
 	local success, data, status = datastoreInterface:getPlayerGlobalSaveFileData(player)
 
 	if not success then
@@ -71,9 +71,9 @@ network:create("getPlayerGlobalData", "BindableFunction", "OnInvoke", function(p
 	end
 
 	return success, data, status
-end)
+end
 
-network:create("setPlayerGlobalData", "BindableFunction", "OnInvoke", function(player, GlobalData)
+local function setPlayerGlobalData(player, GlobalData)
 	local playerId = player.userId
 
 	local success, status, version = datastoreInterface:updatePlayerGlobalSaveFileData(playerId, GlobalData)
@@ -90,7 +90,7 @@ network:create("setPlayerGlobalData", "BindableFunction", "OnInvoke", function(p
 	end
 
 	return success, status, version
-end)
+end
 
 local function isPlayerOfClass(player, class)
 	class = class:lower()
@@ -112,8 +112,6 @@ local function isPlayerOfClass(player, class)
 	-- but here we go anyways, Davidii taking responsibility for this
 	return playerData.abilityBooks[class] ~= nil
 end
-network:create("getIsPlayerOfClass", "RemoteFunction", "OnServerInvoke", isPlayerOfClass)
-network:create("getIsPlayerOfClass_server", "BindableFunction", "OnInvoke", isPlayerOfClass)
 
 local function getPlayerDefaultHomePlaceId(player)
 	if isPlayerOfClass(player, "warrior") then
@@ -178,9 +176,7 @@ local function onDeathGuiAccepted(player)
 
 	network:invoke("teleportPlayer", player, playerData.lastLocationDeathOverride, "default", nil, "death")
 end
-network:create("deathGuiAccepted", "RemoteEvent", "OnServerEvent", onDeathGuiAccepted)
 
-network:create("deathGuiRequested", "RemoteEvent")
 
 local function onPlayerRemoving(player)
 
@@ -296,6 +292,21 @@ local function onPlayerRemoving(player)
 	end
 end
 
+-- TODO: tie into teleport manager
+local function saveDataForTeleport(player)
+	if not player:FindFirstChild("teleporting") then
+		local tag = Instance.new("BoolValue")
+		tag.Name = "teleporting"
+		tag.Parent = player
+
+		network:invoke("reportAnalyticsEvent",player,"teleport:attempt")
+		local TimeStamp = onPlayerRemoving(player)
+		if TimeStamp then
+			return TimeStamp
+		end
+	end
+end
+
 --[[
 	PLAYER APPEARANCE CHANGE
 --]]
@@ -336,7 +347,6 @@ local function playerRequest_changeAccessories(player, desiredAccessories, dialo
 	return false, "Player data not found"
 end
 
-network:create("playerRequest_changeAccessories", "RemoteFunction", "OnServerInvoke", playerRequest_changeAccessories)
 
 --[[
 	INVENTORY
@@ -360,7 +370,6 @@ local function onGetPlayerEquipment(client, player)
 	end
 end
 
-network:create("promptPlayerDeathScreen","RemoteEvent")
 
 local function performDeathToRenderCharacter(player)
 	local previousCharacter = player.Character
@@ -927,7 +936,6 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 end
 
 
-network:create("playerCharacterLoaded", "BindableEvent")
 
 local function isStartingValueRemoved(primaryPart, child)
 	if primaryPart.Parent == nil then
@@ -1321,7 +1329,6 @@ local function onCharacterAdded(player, character)
 	end
 end
 
-network:create("deathTrapKnockback", "RemoteEvent")
 
 local function forceCharacterPosition(player, cf)
 	if player.Character and player.Character.PrimaryPart then
@@ -1329,7 +1336,6 @@ local function forceCharacterPosition(player, cf)
 	end
 end
 
-network:create("serverVerifyCharacterPosition", "RemoteEvent", "OnServerEvent", forceCharacterPosition)
 
 local function onClientRequestFlushPropogationCache(client)
 	if not playerDataContainer[client] then
@@ -2185,7 +2191,6 @@ local function onLogPerkActivation_server(player, equipmentId)
 	end
 end
 
-network:create("logPerkActivation_server", "BindableEvent", "Event", onLogPerkActivation_server)
 
 local function flagCheck(player, playerData)
 --	if not playerData.flags.referralCheck then
@@ -2353,7 +2358,6 @@ local function flagCheck(player, playerData)
 	end
 end
 
-network:create("playerDataLoaded", "BindableEvent")
 
 local function onGetPlayerEquipmentDataByEquipmentPosition(player, equipmentPosition)
 	if playerDataContainer[player] then
@@ -2419,23 +2423,6 @@ end
 
 game.CollectionService:GetInstanceAddedSignal("spawnPoint"):Connect(registerSpawnPoint)
 
-local mapNameCache = {}
-
-local function getPlaceName(destination)
-	if mapNameCache[tostring(destination)] then
-		return mapNameCache[tostring(destination)]
-	else
-		local placeInfo = game.MarketplaceService:GetProductInfo(destination,Enum.InfoType.Asset)
-		local placeName = placeInfo.Name
-		if placeName then
-			placeName = string.gsub(placeName, " %(Demo%)", "")
-			mapNameCache[tostring(destination)] = placeName
-			return placeName
-		end
-	end
-	return "???"
-end
-
 local function registerTeleportAsSpawn(Child)
 	if Child and Child:FindFirstChild("teleportDestination") then
 
@@ -2454,7 +2441,7 @@ local function registerTeleportAsSpawn(Child)
 			spawn(function()
 				local description = Instance.new("StringValue")
 				description.Name = "description"
-				description.Value = "Path to ".. getPlaceName(destination)
+				description.Value = "Path to ".. utilities.getPlaceName(destination)
 				description.Parent = tag
 			end)
 		end
@@ -2470,13 +2457,14 @@ game.CollectionService:GetInstanceAddedSignal("teleportPart"):Connect(registerTe
 spawnPoints.Parent = game.ReplicatedStorage
 -- end spawn point logic
 
-network:create("signal_inputChanged", "RemoteEvent", "OnServerEvent", function(player, input)
+local function signal_inputChanged(player, input)
 	if input == "xbox" or input == "mobile" or input == "pc" then
 		if player:FindFirstChild("input") then
 			player.input.Value = input
 		end
 	end
-end)
+end
+
 
 
 local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
@@ -2550,7 +2538,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 		local location = teleportData.arrivingFrom
 		if location and location ~= 2376885433 and location ~= 2015602902 then
 			spawn(function()
-				local placeName = getPlaceName(location)
+				local placeName = utilities.getPlaceName(location)
 				if teleportData.teleportType and teleportData.teleportType == "rune" then
 					network:fireAllClients("signal_alertChatMessage", {
 						Text = player.Name .. " arrived from " .. placeName .. " via a magical rune.";
@@ -2606,7 +2594,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 		warn("Player data is nil???")
 	end
 
- 	if game.PlaceId == 2376885433 or game.PlaceId == 2015602902 or game.PlaceId == 4623219432 then
+	if game.PlaceId == 2376885433 or game.PlaceId == 2015602902 or game.PlaceId == 4623219432 then
 		-- lobby server, return data to player
 		return playerData
 	end
@@ -2636,56 +2624,56 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 
 	professionTag.Parent = player
 
-	local levelTag 	= Instance.new("IntValue")
-	levelTag.Name 	= "level"
-	levelTag.Value 	= playerData.level
+	local levelTag = Instance.new("IntValue")
+	levelTag.Name = "level"
+	levelTag.Value = playerData.level
 	levelTag.Parent = player
 
-	local moneyTag  = Instance.new("NumberValue")
-	moneyTag.Name	= "gold"
-	moneyTag.Value	= playerData.gold
-	moneyTag.Parent	= player
+	local moneyTag = Instance.new("NumberValue")
+	moneyTag.Name = "gold"
+	moneyTag.Value = playerData.gold
+	moneyTag.Parent = player
 
 	spawn(function()
 		network:invoke("reportAnalyticsEvent",player,"level:lvl"..tostring(playerData.level),playerData.level)
 	end)
-	local inputTag 	= Instance.new("StringValue")
-	inputTag.Name	= "input"
+	local inputTag = Instance.new("StringValue")
+	inputTag.Name = "input"
 	inputTag.Parent = player
 
-	local classTag 	= Instance.new("StringValue")
-	classTag.Name 	= "class"
-	classTag.Value 	= playerData.class
+	local classTag = Instance.new("StringValue")
+	classTag.Name = "class"
+	classTag.Value = playerData.class
 	classTag.Parent = player
 
-	local pvpTag 	= Instance.new("BoolValue")
-	pvpTag.Name 	= "isPVPEnabled"
-	pvpTag.Value 	= false
-	pvpTag.Parent 	= player
+	local pvpTag = Instance.new("BoolValue")
+	pvpTag.Name = "isPVPEnabled"
+	pvpTag.Value = false
+	pvpTag.Parent = player
 
-	local pvpTag 	= Instance.new("BoolValue")
-	pvpTag.Name 	= "isInPVP"
-	pvpTag.Value 	= false
-	pvpTag.Parent 	= player
+	local pvpTag = Instance.new("BoolValue")
+	pvpTag.Name = "isInPVP"
+	pvpTag.Value = false
+	pvpTag.Parent = player
 
-	local entityGUIDTag 	= Instance.new("StringValue")
-	entityGUIDTag.Name 		= "entityGUID"
-	entityGUIDTag.Value 	= httpService:GenerateGUID(false)
-	entityGUIDTag.Parent 	= player
+	local entityGUIDTag = Instance.new("StringValue")
+	entityGUIDTag.Name = "entityGUID"
+	entityGUIDTag.Value = httpService:GenerateGUID(false)
+	entityGUIDTag.Parent = player
 
-	local playerSpawnTimeTag 	= Instance.new("IntValue")
-	playerSpawnTimeTag.Name 	= "playerSpawnTime"
-	playerSpawnTimeTag.Value 	= os.time()
-	playerSpawnTimeTag.Parent 	= player
+	local playerSpawnTimeTag = Instance.new("IntValue")
+	playerSpawnTimeTag.Name = "playerSpawnTime"
+	playerSpawnTimeTag.Value = os.time()
+	playerSpawnTimeTag.Parent = player
 
-	local isPlayerSpawningTag 	= Instance.new("BoolValue")
-	isPlayerSpawningTag.Name 	= "isPlayerSpawning"
-	isPlayerSpawningTag.Value 	= true
-	isPlayerSpawningTag.Parent 	= player
-		local isFirstTimeSpawning 	= Instance.new("BoolValue")
-		isFirstTimeSpawning.Name 	= "isFirstTimeSpawning"
-		isFirstTimeSpawning.Value 	= true
-		isFirstTimeSpawning.Parent 	= isPlayerSpawningTag
+	local isPlayerSpawningTag = Instance.new("BoolValue")
+	isPlayerSpawningTag.Name = "isPlayerSpawning"
+	isPlayerSpawningTag.Value = true
+	isPlayerSpawningTag.Parent = player
+		local isFirstTimeSpawning = Instance.new("BoolValue")
+		isFirstTimeSpawning.Name = "isFirstTimeSpawning"
+		isFirstTimeSpawning.Value = true
+		isFirstTimeSpawning.Parent = isPlayerSpawningTag
 
 	local respawnPointTag = Instance.new("ObjectValue")
 	respawnPointTag.Name = "respawnPoint"
@@ -2695,7 +2683,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	if not playerData.flags.ancientsRevert then
 		playerData.flags.ancientsRevert = true
 
-		for i,v in pairs(playerData.inventory) do
+		for _, v in pairs(playerData.inventory) do
 			if v.id == 63 or v.id == 62 or v.id == 64 or v.id == 17 then -- 63, 62, 17, 64 -> 200
 				v.id = 200
 			end
@@ -2704,7 +2692,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 		if playerData.globalData and playerData.globalData.itemStorage then
 			if not playerData.globalData.ancientsRevertStore then
 				playerData.globalData.ancientsRevertStore = true
-				for i,v in pairs(playerData.globalData.itemStorage) do
+				for _, v in pairs(playerData.globalData.itemStorage) do
 					if v.id == 63 or v.id == 62 or v.id == 64 or v.id == 17 then -- 63, 62, 17, 64 -> 200
 						v.id = 200
 					end
@@ -2738,11 +2726,11 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 			end
 		end
 
-		for i,v in pairs(playerData.equipment) do
+		for _, v in pairs(playerData.equipment) do
 			process(v)
 		end
 
-		for i,v in pairs(playerData.inventory) do
+		for _, v in pairs(playerData.inventory) do
 			process(v)
 		end
 
@@ -2751,7 +2739,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 		if playerData.globalData and playerData.globalData.itemStorage then
 			if not playerData.globalData.enchantWipe3 then
 				playerData.globalData.enchantWipe3 = true
-				for i,v in pairs(playerData.globalData.itemStorage) do
+				for _, v in pairs(playerData.globalData.itemStorage) do
 					process(v)
 				end
 			end
@@ -4109,8 +4097,6 @@ local function swapPlayerWeapons(player)
 
 	events:fireEventLocal("playerEquipmentChanged", player)
 end
-network:create("playerRequest_swapWeapons", "RemoteEvent", "OnServerEvent", swapPlayerWeapons)
-network:create("playerRequest_swapWeapons_yielding", "RemoteFunction", "OnServerInvoke", swapPlayerWeapons)
 
 -- Give clients a section of their data file that they can freely modify/read (maybe with some sanity checks)
 
@@ -4130,8 +4116,6 @@ local function changePlayerSetting(player, setting, value)
 	end
 end
 
-network:create("requestChangePlayerSetting","RemoteFunction","OnServerInvoke",changePlayerSetting)
-network:create("serverChangePlayerSetting","BindableFunction","OnInvoke",changePlayerSetting)
 
 -- keybind stuff
 
@@ -4158,7 +4142,6 @@ local function playerRequestSetKeyAction(player,key,action)
 	end
 end
 
-network:create("playerRequestSetKeyAction","RemoteFunction","OnServerInvoke",playerRequestSetKeyAction)
 
 local function onDamagePlayer(player, damage)
 	player.Character.PrimaryPart.health.Value = player.Character.PrimaryPart.health.Value - damage
@@ -4192,7 +4175,6 @@ local function getTrueEquipmentSlotDataByEquipmentSlotDataFromPlayer(player, equ
 	return nil, nil
 end
 
-network:create("playerAppliedScroll","RemoteEvent")
 
 -- dont mind me just inserting this here
 
@@ -4464,7 +4446,6 @@ local function onReplicateClientWeaponStateChanged(player, weaponState)
 	end
 end
 
-network:create("playerRequestAlphaGift", "RemoteFunction", "OnServerInvoke")
 
 -- NOTE: This is not the same route that state animations take (ie, walking running etc!)
 local function onReplicatePlayerAnimationSequence(player, animationCollection, animationName, extraData)
@@ -4544,8 +4525,6 @@ end
 
 local function main()
 	-- data manipulation
-	network:create("loadPlayerData", "RemoteFunction", "OnServerInvoke", onPlayerAdded)
-	network:create("playerRequest_setupPlayerData", "RemoteFunction", "OnServerInvoke", onPlayerAdded)
 	network:create("switchInventorySlotData", "RemoteFunction", "OnServerInvoke", onSwitchInventorySlotDataRequestReceived)
 	network:create("playerRequest_switchInventorySlotData", "RemoteFunction", "OnServerInvoke", onSwitchInventorySlotDataRequestReceived)
 	network:create("transferInventoryToEquipment", "RemoteFunction", "OnServerInvoke", onTransferInventoryToEquipment)
@@ -4560,6 +4539,13 @@ local function main()
 			player.Character.PrimaryPart.CFrame = targetCFrame
 		end
 	end)
+	network:create("playerRequestAlphaGift", "RemoteFunction", "OnServerInvoke")
+	network:create("playerRequestSetKeyAction","RemoteFunction","OnServerInvoke",playerRequestSetKeyAction)
+	network:create("playerRequest_changeAccessories", "RemoteFunction", "OnServerInvoke", playerRequest_changeAccessories)
+	network:create("playerRequest_swapWeapons", "RemoteEvent", "OnServerEvent", swapPlayerWeapons)
+	network:create("playerRequest_swapWeapons_yielding", "RemoteFunction", "OnServerInvoke", swapPlayerWeapons)
+	network:create("requestChangePlayerSetting","RemoteFunction","OnServerInvoke",changePlayerSetting)
+
 
 	-- data interfacing with client
 	network:create("getPropogationCacheLookupTable", "RemoteFunction", "OnServerInvoke", getPropogationCacheLookupTable)
@@ -4569,6 +4555,8 @@ local function main()
 	network:create("playerRequest_getPlayerEquipmentData", "RemoteFunction", "OnServerInvoke", onGetPlayerEquipment)
 	network:create("dataRecoveryRequested", "RemoteEvent", "OnServerEvent", onDataRecoveryRequested)
 	network:create("playerEquipmentChanged", "RemoteEvent")
+	network:create("loadPlayerData", "RemoteFunction", "OnServerInvoke", onPlayerAdded)
+	network:create("playerRequest_setupPlayerData", "RemoteFunction", "OnServerInvoke", onPlayerAdded)
 
 	network:create("requestSplitInventorySlotDataStack", "RemoteFunction", "OnServerInvoke", onRequestSplitInventorySlotDataStack)
 	network:create("playerRequest_splitInventorySlotDataStack", "RemoteFunction", "OnServerInvoke", onRequestSplitInventorySlotDataStack)
@@ -4577,6 +4565,8 @@ local function main()
 	network:create("replicateClientStateChanged", "RemoteEvent", "OnServerEvent", onReplicateClientStateChanged)
 	network:create("replicateClientWeaponStateChanged", "RemoteEvent", "OnServerEvent", onReplicateClientWeaponStateChanged)
 	network:create("playerRequest_equipTemporaryEquipment", "RemoteFunction", "OnServerInvoke", onPlayerRequest_equipTemporaryEquipment)
+	network:create("getIsPlayerOfClass", "RemoteFunction", "OnServerInvoke", isPlayerOfClass)
+	network:create("serverVerifyCharacterPosition", "RemoteEvent", "OnServerEvent", forceCharacterPosition)
 
 	-- data interfacing with server
 	network:create("getPlayerData", "BindableFunction", "OnInvoke", getPlayerData)
@@ -4586,6 +4576,10 @@ local function main()
 	network:create("removePlayerInventorySlotData", "BindableFunction", "OnInvoke", onRemovePlayerInventorySlotData)
 	network:create("playerEquipmentChanged_server", "BindableEvent")
 	network:create("doesPlayerHaveInventorySpaceForTrade", "BindableFunction", "OnInvoke", int__doesPlayerHaveInventorySpaceForTrade)
+	network:create("getPlayerGlobalData", "BindableFunction", "OnInvoke", getPlayerGlobalData)
+	network:create("setPlayerGlobalData", "BindableFunction", "OnInvoke", setPlayerGlobalData)
+	network:create("serverChangePlayerSetting","BindableFunction","OnInvoke",changePlayerSetting)
+	network:create("getIsPlayerOfClass_server", "BindableFunction", "OnInvoke", isPlayerOfClass)
 
 	-- data routing
 	network:create("replicatePlayerAnimationSequence", "RemoteEvent", "OnServerEvent", onReplicatePlayerAnimationSequence)
@@ -4598,6 +4592,15 @@ local function main()
 	network:create("playerRequest_respawnMyCharacter", "RemoteFunction", "OnServerInvoke", onPlayerRequest_respawnMyCharacter)
 	network:create("playerRequest_returnToMainMenu", "RemoteFunction", "OnServerInvoke", onPlayerRequest_returnToMainMenu)
 	network:create("requestTradeBetweenPlayers", "BindableFunction", "OnInvoke", onTradeRequestReceived)
+	network:create("deathGuiAccepted", "RemoteEvent", "OnServerEvent", onDeathGuiAccepted)
+	network:create("deathGuiRequested", "RemoteEvent")
+	network:create("promptPlayerDeathScreen","RemoteEvent")
+	network:create("playerCharacterLoaded", "BindableEvent")
+	network:create("deathTrapKnockback", "RemoteEvent")
+	network:create("logPerkActivation_server", "BindableEvent", "Event", onLogPerkActivation_server)
+	network:create("playerDataLoaded", "BindableEvent")
+	network:create("signal_inputChanged", "RemoteEvent", "OnServerEvent", signal_inputChanged)
+	network:create("playerAppliedScroll","RemoteEvent")
 
 	-- todo: probably tighten this
 	network:create("tradeItemsBetweenPlayerAndNPC", "BindableFunction", "OnInvoke", int__tradeItemsBetweenPlayerAndNPC)
@@ -4606,7 +4609,12 @@ local function main()
 	network:create("signal_exp", "RemoteEvent")
 
 	-- random teleport crap
+	network:create("saveDataForTeleportation", "RemoteFunction", "OnServerInvoke", saveDataForTeleport)
+	network:create("playerRequest_savePlayerDataForTeleportation", "RemoteFunction", "OnServerInvoke", saveDataForTeleport)
+	network:create("saveDataForTeleport", "BindableFunction", "OnInvoke", saveDataForTeleport)
 	network:create("externalTeleport", "RemoteEvent")
+
+	-- other trash
 	network:create("signal_alertChatMessage", "RemoteEvent")
 	network:create("openLoreBookFromServer", "RemoteEvent")
 	network:create("playerInventoryChanged_server", "BindableEvent")
