@@ -48,7 +48,7 @@ local function getChatTagPartForEntity(entityContainer)
 	end
 end
 
-network:create("getChatTagPartForEntity", "BindableFunction", "OnInvoke", getChatTagPartForEntity)
+
 
 local function createChatTagPart(entityContainer, offset, rangeMulti)
 	--[[
@@ -78,7 +78,7 @@ local function createChatTagPart(entityContainer, offset, rangeMulti)
 	return chatTag
 end
 
-network:create("createChatTagPart", "BindableFunction", "OnInvoke", createChatTagPart)
+
 
 local function displayChatMessageFromChatTagPart(chatTagPart, message, speakerName)
 	--local chatTag = chatTagPart:FindFirstChild("SurfaceGui")
@@ -134,7 +134,7 @@ local function displayChatMessageFromChatTagPart(chatTagPart, message, speakerNa
 	end
 end
 
-network:create("displayChatMessageFromChatTagPart", "BindableFunction", "OnInvoke", displayChatMessageFromChatTagPart)
+
 
 game.ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents").OnMessageDoneFiltering.OnClientEvent:connect(function(messageInfo, rio)
 	--  {"ExtraData":{"Tags":[],"ChatColor":null,"NameColor":null},"IsFiltered":true,"MessageType":"Message","IsFilterResult":true,
@@ -157,5 +157,11 @@ game.ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents").OnMessageDone
 		end
 	end
 end)
+
+
+
+network:create("getChatTagPartForEntity", "BindableFunction", "OnInvoke", getChatTagPartForEntity)
+network:create("createChatTagPart", "BindableFunction", "OnInvoke", createChatTagPart)
+network:create("displayChatMessageFromChatTagPart", "BindableFunction", "OnInvoke", displayChatMessageFromChatTagPart)
 
 return true
