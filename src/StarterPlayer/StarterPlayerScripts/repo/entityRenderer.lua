@@ -257,7 +257,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 	local function populateEntityData()
 		if entityManifest.entityType.Value == "character" then
-			characterEntityAnimationTracks = animationInterface:registerAnimationsForAnimationController(renderEntityData.entityContainer.entity.AnimationController, "movementAnimations", "swordAndShieldAnimations", "dualAnimations", "greatswordAnimations", "swordAnimations", "daggerAnimations", "staffAnimations", "fishing-rodAnimations", "emoteAnimations", "bowAnimations")
+			characterEntityAnimationTracks = animationInterface:registerAnimationsForAnimationController(renderEntityData.entityContainer.entity.AnimationController, "movementAnimations", "swordAndShieldAnimations", "dualAnimations", "greatswordAnimations", "swordAnimations", "daggerAnimations", "staffAnimations", "fishing-rodAnimations", "emoteAnimations", "bowAnimations", "axeAnimations","pickaxeAnimations")
 		elseif entityManifest.entityType.Value == "monster" or entityManifest.entityType.Value == "pet" then
 			entityBaseData = (entityManifest.entityType.Value == "monster") and monsterLookup[entityManifest.entityId.Value] or itemLookup[tonumber(entityManifest.entityId.Value)]
 			entityStatesData = utilities.copyTable(entityBaseData.statesData.states)

@@ -8,7 +8,9 @@ function melee_manager.PlayAnimation(animationSequenceName, characterEntityAnima
         animationSequenceName == "daggerAnimations" or
         animationSequenceName == "greatswordAnimations" or
         animationSequenceName == "dualAnimations" or
-        animationSequenceName == "swordAndShieldAnimations"
+        animationSequenceName == "swordAndShieldAnimations" or
+        animationSequenceName == "axeAnimations" or
+        animationSequenceName == "pickaxeAnimations"
         then
             local atkspd = (extraData and extraData.attackSpeed) or 0
             characterEntityAnimationTracks[animationSequenceName][animationName]:Play(0.1, 1, (1 + atkspd))

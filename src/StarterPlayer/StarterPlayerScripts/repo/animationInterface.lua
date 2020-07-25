@@ -224,6 +224,8 @@ local ATTACK_SPEED_ANIMATION_COLLECTION_NAMES = {
 	"greatswordAnimations",
 	"dualAnimations",
 	"swordAndShieldAnimations",
+	"axeAnimations",
+	"pickaxeAnimations"
 }
 local function isAttackSpeedAnimationCollection(name)
 	for _, attackSpeedAnimationCollectionName in pairs(ATTACK_SPEED_ANIMATION_COLLECTION_NAMES) do
