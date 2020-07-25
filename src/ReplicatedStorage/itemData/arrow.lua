@@ -25,11 +25,11 @@ return {
 	--> crafting information <--
 	recipe = {
 		-- oak wood
-		{id = 2, quantity = 1},
+		{id = 2, stacks = 1},
 		-- stone
-		{id = 600, quantity = 1},
+		{id = 600, stacks = 1},
 		-- feather
-		{id = 271, quantity = 1},
+		{id = 271, stacks = 1},
 	};
 
 	--> sorting information <--

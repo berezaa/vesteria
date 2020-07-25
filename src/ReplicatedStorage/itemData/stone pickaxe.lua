@@ -23,9 +23,9 @@ return {
 	--> crafting information <--
 	recipe = {
 		-- oak wood
-		{id = 2, quantity = 20},
+		{id = 2, stacks = 20},
 		-- stone
-		{id = 600, quantity = 20}
+		{id = 600, stacks = 20}
 	};
 
 	--> shop information <--
