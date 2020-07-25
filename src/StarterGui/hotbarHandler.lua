@@ -394,42 +394,20 @@ function module.postInit(Modules)
 
 		if hotbarSlotData then
 
+			local correspondingBG = hotbarFrame.decor:FindFirstChild(hotbarButtonItem.Name:gsub("hotbarButton",""))
+			if correspondingBG then
+				correspondingBG.ImageColor3 = Color3.fromRGB(0, 255, 255)
+				tween(correspondingBG,{"ImageColor3"},Color3.fromRGB(72, 72, 76),0.5)
+			end
+
 			if hotbarSlotData.dataType == mapping.dataType.item then
 				local inventorySlotData = network:invoke("getInventorySlotDataWithItemId", hotbarSlotData.id)
-				local correspondingBG = hotbarFrame.decor:FindFirstChild(hotbarButtonItem.Name:gsub("hotbarButton",""))
-				if correspondingBG then
-					correspondingBG.ImageColor3 = Color3.fromRGB(0, 255, 255)
-					tween(correspondingBG,{"ImageColor3"},Color3.fromRGB(72, 72, 76),0.5)
-				end
 				if inventorySlotData then
 					network:invoke("activateItemRequestLocal", inventorySlotData)
 				end
 
 			elseif hotbarSlotData.dataType == mapping.dataType.ability then
-				local correspondingBG = hotbarFrame.decor:FindFirstChild(hotbarButtonItem.Name:gsub("hotbarButton",""))
-				if correspondingBG then
-					correspondingBG.ImageColor3 = Color3.fromRGB(0, 255, 255)
-				end
-				local canActivate, problem = network:invoke("canActivateAbility", hotbarSlotData.id, hotbarButtonItem, ...)
-				if canActivate then
-					local targetingComplete = doAbilityTargeting(hotbarSlotData.id, hotbarSlotData.keyCode)
-
-					if targetingComplete then
-						-- success, errorMessage
-						network:invoke("activateAbilityRequest", hotbarSlotData.id, hotbarButtonItem, ...)
-					end
-				else
-					utilities.playSound("error")
-					if correspondingBG then
-						correspondingBG.ImageColor3 = Color3.fromRGB(255, 0, 0)
-					end
-					if problem == "missing-mana" then
-						Modules.statusBars.manaWarning()
-					end
-				end
-				if correspondingBG then
-					tween(correspondingBG,{"ImageColor3"},Color3.fromRGB(72, 72, 76),0.5)
-				end
+				network:invoke("abilityUseRequest", hotbarSlotData.id)
 			end
 		end
 	end
