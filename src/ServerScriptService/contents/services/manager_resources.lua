@@ -66,7 +66,7 @@ end
 
 local function newNodeData(node)
 	local n = {}
-	local nodeTypeMetadata = require(node.Parent.Parent.Parent.Metadata)
+	local nodeTypeMetadata = require(getNodeTypeMetadataFromNode(node))
 	local dropPoints = node:FindFirstChild("DropPoints")
 	
 	n.HarvestsLeft = nodeTypeMetadata.Harvests
