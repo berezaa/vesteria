@@ -138,17 +138,8 @@ local function calcDamageForNode(node, player)
 	local weaponItem
 	
 	if nodeTypeMetadata.NodeCategory then
-		for _, equip in pairs (playerEquipment) do
-			if equip.position == 1 then
-				weaponItem = ItemLookup[equip.id]
-			end
-		end
-		
-		if weaponItem.modifierData then
-			if weaponItem.modifierData[nodeTypeMetadata.NodeCategory] then
-				return weaponItem.modifierData[nodeTypeMetadata.NodeCategory]
-			end
-		end
+		local playerData = Network:invoke("getPlayerData", player)
+		return playerData.nonSerializeData.statistics_final[nodeTypeMetadata.NodeCategory]
 	end
 		
 	return 1
