@@ -1,13 +1,13 @@
 
 return {
 	--> identifying information <--
-	id = 2;
+	id = 600;
 
 	--> generic information <--
-	name = "Oak Wood";
+	name = "Stone";
 	rarity = "Common";
-	image = "rbxassetid://5319820628";
-	description = "The oak is well-known for its sturdy wood that is used in many recipes.";
+	image = "rbxassetid://5425453518";
+	description = "A chunk of rock that is used in many recipes.";
 
 	-- todo: wood item type icon
 --	itemType = "wood";

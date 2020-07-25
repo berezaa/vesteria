@@ -48,6 +48,15 @@ local localResourceNodeData = {}
 
 
 
+local function getNodeTypeMetadataFromNode(node)
+	local containingFolder = node:FindFirstAncestorWhichIsA("Folder")
+	local isNodeGroup = CollectionService:HasTag(containingFolder, "resourceNodeGroupFolder")
+	local nodeTypeMetadata = isNodeGroup and containingFolder.Parent.Metadata or containingFolder.Metadata
+
+	return nodeTypeMetadata
+end
+
+
 local function setupBaseNodeDataForPlayer(player)
 	local p = {}	
 	localResourceNodeData[player] = p
@@ -57,7 +66,7 @@ end
 
 local function newNodeData(node)
 	local n = {}
-	local nodeTypeMetadata = require(node.Parent.Parent.Parent.Metadata)
+	local nodeTypeMetadata = require(getNodeTypeMetadataFromNode(node))
 	local dropPoints = node:FindFirstChild("DropPoints")
 	
 	n.HarvestsLeft = nodeTypeMetadata.Harvests
@@ -124,7 +133,7 @@ end
 
 
 local function calcDamageForNode(node, player)
-	local nodeTypeMetadata = require(node.Parent.Parent.Parent.Metadata)
+	local nodeTypeMetadata = require(getNodeTypeMetadataFromNode(node))
 	local playerEquipment = Network:invoke("getPlayerData", player).equipment
 	local weaponItem
 	
@@ -135,9 +144,9 @@ local function calcDamageForNode(node, player)
 			end
 		end
 		
-		if weaponItem.resourceDamageModifier then
-			if weaponItem.resourceDamageModifier[nodeTypeMetadata.NodeCategory] then
-				return weaponItem.resourceDamageModifier[nodeTypeMetadata.NodeCategory]
+		if weaponItem.modifierData then
+			if weaponItem.modifierData[nodeTypeMetadata.NodeCategory] then
+				return weaponItem.modifierData[nodeTypeMetadata.NodeCategory]
 			end
 		end
 	end
@@ -147,7 +156,7 @@ end
 
 
 local function calcNumHarvests(damage, node, nodeData)
-	local nodeTypeMetadata = require(node.Parent.Parent.Parent.Metadata)
+	local nodeTypeMetadata = require(getNodeTypeMetadataFromNode(node))
 	local maxDurability = nodeTypeMetadata.Durability
 	local durability = nodeData.Durability
 	local harvestsLeft = nodeData.HarvestsLeft
@@ -194,7 +203,7 @@ end
 
 
 function ResourceManager:ResourceNodeReplenished(node, player)
-	local nodeTypeMetadata = require(node.Parent.Parent.Parent.Metadata)
+	local nodeTypeMetadata = require(getNodeTypeMetadataFromNode(node))
 	local isNodeGlobal = nodeTypeMetadata.IsGlobal
 	local nodeData = isNodeGlobal and getGlobalDataForNode(node) or getNodeDataForPlayer(node, player)
 	local dropPoints = node:FindFirstChild("DropPoints")
@@ -222,7 +231,7 @@ end
 
 
 function ResourceManager:ResourceNodeDepleted(node, player)
-	local nodeTypeMetadata = require(node.Parent.Parent.Parent.Metadata)
+	local nodeTypeMetadata = require(getNodeTypeMetadataFromNode(node))
 	local isGlobal = nodeTypeMetadata.IsGlobal
 	local nodeData = isGlobal and getGlobalDataForNode(node) or getNodeDataForPlayer(node, player)
 	
@@ -259,13 +268,13 @@ function ResourceManager:HarvestResource(node, player)
 	
 	if char then		
 		if typeof(node) == "Instance" then
-			if node:IsA("Model") and node.Parent.Name == "Nodes" and node:IsDescendantOf(nodesFolder) then
+			if node:IsA("Model") and node:IsDescendantOf(nodesFolder) and node.Name ~= "Nodes" and node.Name ~= "Props" then
 				local nodePosition = node:GetBoundingBox().Position
 				local charPosition = char:GetPrimaryPartCFrame().Position
 				local distance = (nodePosition - charPosition).Magnitude
 				
 				if distance < node:GetExtentsSize().Magnitude * 1.25 then
-					local nodeTypeMetadata = require(node.Parent.Parent.Parent.Metadata)
+					local nodeTypeMetadata = require(getNodeTypeMetadataFromNode(node))
 					local isNodeGlobal = nodeTypeMetadata.IsGlobal
 					local numDrops = nodeTypeMetadata.LootTable.Drops
 					
