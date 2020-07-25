@@ -14,8 +14,18 @@ local Network
 local Thread
 
 
+
+local function getNodeTypeMetadataFromNode(node)
+	local containingFolder = node:FindFirstAncestorWhichIsA("Folder")
+	local isNodeGroup = CollectionService:HasTag(containingFolder, "resourceNodeGroupFolder")
+	local nodeTypeMetadata = isNodeGroup and containingFolder.Parent.Metadata or containingFolder.Metadata
+
+	return nodeTypeMetadata
+end
+
+
 function Resources:DoEffect(node, effect)
-	local nodeMetadata = node.Parent.Parent.Parent.Metadata
+	local nodeMetadata = getNodeTypeMetadataFromNode(node)
 	local effectFolder = nodeMetadata.EffectsStorage:FindFirstChild(effect)
 	
 	if effectFolder then
@@ -40,7 +50,7 @@ end
 function Resources:Start()
 	
 	Network:connect("ResourceHarvested", "OnClientEvent", function(node, dropPoint)
-		local nodeMetadata = require(node.Parent.Parent.Parent.Metadata)
+		local nodeMetadata = require(getNodeTypeMetadataFromNode(node))
 		local onHarvest = nodeMetadata.Animations.OnHarvest
 		
 		if onHarvest and type(onHarvest) == "function" then
@@ -55,7 +65,7 @@ function Resources:Start()
 	end)
 	
 	Network:connect("ResourceReplenished", "OnClientEvent", function(node)
-		local nodeMetadata = require(node.Parent.Parent.Parent.Metadata)
+		local nodeMetadata = require(getNodeTypeMetadataFromNode(node))
 		local onReplenish = nodeMetadata.Animations.OnReplenish
 		
 		if nodeMetadata.DestroyOnDeplete then
@@ -83,7 +93,7 @@ function Resources:Start()
 	end)
 	
 	Network:connect("ResourceDepleted", "OnClientEvent", function(node)
-		local nodeMetadata = require(node.Parent.Parent.Parent.Metadata)
+		local nodeMetadata = require(getNodeTypeMetadataFromNode(node))
 		local onDeplete = nodeMetadata.Animations.OnDeplete
 		
 		if nodeMetadata.DestroyOnDeplete then			

@@ -364,8 +364,10 @@ local function attackInteraction(interaction, part)
 
 	--attackable interactable ableables!
 	if collectionService:HasTag(part, "attackable") then
-		if part.Parent:IsA("Model") and part.Parent.Parent.Name == "Nodes" and part:IsDescendantOf(placeSetup.getPlaceFolder("resourceNodes")) then
-			local nodeModel = part:FindFirstAncestorWhichIsA("Model")
+		local model = part:FindFirstAncestorWhichIsA("Model")
+		local folder = model:FindFirstAncestorWhichIsA("Folder")
+		if collectionService:HasTag(folder, "resourceNodeTypeFolder") or collectionService:HasTag(folder, "resourceNodeGroupFolder") then
+			local nodeModel = model
 			local dropPoint = network:invokeServer("HarvestResource", nodeModel)
 			shake(nodeModel)
 		else
