@@ -14,6 +14,7 @@ local abilityLookup = require(replicatedStorage:WaitForChild("abilityLookup"))
 
 function module.init(Modules)
 	local network = Modules.network
+	local uiCreator = Modules.uiCreator
 
 	local abilityDataPairing = {}
 
@@ -21,9 +22,13 @@ function module.init(Modules)
 		-- playerData.abilities
 		abilities = abilities or network:invoke("getCacheValueByNameTag", "abilities")
 		local unlockedAbilities = {}
+
+		print(abilities)
+
 		for _, abilityData in pairs(abilities) do
 			-- TODO: check if REALLY unlocked
 			table.insert(unlockedAbilities, abilityData)
+			--print(abilityData)
 		end
 
 		-- clear existing buttons
@@ -41,8 +46,14 @@ function module.init(Modules)
 			local abilityData = unlockedAbilities[i]
 			if abilityData then
 				local abilityInfo = abilityLookup[abilityData.id]
+
 				template.item.Image = abilityInfo.image
 				abilityDataPairing[template] = abilityData
+
+				uiCreator.drag.setIsDragDropFrame(template.item)
+				uiCreator.setIsDoubleClickFrame(template.item, 0.2, function()
+					local thing, error = network:invoke("abilityUseRequest", abilityData.id)
+				end)
 			end
 
 			template.Parent = menu.content
@@ -57,7 +68,7 @@ function module.init(Modules)
 		end
 	end)
 	network:create("getAbilitySlotDataByAbilitySlotUI", "BindableFunction", "OnInvoke", function(button)
-		return abilityDataPairing[button]
+		return abilityDataPairing[button.item]
 	end)
 end
 

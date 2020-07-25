@@ -1088,7 +1088,7 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 			-- dragged into overworld
 		end
 	elseif buttonFrom:IsDescendantOf(menu_abilities) then
-		if buttonTo:IsDescendantOf(ui.bottomRight.hotbarFrame) then
+		if buttonTo and buttonTo:IsDescendantOf(ui.bottomRight.hotbarFrame) then
 			local abilityData = network:invoke("getAbilitySlotDataByAbilitySlotUI", buttonFrom)
 			if abilityData.id then
 				local num = string.gsub(buttonTo.Name,"[^.0-9]+","")

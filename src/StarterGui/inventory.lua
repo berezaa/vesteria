@@ -334,28 +334,6 @@ function module.init(Modules)
 
 	local abilityData
 
-	local function getPlayerDataSpentAP(playerData)
-		local spentAP = 0
-		for i, abilitySlotData in pairs(playerData.abilities) do
-			if abilitySlotData.rank ~= 0 then
-				local abilityBaseData = abilityLookup[abilitySlotData.id](playerData)
-				if abilityBaseData and abilityBaseData.metadata then
-					spentAP = spentAP + abilityBaseData.metadata.cost
-				end
-				local upgrades = abilitySlotData.rank - 1
-				if upgrades > 0 and abilityBaseData.metadata and abilityBaseData.metadata.upgradeCost then
-					spentAP = spentAP + abilityBaseData.metadata.upgradeCost * upgrades
-				end
-				if abilitySlotData.variant then
-					local variantData = abilityBaseData.metadata.variants[abilitySlotData.variant]
-					spentAP = spentAP + variantData.cost
-				end
-			end
-		end
-		return spentAP
-	end
-
-
 	local learnAbilitiesFrame = menuUI.learnAbilities
 
 	local learnableAbilityCount = 0
@@ -499,11 +477,6 @@ function module.init(Modules)
 			abilityData = abilityData or network:invoke("getCacheValueByNameTag", "abilities")
 
 			local level = network:invoke("getCacheValueByNameTag", "level") or 1
-			local abilityPoints = level - 1
-			local unspentAbilityPoints = abilityPoints - getPlayerDataSpentAP(playerData)
-
-			menuUI.abilityPoints.Visible = unspentAbilityPoints > 0
-			menuUI.abilityPoints.amount.Text = tostring(unspentAbilityPoints) .. " AP"
 
 			local contents = {}
 			local n = 0

@@ -23,7 +23,7 @@ local module = {}
 	module.dataType = {}
 		module.dataType.item = 1
 		module.dataType.ability = 2
-		module.datatype.abilitySlot = 3
+		module.dataType.abilitySlot = 3
 
 	module.gripType = {}
 		module.gripType.right = 1
