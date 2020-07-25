@@ -367,11 +367,10 @@ function module.init(Modules)
 				yOffset_options = yOffset_options + 42
 			end
 
-			responseOption.inner.Text = textToDisplay
-			responseOption.Size = UDim2.new(0, responseOptionSize.X + 30, 0, 42)
-			responseOption.Position = UDim2.new(0, xOffset_options, 0, yOffset_options)
-			responseOption.Visible = true
-			responseOption.Parent = dialogueFrameUI.contents.options
+			responseOption.inner.Text 	= textToDisplay
+			responseOption.Size 		= UDim2.new(0, responseOptionSize.X + 30, 0, 42)
+			responseOption.Position 	= UDim2.new(0, xOffset_options, 0, yOffset_options)
+			responseOption.Parent 		= dialogueFrameUI.contents.options
 
 			local questResponseType
 			if dialogueData then
