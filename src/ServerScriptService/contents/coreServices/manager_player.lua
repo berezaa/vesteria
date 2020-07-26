@@ -1172,8 +1172,7 @@ local function onCharacterAdded(player, character)
 				end
 				local args = getArgs(part.statusEffect)
 
-				network:invoke(
-					"applyStatusEffectToEntityManifest",
+				network:invoke("applyStatusEffectToEntityManifest",
 					manifest,
 					statusName,
 					args,

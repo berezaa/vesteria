@@ -9,8 +9,7 @@ local itemLookup = require(replicatedStorage:WaitForChild("itemData"))
 local function playerRequest_craftItem(player, itemId)
 	local item = itemLookup[itemId]
 	if item and item.recipe then
-		local success, reason = network:invoke(
-			"tradeItemsBetweenPlayerAndNPC",
+		local success, reason = network:invoke("tradeItemsBetweenPlayerAndNPC",
 			player,
 			item.recipe,
 			0,

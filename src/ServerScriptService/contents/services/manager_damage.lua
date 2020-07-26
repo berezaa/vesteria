@@ -965,8 +965,7 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 								damageData.damage = damageData.damage * 0.35
 								damageData.supressed = true
 
-								network:fireAllClients(
-									"signal_damageModificationByActiveAbility",
+								network:fireAllClients("signal_damageModificationByActiveAbility",
 									-- player that is using the ability that modified
 									targetPlayer,
 									activeAbilityExecutionData.id,

@@ -486,8 +486,7 @@ local playerConsumeCooldownTable 	= {}
 
 local function onActivateItemRequestReceived(player, category, inventorySlotPosition, _itemId, playerInput)
 	local playerData = network:invoke("getPlayerData", player)
-	local inventorySlotData = network:invoke(
-		"getPlayerInventorySlotDataByInventorySlotPosition",
+	local inventorySlotData = network:invoke("getPlayerInventorySlotDataByInventorySlotPosition",
 		player,
 		category,
 		inventorySlotPosition
@@ -510,8 +509,7 @@ local function onActivateItemRequestReceived(player, category, inventorySlotPosi
 					local source = "item:"..itemBaseData.module.Name
 
 					if itemBaseData.category ~= "miscellaneous" then
-						network:invoke(
-							"tradeItemsBetweenPlayerAndNPC",
+						network:invoke("tradeItemsBetweenPlayerAndNPC",
 							player,
 							{{id = inventorySlotData.id; position = inventorySlotData.position; stacks = 1}},
 							0,
@@ -522,8 +520,7 @@ local function onActivateItemRequestReceived(player, category, inventorySlotPosi
 					end
 
 				else
-					network:fireClient(
-						"signal_alertChatMessage",
+					network:fireClient("signal_alertChatMessage",
 						player,
 						{
 							Text = "Failed to use item: "..status or "no error.";
@@ -632,8 +629,7 @@ local function onPlayerRequest_buyItemFromShop(player, inventorySlotData, stacks
 				local stacksBeingBought = math.clamp(stacksBeingRequested, 1, itemBaseData.stackSize or 99)
 				itemBeingBought.stacks 	= stacksBeingBought
 
-				success, reason = network:invoke(
-					"tradeItemsBetweenPlayerAndNPC",
+				success, reason = network:invoke("tradeItemsBetweenPlayerAndNPC",
 					player,
 					{{id = confirmedCostInfo.costId; stacks = itemCost * stacksBeingRequested}},
 					0,
@@ -664,8 +660,7 @@ local function onPlayerRequest_buyItemFromShop(player, inventorySlotData, stacks
 		local coinCostReduction = 1 - math.clamp(playerData.nonSerializeData.statistics_final.merchantCostReduction, 0, 1)
 
 		itemBeingBought.stacks = stacksBeingRequested
-		success, reason = network:invoke(
-			"tradeItemsBetweenPlayerAndNPC",
+		success, reason = network:invoke("tradeItemsBetweenPlayerAndNPC",
 			player,
 			{},
 			math.clamp((itemCost or itemBaseData.buyValue or 1) * coinCostReduction, 1, math.huge) * stacksBeingRequested,
@@ -714,8 +709,7 @@ local function onPlayerRequest_sellItem(player, unsafeInventorySlotData, stacksT
 		-- edit: jesus don't put "stacks" in the amount removed.
 		local source = "shop:"..itemBaseData.module.Name
 		local sellValue = economy.getSellValue(itemBaseData, inventorySlotData)
-		local success = network:invoke(
-			"tradeItemsBetweenPlayerAndNPC",
+		local success = network:invoke("tradeItemsBetweenPlayerAndNPC",
 			player,
 			{{
 				id = inventorySlotData.id;
@@ -797,8 +791,7 @@ local function playerRequest_dropItem(player, inventorySlotData)
 
 			local drop
 			if not (trueMetadata.soulbound or itemBaseData.soulbound) then
-				drop = network:invoke(
-					"spawnItemOnGround",
+				drop = network:invoke("spawnItemOnGround",
 					trueMetadata,
 					player.Character.PrimaryPart.Position + player.Character.PrimaryPart.CFrame.lookVector * 5,
 					nil
