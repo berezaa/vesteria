@@ -360,8 +360,8 @@ function ResourceManager:Init()
 	end)
 	
 	network:create("ResourceHarvested", "RemoteEvent")
-	network:create(""ResourceDepleted"", "RemoteEvent")
-	network:create(""ResourceReplenished"", "RemoteEvent")
+	network:create("ResourceDepleted", "RemoteEvent")
+	network:create("ResourceReplenished", "RemoteEvent")
 	
 end
 
