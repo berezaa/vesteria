@@ -37,8 +37,8 @@ local network
 
 local HARVEST_RESOURCE_CLIENT_EVENT = "HarvestResource"
 local RESOURCE_HARVESTED_CLIENT_EVENT = "ResourceHarvested"
-local RESOURCE_DEPLETED_CLIENT_EVENT = ""ResourceDepleted""
-local RESOURCE_REPLENISHED_CLIENT_EVENT = ""ResourceReplenished""
+local RESOURCE_DEPLETED_CLIENT_EVENT = "ResourceDepleted"
+local RESOURCE_REPLENISHED_CLIENT_EVENT = "ResourceReplenished"
 
 local nodesFolder
 
