@@ -3,9 +3,9 @@ local module = {}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Modules = require(ReplicatedStorage.modules)
-local Network = Modules.load("network")
+local network = Modules.load("network")
 
-Network:create("playerRequest_claimGifts", "RemoteFunction", "OnServerInvoke", function(player)
+network:create("playerRequest_claimGifts", "RemoteFunction", "OnServerInvoke", function(player)
 	local playerData = playerDataContainer[player]
 	if playerData and playerData.globalData then
 		if ((not playerData.globalData.alphaGiftClaimed2) and (not playerData.alphaGiftClaimed2)) or ((not playerData.globalData.alphaGiftClaimed) and (not playerData.alphaGiftClaimed)) then

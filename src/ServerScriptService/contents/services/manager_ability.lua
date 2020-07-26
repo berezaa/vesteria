@@ -3,7 +3,7 @@ local module = {}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Modules = require(ReplicatedStorage.modules)
-local Network = Modules.load("network")
+local network = Modules.load("network")
 local Utilities = Modules.load("utilities")
 local AbilityUtilities = Modules.load("ability_utilities")
 local AbilityLookup = require(ReplicatedStorage.abilityLookup)
@@ -23,7 +23,7 @@ local function onPlayerAdded(player)
 	abilityCooldownLookup[player] = {}
 	castedAbilityGUIDs[player] = {}
 
-	local playerData = Network:invoke("getPlayerData", player)
+	local playerData = network:invoke("getPlayerData", player)
 	playerData.abilities[1] = {
 		level = 1;
 		experience = 0;
@@ -76,7 +76,7 @@ local function changeAbilityState(caster, requestedState, executionData)
 
 	local player = game.Players:GetPlayerFromCharacter(casterContainer)
 	if player then
-		casterData = Network:invoke("getPlayerData", player)
+		casterData = network:invoke("getPlayerData", player)
 	else
 		--Get Monsters Data Here
 	end
@@ -128,7 +128,7 @@ local function changeAbilityState(caster, requestedState, executionData)
 			--Send Ability Cast to Clients
 			local nearbyPlayers = AbilityUtilities.returnNearbyPlayers(player.Character.PrimaryPart.CFrame, maximumAbilityRenderDistance)
 			if nearbyPlayers then
-				Network:fireClients("replicateAbilityLocally", nearbyPlayers, executionData, false)
+				network:fireClients("replicateAbilityLocally", nearbyPlayers, executionData, false)
 			end
 
 			--@ ABILITY BEGIN ENDED @--
@@ -152,7 +152,7 @@ local function changeAbilityState(caster, requestedState, executionData)
 			--Send Ability Cast to Clients
 			local nearbyPlayers = Utilities.returnNearbyPlayers(player.Character.PrimaryPart.CFrame, maximumAbilityRenderDistance)
 			if nearbyPlayers then
-				Network:fireClients("replicateAbilityUpdateLocally", nearbyPlayers, executionData, false)
+				network:fireClients("replicateAbilityUpdateLocally", nearbyPlayers, executionData, false)
 			end
 		else
 			return false, "invalid_guid"
@@ -171,13 +171,13 @@ end
 
 local function main()
 	--Register Player Added and Remove Functions Defined Above
-	Network:connect("playerDataLoaded", "Event", onPlayerAdded)
+	network:connect("playerDataLoaded", "Event", onPlayerAdded)
 	game.Players.PlayerRemoving:Connect(onPlayerRemoving)
 
 	--Register all functions as network events/functions
-	Network:create("requestAbilityStateUpdate", "RemoteEvent", "OnServerEvent", changeAbilityState)
-	Network:create("validateAbilityGUID", "BindableFunction", "OnInvoke", validateAbilityGUID)
-	Network:create("resetAbilityCooldown", "BindableEvent", "Event", resetAbilityCooldown)
+	network:create("requestAbilityStateUpdate", "RemoteEvent", "OnServerEvent", changeAbilityState)
+	network:create("validateAbilityGUID", "BindableFunction", "OnInvoke", validateAbilityGUID)
+	network:create("resetAbilityCooldown", "BindableEvent", "Event", resetAbilityCooldown)
 end
 
 main()

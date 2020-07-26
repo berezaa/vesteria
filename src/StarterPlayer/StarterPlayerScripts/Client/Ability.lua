@@ -4,7 +4,7 @@ local HTTPService = game:GetService("HttpService")
 local ReplicatedStorage = game.ReplicatedStorage
 
 local Modules = require(ReplicatedStorage.modules)
-local Network = Modules.load("network")
+local network = Modules.load("network")
 local Utilities = Modules.load("utilities")
 local AbilityUtilities = Modules.load("ability_utilities")
 
@@ -21,7 +21,7 @@ function abilityController.abilityUseRequest(abilityId)
 	if not abilityModule then return false, "invalid_abilityId" end
 
 	--Check if player can Cast locally using AbilityUtilities
-	local playerData = Network:invoke("getLocalPlayerDataCache")
+	local playerData = network:invoke("getLocalPlayerDataCache")
 
 	local canCast, err = AbilityUtilities.canPlayerCast(player, playerData, abilityId)
 	if canCast then
@@ -56,12 +56,12 @@ function abilityController.abilityUseRequest(abilityId)
 		}
 
 		--Call Remote for changing Ability State ("begin")
-		Network:fireServer("requestAbilityStateUpdate", "begin", executionData)
+		network:fireServer("requestAbilityStateUpdate", "begin", executionData)
 
 		--Execute Ability Locally
 		abilityModule:execute(executionData, true)
 
-		Network:fireServer("requestAbilityStateUpdate", "end", executionData)
+		network:fireServer("requestAbilityStateUpdate", "end", executionData)
 	else
 		warn(err)
 	end
@@ -88,9 +88,9 @@ end
 
 function abilityController.init()
 	--N/A
-	Network:create("abilityUseRequest", "BindableFunction", "OnInvoke", abilityController.abilityUseRequest)
-	Network:create("replicateAbilityLocally", "RemoteEvent", "OnClientEvent", abilityController.replicateAbilityLocally)
-	Network:create("replicateAbilityUpdateLocally", "RemoteEvent", "OnClientEvent", abilityController.replicateAbilityUpdateLocally)
+	network:create("abilityUseRequest", "BindableFunction", "OnInvoke", abilityController.abilityUseRequest)
+	network:create("replicateAbilityLocally", "RemoteEvent", "OnClientEvent", abilityController.replicateAbilityLocally)
+	network:create("replicateAbilityUpdateLocally", "RemoteEvent", "OnClientEvent", abilityController.replicateAbilityUpdateLocally)
 end
 
 return abilityController

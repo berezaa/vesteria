@@ -3,7 +3,7 @@ local module = {}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Modules = require(ReplicatedStorage.modules)
-local Network = Modules.load("network")
+local network = Modules.load("network")
 
 local numberGenerator_enchantment = Random.new()
 -- item location view is either "inventory" or "equipment"
@@ -46,7 +46,7 @@ local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlo
 			if success then
 				local wasSpent = network:invoke("tradeItemsBetweenPlayerAndNPC", player, {}, cost, {}, 0, "etc:enchant")
 				if not wasSpent then
-					Network:invoke("reportError", player, "error", "Enchantment went through but money wasn't spent??")
+					network:invoke("reportError", player, "error", "Enchantment went through but money wasn't spent??")
 				end
 				if itemLocationView == "equipment" then
 					playerData.nonSerializeData.playerDataChanged:Fire("equipment")
@@ -61,7 +61,7 @@ local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlo
 				end
 
 				if itemLocationViewSlotData_equipment.blessed then
-					Network:fireAllClients("signal_alertChatMessage", {Text = player.Name .. "'s ".. (itemBaseData_equipment.name or "equipment") .." is blessed by The Orb."; Font = Enum.Font.SourceSansBold; Color = Color3.fromRGB(0, 81, 255)}	)
+					network:fireAllClients("signal_alertChatMessage", {Text = player.Name .. "'s ".. (itemBaseData_equipment.name or "equipment") .." is blessed by The Orb."; Font = Enum.Font.SourceSansBold; Color = Color3.fromRGB(0, 81, 255)}	)
 				end
 
 				return true
@@ -206,7 +206,7 @@ local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlo
 								playerData.nonSerializeData.playerDataChanged:Fire("equipment")
 							end
 
-							Network:fireAllClients("playerAppliedScroll", player, itemBaseData_enchantment.id, successfullyApplyScroll)
+							network:fireAllClients("playerAppliedScroll", player, itemBaseData_enchantment.id, successfullyApplyScroll)
 
 							return true, successfullyApplyScroll, itemLocationViewSlotData_equipment, status
 						end
@@ -226,6 +226,6 @@ local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlo
 	return false
 end
 
-Network:create("playerRequest_enchantEquipment", "RemoteFunction", "OnServerInvoke", onEnchantEquipmentRequestReceived)
+network:create("playerRequest_enchantEquipment", "RemoteFunction", "OnServerInvoke", onEnchantEquipmentRequestReceived)
 
 return module
