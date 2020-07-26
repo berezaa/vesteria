@@ -14,34 +14,33 @@ function abilityController.abilityUseRequest(abilityId)
 	local player = game.Players.LocalPlayer
 	local character = player.Character
 	local root = character.PrimaryPart
-	if not player or not character or not root or not abilityId then return false, "nill player/abilityId" end
-	
+	if not player or not character or not root or not abilityId then return false, "nil player/abilityId" end
+
 	--Check if Ability of abilityId exists in abilityLookup
 	local abilityModule = AbilityLookup[abilityId]
 	if not abilityModule then return false, "invalid_abilityId" end
-	
+
 	--Check if player can Cast locally using AbilityUtilities
-	local canCast, err = AbilityUtilities.canPlayerCast(player, abilityId) 
+	local playerData = Network:invoke("getLocalPlayerDataCache")
+
+	local canCast, err = AbilityUtilities.canPlayerCast(player, playerData, abilityId)
 	if canCast then
-		print("Player CAN cast ability with id: " .. tostring(abilityId))
-		
 		--Generate abilityCastGuid and encode it
 		local abilityGuid = HTTPService:GenerateGUID()
-		local abilityGuidJSON = Utilities.safeJSONEncode(abilityGuid)
-		
+		local abilityGuidJSON = Utilities.safeJSONEncode({abilityGuid})
+
 		--Get Mouse Position and Starting Cast Tick
 		local mousePosition = player:GetMouse().Hit.Position
 		local castTick = tick()
-		
+
 		--Get player states HERE
 		local casterStates = {}
-		
+
 		local abilityDataCopy = Utilities.copyTable(abilityModule)
-		local casterData = Network:invoke("getPlayerData", player)
-		local increasingStat, newStatData = AbilityUtilities.calculateStats(casterData, abilityId)
-		
+		local increasingStat, newStatData = AbilityUtilities.calculateStats(playerData, abilityId)
+
 		abilityDataCopy.statistics[increasingStat] = newStatData
-		
+
 		--Set executionData
 		local executionData = {
 			caster = player,
@@ -55,12 +54,14 @@ function abilityController.abilityUseRequest(abilityId)
 			targetPosition = mousePosition,
 			abilityData = abilityDataCopy
 		}
-		
+
+		--Call Remote for changing Ability State ("begin")
+		Network:fireServer("requestAbilityStateUpdate", "begin", executionData)
+
 		--Execute Ability Locally
 		abilityModule:execute(executionData, true)
-		
-		--Call Remote for changing Ability State ("begin")
-		Network:invoke("requestAbilityStateUpdate", "begin", executionData)
+
+		Network:fireServer("requestAbilityStateUpdate", "end", executionData)
 	else
 		warn(err)
 	end
@@ -68,7 +69,7 @@ end
 
 function abilityController.replicateAbilityLocally(executionData, isSource)
 	if not executionData then return "invalid_executionData" end
-	
+
 	local abilityModule = AbilityLookup[executionData.abilityId]
 	if abilityModule then
 		abilityModule:execute(executionData, isSource)
@@ -77,7 +78,7 @@ end
 
 function abilityController.replicateAbilityUpdateLocally(executionData, isSource)
 	if not executionData then return "invalid_executionData" end
-	
+
 	local abilityModule = AbilityLookup[executionData.abilityId]
 	if abilityModule then
 		abilityModule:execute_update(executionData, isSource)

@@ -7,7 +7,7 @@ for _, moduleScript in pairs(script:GetChildren()) do
 end
 
 for _, module in pairs(Modules) do
-	if Modules.init then
-		Modules.init(Modules)
+	if module.init then
+		module.init(Modules)
 	end
 end

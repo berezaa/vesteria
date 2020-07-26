@@ -38,6 +38,7 @@ local menu_enchant = ui.menu_enchant
 local menu_shop = ui.menu_shop
 local menu_storage = ui.menu_storage
 local menu_equipment = ui.menu_equipment
+local menu_abilities = ui.menu_abilities
 
 local interactionPromptsFrame = ui.interactionPrompts
 
@@ -876,12 +877,6 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 							if tonumber(num) == 10 then num = 0 end
 							network:invokeServer("registerHotbarSlotData", mapping.dataType.item, inventorySlotData.id, tonumber(num))
 						end
-					elseif buttonFromType == "ability" and not inventorySlotData.passive then
-						if inventorySlotData.id then
-							local num = string.gsub(buttonTo.Name,"[^.0-9]+","")
-							if tonumber(num) == 10 then num = 0 end
-							network:invokeServer("registerHotbarSlotData", mapping.dataType.ability, inventorySlotData.id, tonumber(num))
-						end
 					end
 				end
 			elseif buttonTo:IsDescendantOf(menu_equipment) then
@@ -944,7 +939,7 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 								if status then
 									spawn(function()
 										wait(0.5)
---										game.StarterGui:SetCore("ChatMakeSystemMessage", status)
+
 										network:fire("alert", status)
 									end)
 								end
@@ -1092,9 +1087,14 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 		else
 			-- dragged into overworld
 		end
-	elseif buttonFrom:IsDescendantOf(menu_enchant) then
-		if buttonTo == nil or not buttonFrom:IsDescendantOf(menu_enchant) then
-			Modules.enchant.reset()
+	elseif buttonFrom:IsDescendantOf(menu_abilities) then
+		if buttonTo and buttonTo:IsDescendantOf(ui.bottomRight.hotbarFrame) then
+			local abilityData = network:invoke("getAbilitySlotDataByAbilitySlotUI", buttonFrom)
+			if abilityData.id then
+				local num = string.gsub(buttonTo.Name,"[^.0-9]+","")
+				if tonumber(num) == 10 then num = 0 end
+				network:invokeServer("registerHotbarSlotData", mapping.dataType.ability, abilityData.id, tonumber(num))
+			end
 		end
 	end
 

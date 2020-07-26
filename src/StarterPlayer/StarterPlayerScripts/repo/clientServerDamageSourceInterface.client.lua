@@ -119,7 +119,6 @@ end
 -- sourceType = "ability", "item"
 local function handleRequestEntityDamageRequest(serverHitbox, damagePosition, sourceType, sourceId, sourceTag, GUID)
 	-- todo: do client-side sanity checks
-
 	-- check if is descendant
 	if damage.canPlayerDamageTarget(player, serverHitbox) then
 		network:fire("monsterDamagedAtPosition", damagePosition)
