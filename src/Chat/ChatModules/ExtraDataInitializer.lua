@@ -24,11 +24,11 @@ local groupRankComparison = ">="
 
 --[[
 	This is where you put all possible tags and chat colors. So, the index, like in my examples, is the name of the tag that you will later refer to.
-	
+
 	Priority is the order in which the tags are added. I have random values for examples.
-	
+
 	The higher the number, the more it will be seen first.
-	
+
 	Example given what is below, if you have all the tags:
 	[Owner] [Developer] [Moderator] [Tester] [VIP] [Roblox Staff] [Roblox Star] [Roblox QA] [Roblox DevForum] [Nicholas_Foreman]: hi
 	Let's just say, it's reaaaaally long.
@@ -75,14 +75,14 @@ local possibleTags = {
 		TagText = "β",
 		TagColor = Color3.fromRGB(140,140,140),
 		Priority = 1,
-	}	
+	}
 }
 
 local possibleChatColors = {
 	["Dev Orange"] = {
 		ChatColor = Color3.fromRGB(255, 154, 103),
 		Priority = 5,
-	},	
+	},
 	["Admin Yellow"] = {
 		ChatColor = Color3.fromRGB(255, 215, 0),
 		Priority = 4,
@@ -90,11 +90,11 @@ local possibleChatColors = {
 	["Contributor Blue"] = {
 		ChatColor = Color3.fromRGB(156, 247, 255),
 		Priority = 3,
-	},		
+	},
 	["Tester Purple"] = {
 		ChatColor = Color3.fromRGB(225, 203, 255),
 		Priority = 2,
-	},		
+	},
 	["Intern Blue"] = {
 		ChatColor = Color3.fromRGB(175, 221, 255),
 		Priority = 1,
@@ -131,22 +131,22 @@ local SpecialChatColors = {
 			GroupId = 4238824,
 			Rank = 254,
 			ChatColor = possibleChatColors["Dev Orange"],
-		},		
+		},
 		{
 			---Contributors
 			GroupId = 4238824,
 			Rank = 5,
 			ChatColor = possibleChatColors["Contributor Blue"],
-		},			
+		},
 		{
 			---Contributors
 			GroupId = 4238824,
 			Rank = 3,
 			ChatColor = possibleChatColors["Tester Purple"],
-		},				
+		},
 
 		{
-			
+
 			--- Roblox Admins group
 			GroupId = 1200769,
 			ChatColor = possibleChatColors["Admin Yellow"],
@@ -193,7 +193,7 @@ local SpecialTags = {
 			--- Tester Badge?
 			BadgeId = 2124469268,
 			Tags = {"Beta"}
-		},		
+		},
 	},
 	Teams = {
 		--[[{
@@ -222,7 +222,7 @@ local SpecialTags = {
 			GroupId = 4238824,
 			Rank = 254,
 			Tags = {"Developer"}
-		},		
+		},
 		{
 			---Contributors
 			GroupId = 4238824,
@@ -234,7 +234,7 @@ local SpecialTags = {
 			GroupId = 4238824,
 			Rank = 3,
 			Tags = {"Tester"}
-		},	
+		},
 
 	},
 	Players = {
@@ -302,10 +302,25 @@ ConstructIsInGroups()
 local Players = game:GetService("Players")
 
 
+local devColors = {
+	["berezaa"] = {Color3.fromRGB(255, 0, 64), Color3.fromRGB(255, 130, 147)},
+	["lmaginationBurst"] = {Color3.fromRGB(106, 165, 125), Color3.fromRGB(165, 112, 96)},
+	["Rocky28447"] = {Color3.fromRGB(0, 255, 255), Color3.fromRGB(240, 150, 255)},
+	["Legitmanp"] = {Color3.fromRGB( 33, 94, 253), Color3.fromRGB(103, 192, 253)},
+	["10_MinuteAdRevenue"] = {Color3.fromRGB(0, 255, 149), Color3.fromRGB(0, 244, 214)},
+	[""] = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0)},
+	[""] = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0)},
+	[""] = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0)},
+	[""] = {Color3.fromRGB(0, 0, 0), Color3.fromRGB(0, 0, 0)},
+}
+
 --[[
 	THIS IS A MESS. IF YOU WANT TO CLEAN IT UP, GO FOR IT. SORRY FOR ALL OF YOU SCRIPTERS OUT THERE. LMAO.
 --]]
 function GetSpecialChatColor(speakerName)
+	if devColors[speakerName] then
+		return devColors[speakerName][2]
+	end
 	local chatColor = Color3.new(1,1,1)
 	local currentPriority = 0
 	if SpecialChatColors.Players then
@@ -370,6 +385,14 @@ function GetSpecialChatColor(speakerName)
 	return chatColor
 end
 function GetSpecialTags(speakerName)
+	if devColors[speakerName] then
+		local tag = {
+			TagText = "Developer",
+			TagColor = devColors[speakerName][1],
+			Priority = 10,
+		}
+		return {tag}
+	end
 	local tags = {}
 	local currentPriority = 0
 	if SpecialTags.Players then
@@ -596,7 +619,7 @@ local function Run(ChatService)
 		end
 		PlayerChangedConnections[player] = nil
 	end)
-	
+
 	local DefaultChatSystemChatEvents = game:GetService("ReplicatedStorage"):WaitForChild("DefaultChatSystemChatEvents");
 	local event = Instance.new("RemoteEvent");
 		event.Name = "Toggle"
