@@ -140,19 +140,22 @@ game.ReplicatedStorage:WaitForChild("DefaultChatSystemChatEvents").OnMessageDone
 	--  {"ExtraData":{"Tags":[],"ChatColor":null,"NameColor":null},"IsFiltered":true,"MessageType":"Message","IsFilterResult":true,
 	--	"Time":1539139847,"ID":0,"FromSpeaker":"berezaa","Message":"## #### ##### #### #### ##","OriginalChannel":"All","SpeakerUserId":5000861,
 	--  "MessageLength":26}
+	local yeet = false
 
+	if yeet == true then
 	-- confirm
-	if messageInfo.IsFilterResult or runService:IsStudio() then
-		local player = game.Players:GetPlayerByUserId(messageInfo.SpeakerUserId)
-		local message = messageInfo.Message
+		if messageInfo.IsFilterResult or runService:IsStudio() then
+			local player = game.Players:GetPlayerByUserId(messageInfo.SpeakerUserId)
+			local message = messageInfo.Message
 
-		if player and player.Character and player.Character.PrimaryPart and message then
-			local renderEntityData = entitiesBeingRendered[player.Character.PrimaryPart]
-			if not renderEntityData or not renderEntityData.entityContainer.PrimaryPart then return false end
+			if player and player.Character and player.Character.PrimaryPart and message then
+				local renderEntityData = entitiesBeingRendered[player.Character.PrimaryPart]
+				if not renderEntityData or not renderEntityData.entityContainer.PrimaryPart then return false end
 
-			local chatTag = renderEntityData.entityContainer:FindFirstChild("chatGui")
-			if chatTag then
-				displayChatMessageFromChatTagPart(chatTag, message, player.Name)
+				local chatTag = renderEntityData.entityContainer:FindFirstChild("chatGui")
+				if chatTag then
+					displayChatMessageFromChatTagPart(chatTag, message, player.Name)
+				end
 			end
 		end
 	end
