@@ -355,13 +355,13 @@ function ResourceManager:Init()
 	
 	nodesFolder = PlaceSetup.getPlaceFolder("resourceNodes")
 	
-	network:create(HARVEST_RESOURCE_CLIENT_EVENT, "RemoteFunction", "OnServerInvoke", function(player, node)
+	network:create("HarvestResource", "RemoteFunction", "OnServerInvoke", function(player, node)
 		return self:HarvestResource(node, player)
 	end)
 	
-	network:create(RESOURCE_HARVESTED_CLIENT_EVENT, "RemoteEvent")
-	network:create(RESOURCE_DEPLETED_CLIENT_EVENT, "RemoteEvent")
-	network:create(RESOURCE_REPLENISHED_CLIENT_EVENT, "RemoteEvent")
+	network:create("ResourceHarvested", "RemoteEvent")
+	network:create("ResourceDepleted", "RemoteEvent")
+	network:create("ResourceReplenished", "RemoteEvent")
 	
 end
 
