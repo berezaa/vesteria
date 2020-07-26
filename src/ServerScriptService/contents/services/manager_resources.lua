@@ -212,9 +212,9 @@ function ResourceManager:ResourceNodeReplenished(node, player)
 			end
 		end
 		CollectionService:AddTag(node.PrimaryPart, "attackable")
-		network:fireAllClients(RESOURCE_REPLENISHED_CLIENT_EVENT, node)
+		network:fireAllClients(ResourceReplenished, node)
 	else
-		network:fireClient(RESOURCE_REPLENISHED_CLIENT_EVENT, player, node)
+		network:fireClient(ResourceReplenished, player, node)
 	end
 end
 
@@ -241,9 +241,9 @@ function ResourceManager:ResourceNodeDepleted(node, player)
 			end
 		end
 		CollectionService:RemoveTag(node.PrimaryPart, "attackable")
-		network:fireAllClients(RESOURCE_DEPLETED_CLIENT_EVENT, node)
+		network:fireAllClients(ResourceDepleted, node)
 	else
-		network:fireClient(RESOURCE_DEPLETED_CLIENT_EVENT, player, node)
+		network:fireClient(ResourceDepleted, player, node)
 	end
 	
 	if nodeTypeMetadata.Animations.OnDeplete then
@@ -292,9 +292,9 @@ function ResourceManager:HarvestResource(node, player)
 							nodeData.Durability = nodeTypeMetadata.Durability
 							
 							if isNodeGlobal then
-								network:fireAllClients(RESOURCE_HARVESTED_CLIENT_EVENT, node, dropPoint and dropPoint.Value or nil)
+								network:fireAllClients("ResourceHarvested", node, dropPoint and dropPoint.Value or nil)
 							else
-								network:fireClient(RESOURCE_HARVESTED_CLIENT_EVENT, player, node, dropPoint and dropPoint.Value or nil)
+								network:fireClient("ResourceHarvested", player, node, dropPoint and dropPoint.Value or nil)
 							end
 							
 							if harvestsLeft == 0 then
@@ -326,9 +326,9 @@ function ResourceManager:HarvestResource(node, player)
 							return dropPoint and dropPoint.Value or nil
 						else
 							if isNodeGlobal then
-								network:fireAllClients(RESOURCE_HARVESTED_CLIENT_EVENT, node)
+								network:fireAllClients("ResourceHarvested", node)
 							else
-								network:fireClient(RESOURCE_HARVESTED_CLIENT_EVENT, player, node)
+								network:fireClient("ResourceHarvested", player, node)
 							end
 						end
 					end
