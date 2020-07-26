@@ -30,10 +30,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SharedModules
 local ItemLookup
-local Network
 local PlaceSetup
 local Thread
 local TableUtil
+local network
 
 local HARVEST_RESOURCE_CLIENT_EVENT = "HarvestResource"
 local RESOURCE_HARVESTED_CLIENT_EVENT = "ResourceHarvested"
@@ -134,11 +134,9 @@ end
 
 local function calcDamageForNode(node, player)
 	local nodeTypeMetadata = require(getNodeTypeMetadataFromNode(node))
-	local playerEquipment = Network:invoke("getPlayerData", player).equipment
-	local weaponItem
+	local playerData = network:invoke("getPlayerData", player)
 	
 	if nodeTypeMetadata.NodeCategory then
-		local playerData = Network:invoke("getPlayerData", player)
 		return playerData.nonSerializeData.statistics_final[nodeTypeMetadata.NodeCategory]
 	end
 		
@@ -214,9 +212,9 @@ function ResourceManager:ResourceNodeReplenished(node, player)
 			end
 		end
 		CollectionService:AddTag(node.PrimaryPart, "attackable")
-		Network:fireAllClients(RESOURCE_REPLENISHED_CLIENT_EVENT, node)
+		network:fireAllClients(RESOURCE_REPLENISHED_CLIENT_EVENT, node)
 	else
-		Network:fireClient(RESOURCE_REPLENISHED_CLIENT_EVENT, player, node)
+		network:fireClient(RESOURCE_REPLENISHED_CLIENT_EVENT, player, node)
 	end
 end
 
@@ -243,9 +241,9 @@ function ResourceManager:ResourceNodeDepleted(node, player)
 			end
 		end
 		CollectionService:RemoveTag(node.PrimaryPart, "attackable")
-		Network:fireAllClients(RESOURCE_DEPLETED_CLIENT_EVENT, node)
+		network:fireAllClients(RESOURCE_DEPLETED_CLIENT_EVENT, node)
 	else
-		Network:fireClient(RESOURCE_DEPLETED_CLIENT_EVENT, player, node)
+		network:fireClient(RESOURCE_DEPLETED_CLIENT_EVENT, player, node)
 	end
 	
 	if nodeTypeMetadata.Animations.OnDeplete then
@@ -294,9 +292,9 @@ function ResourceManager:HarvestResource(node, player)
 							nodeData.Durability = nodeTypeMetadata.Durability
 							
 							if isNodeGlobal then
-								Network:fireAllClients(RESOURCE_HARVESTED_CLIENT_EVENT, node, dropPoint and dropPoint.Value or nil)
+								network:fireAllClients(RESOURCE_HARVESTED_CLIENT_EVENT, node, dropPoint and dropPoint.Value or nil)
 							else
-								Network:fireClient(RESOURCE_HARVESTED_CLIENT_EVENT, player, node, dropPoint and dropPoint.Value or nil)
+								network:fireClient(RESOURCE_HARVESTED_CLIENT_EVENT, player, node, dropPoint and dropPoint.Value or nil)
 							end
 							
 							if harvestsLeft == 0 then
@@ -314,7 +312,7 @@ function ResourceManager:HarvestResource(node, player)
 									
 									itemModifiers.id = itemDrop.ID
 									
-									local item = Network:invoke(
+									local item = network:invoke(
 										"spawnItemOnGround",
 										itemModifiers,
 										dropPosition,
@@ -328,9 +326,9 @@ function ResourceManager:HarvestResource(node, player)
 							return dropPoint and dropPoint.Value or nil
 						else
 							if isNodeGlobal then
-								Network:fireAllClients(RESOURCE_HARVESTED_CLIENT_EVENT, node)
+								network:fireAllClients(RESOURCE_HARVESTED_CLIENT_EVENT, node)
 							else
-								Network:fireClient(RESOURCE_HARVESTED_CLIENT_EVENT, player, node)
+								network:fireClient(RESOURCE_HARVESTED_CLIENT_EVENT, player, node)
 							end
 						end
 					end
@@ -350,20 +348,20 @@ function ResourceManager:Init()
 	
 	SharedModules = require(ReplicatedStorage.modules)
 	ItemLookup = require(ReplicatedStorage.itemData)
-	Network = SharedModules.load("network")
+	network = SharedModules.load("network")
 	PlaceSetup = SharedModules.load("placeSetup")
 	Thread = SharedModules.load("Thread")
 	TableUtil = SharedModules.load("TableUtil")
 	
 	nodesFolder = PlaceSetup.getPlaceFolder("resourceNodes")
 	
-	Network:create(HARVEST_RESOURCE_CLIENT_EVENT, "RemoteFunction", "OnServerInvoke", function(player, node)
+	network:create(HARVEST_RESOURCE_CLIENT_EVENT, "RemoteFunction", "OnServerInvoke", function(player, node)
 		return self:HarvestResource(node, player)
 	end)
 	
-	Network:create(RESOURCE_HARVESTED_CLIENT_EVENT, "RemoteEvent")
-	Network:create(RESOURCE_DEPLETED_CLIENT_EVENT, "RemoteEvent")
-	Network:create(RESOURCE_REPLENISHED_CLIENT_EVENT, "RemoteEvent")
+	network:create(RESOURCE_HARVESTED_CLIENT_EVENT, "RemoteEvent")
+	network:create(RESOURCE_DEPLETED_CLIENT_EVENT, "RemoteEvent")
+	network:create(RESOURCE_REPLENISHED_CLIENT_EVENT, "RemoteEvent")
 	
 end
 
