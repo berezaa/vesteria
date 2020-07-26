@@ -825,6 +825,7 @@ function module.postInit(Modules)
 				local hotbarButtonItem = hotbarFrame.content:FindFirstChild("hotbarButton"..i) or hotbarFrame.hotbarButton:Clone()
 				hotbarButtonItem.Name = "hotbarButton"..i
 				hotbarButtonItem.Parent = hotbarFrame.content
+				hotbarButtonItem.Visible = true
 				updateButtonItem(hotbarButtonItem, i)
 				uiCreator.drag.setIsDragDropFrame(hotbarButtonItem)
 			end
