@@ -37,8 +37,8 @@ local network
 
 local HARVEST_RESOURCE_CLIENT_EVENT = "HarvestResource"
 local RESOURCE_HARVESTED_CLIENT_EVENT = "ResourceHarvested"
-local RESOURCE_DEPLETED_CLIENT_EVENT = "ResourceDepleted"
-local RESOURCE_REPLENISHED_CLIENT_EVENT = "ResourceReplenished"
+local RESOURCE_DEPLETED_CLIENT_EVENT = ""ResourceDepleted""
+local RESOURCE_REPLENISHED_CLIENT_EVENT = ""ResourceReplenished""
 
 local nodesFolder
 
@@ -212,9 +212,9 @@ function ResourceManager:ResourceNodeReplenished(node, player)
 			end
 		end
 		CollectionService:AddTag(node.PrimaryPart, "attackable")
-		network:fireAllClients(ResourceReplenished, node)
+		network:fireAllClients("ResourceReplenished", node)
 	else
-		network:fireClient(ResourceReplenished, player, node)
+		network:fireClient("ResourceReplenished", player, node)
 	end
 end
 
@@ -241,9 +241,9 @@ function ResourceManager:ResourceNodeDepleted(node, player)
 			end
 		end
 		CollectionService:RemoveTag(node.PrimaryPart, "attackable")
-		network:fireAllClients(ResourceDepleted, node)
+		network:fireAllClients("ResourceDepleted", node)
 	else
-		network:fireClient(ResourceDepleted, player, node)
+		network:fireClient("ResourceDepleted", player, node)
 	end
 	
 	if nodeTypeMetadata.Animations.OnDeplete then
@@ -360,8 +360,8 @@ function ResourceManager:Init()
 	end)
 	
 	network:create("ResourceHarvested", "RemoteEvent")
-	network:create("ResourceDepleted", "RemoteEvent")
-	network:create("ResourceReplenished", "RemoteEvent")
+	network:create(""ResourceDepleted"", "RemoteEvent")
+	network:create(""ResourceReplenished"", "RemoteEvent")
 	
 end
 
