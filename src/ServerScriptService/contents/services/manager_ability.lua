@@ -30,6 +30,12 @@ local function onPlayerAdded(player)
 		id = 1;
 	}
 
+	playerData.abilities[2] = {
+		level = 1;
+		experience = 0;
+		id = 2;
+	}
+
 	playerData.nonSerializeData.setPlayerData("abilities", playerData.abilities)
 end
 
@@ -104,6 +110,8 @@ local function changeAbilityState(caster, requestedState, executionData)
 			end
 
 			if castedAbilityGUIDs[player][abilityId] and castedAbilityGUIDs[player][abilityId][guid] then return false, "already_begun" end
+			castedAbilityGUIDs[player][abilityId] = {}
+			castedAbilityGUIDs[player][abilityId][guid] = true
 
 			----@ ABILITY CAN BE CASTED @----
 
@@ -152,8 +160,8 @@ local function changeAbilityState(caster, requestedState, executionData)
 
 	----@ END STATE @----
 	elseif requestedState == "end" then
-		if castedAbilityGUIDs[player][abilityId][guid] ~= nil then
-			castedAbilityGUIDs[player][abilityId][guid] = nil
+		if castedAbilityGUIDs[player][abilityId] ~= nil and castedAbilityGUIDs[player][abilityId][guid] ~= nil then
+			castedAbilityGUIDs[player][abilityId] = nil
 		end
 	end
 end
@@ -168,7 +176,7 @@ local function main()
 
 	--Register all functions as network events/functions
 	Network:create("requestAbilityStateUpdate", "RemoteEvent", "OnServerEvent", changeAbilityState)
-	Network:create("validateAbilityGUID", "RemoteFunction", "OnServerInvoke", validateAbilityGUID)
+	Network:create("validateAbilityGUID", "BindableFunction", "OnInvoke", validateAbilityGUID)
 	Network:create("resetAbilityCooldown", "BindableEvent", "Event", resetAbilityCooldown)
 end
 

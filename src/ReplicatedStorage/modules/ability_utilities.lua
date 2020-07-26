@@ -75,11 +75,12 @@ function module.calculateStats(playerData, abilityId)
 	if not playerData.abilities[abilityId] then return nil end
 
 	local increasingStat = abilityData.statistics.increasingStat
+	local baseStat = abilityData.statistics[increasingStat]
 	local exponent = abilityData.statistics.increaseExponent
 	local playerAbilityLevel = playerData.abilities[abilityId].level
 
 	if not increasingStat or not exponent then return nil end
-	local finalStatData = playerAbilityLevel * exponent
+	local finalStatData = baseStat * (1 + (playerAbilityLevel * exponent))
 
 	return increasingStat, finalStatData
 end

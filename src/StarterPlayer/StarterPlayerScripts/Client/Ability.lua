@@ -25,8 +25,6 @@ function abilityController.abilityUseRequest(abilityId)
 
 	local canCast, err = AbilityUtilities.canPlayerCast(player, playerData, abilityId)
 	if canCast then
-		print("Player CAN cast ability with id: " .. tostring(abilityId))
-
 		--Generate abilityCastGuid and encode it
 		local abilityGuid = HTTPService:GenerateGUID()
 		local abilityGuidJSON = Utilities.safeJSONEncode({abilityGuid})
@@ -57,11 +55,13 @@ function abilityController.abilityUseRequest(abilityId)
 			abilityData = abilityDataCopy
 		}
 
+		--Call Remote for changing Ability State ("begin")
+		Network:fireServer("requestAbilityStateUpdate", "begin", executionData)
+
 		--Execute Ability Locally
 		abilityModule:execute(executionData, true)
 
-		--Call Remote for changing Ability State ("begin")
-		Network:fireServer("requestAbilityStateUpdate", "begin", executionData)
+		Network:fireServer("requestAbilityStateUpdate", "end", executionData)
 	else
 		warn(err)
 	end

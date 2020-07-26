@@ -494,174 +494,157 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 		if sourceType == "ability" or sourceType == "equipment" then
 			isPlayerAttacker = true
 			if sourceType == "ability" then
-				-- ??
-				local abilityDamageGUIDData = network:invoke("getIsAbilityDamageGUIDValid", player, sourceId, guid)
+				local abilityDamageGUIDData = network:invoke("validateAbilityGUID", player, sourceId, guid)
 				-- if guid is valid then player casted ability properly
 				if abilityDamageGUIDData then
-					local abilityRank = network:invoke("getPlayerAbilityRankByAbilityId", player, sourceId)
+					print("2")
+					-- if this causes problems add abilityExecutionData after playerData
+					local abilityBaseData = abilityLookup[sourceId]
+					local abilityDamageType = "physical"
 
-					if abilityRank and abilityRank > 0 then
+					attackerStats = playerData.nonSerializeData.statistics_final
+					attackerStats.level = playerData.level
 
-						-- if this causes problems add abilityExecutionData after playerData
-						local abilityBaseData = abilityLookup[sourceId](playerData)
+					local health, maxHealth, targetLevel, targetDefense, defenderDex, defenderVit, targetPlayer, targetPlayerData = 0, 0, 0, 0, 0.1, 0.1, nil, nil do
+						if isServerHitboxPlayer then
+							health 	= serverHitbox.health.Value
+							maxHealth = serverHitbox.maxHealth.Value
+							targetPlayer = game.Players:GetPlayerFromCharacter(serverHitbox.Parent)
 
-						if abilityBaseData._serverValidateDamageRequest then
-							local isValid = abilityBaseData._serverValidateDamageRequest(abilityDamageGUIDData.player, abilityDamageGUIDData.executionData)
+							if targetPlayer then
+								targetPlayerData = network:invoke("getPlayerData", targetPlayer)
 
-							if not isValid then
-								return false
+								if targetPlayerData then
+--									targetDefense = targetPlayerData.nonSerializeData.statistics_final[abilityDamageType .. "Defense"]
+									defenderStats = targetPlayerData.nonSerializeData.statistics_final
+									defenderStats.level = targetPlayerData.level
+								end
+								targetLevel = targetPlayer.level.Value
+							end
+						else
+							health = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "health")
+							maxHealth = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "maxHealth")
+							targetLevel = serverHitbox.level.Value
+
+							defenderStats = {
+								level = serverHitbox.level.Value;
+								dex = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "dex") or 0;
+								vit = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "vit") or 0;
+								str = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "str") or 0;
+								int = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "int") or 0;
+								defense = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "defense") or 0;
+								physicalDefense = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "defense") or 0;
+								magicalDefense = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "defense") or 0;
+							}
+						end
+					end
+					abilityDamageMulti  = 1
+					-- note: this stuff does literally nothing with the dmg changes
+					local baseDamage = calculatePlayerDamage(player, abilityDamageType, targetLevel, isServerHitboxPlayer)
+					local abilityDamage = math.ceil(baseDamage * abilityDamageMulti)
+
+					local damageCategory = "direct"
+					local firstHitDataForSourceTag
+					--[[local WEIRD_BLOCK do
+						for i, v in pairs(abilityDamageGUIDData.previousEntityHits) do
+							if abilityBaseData.securityData and abilityBaseData.securityData.isDamageContained then
+								-- use any first hit
+								firstHitDataForSourceTag = v.hitData[1]
+							end
+
+							if v.entityManifest == serverHitbox then
+								for _, hitData in pairs(v.hitData) do
+									if hitData.sourceTag == sourceTag then
+										hitsDoneToEntityManifestBySourceTag = hitsDoneToEntityManifestBySourceTag + 1
+									end
+								end
+
+								break
 							end
 						end
+					end]]
 
-						local abilityStatistics,_ = network:invoke("getAbilityStatisticsForRank", abilityBaseData, abilityRank)
-						local targetLevel = 0
+					-- todo: turn this into something more elegant.
+					if configuration.getConfigurationValue("doUseAbilitySecurityData", player) then
+						if abilityBaseData.securityData then
+							local adjustServerHitboxPosition = detection.projection_Box(serverHitbox.CFrame, serverHitbox.Size, player.Character.PrimaryPart.Position)
 
-						local abilityDamageType = abilityBaseData.damageType or "physical"
-
-						attackerStats = playerData.nonSerializeData.statistics_final
-						attackerStats.level = playerData.level
-
-						local health, maxHealth, targetLevel, targetDefense, defenderDex, defenderVit, targetPlayer, targetPlayerData = 0, 0, 0, 0, 0.1, 0.1, nil, nil do
-							if isServerHitboxPlayer then
-								health 			= serverHitbox.health.Value
-								maxHealth 		= serverHitbox.maxHealth.Value
-								targetPlayer 	= game.Players:GetPlayerFromCharacter(serverHitbox.Parent)
-								if targetPlayer then
-									targetPlayerData = network:invoke("getPlayerData", targetPlayer)
-
-									if targetPlayerData then
-	--									targetDefense = targetPlayerData.nonSerializeData.statistics_final[abilityDamageType .. "Defense"]
-
-										defenderStats = targetPlayerData.nonSerializeData.statistics_final
-										defenderStats.level = targetPlayerData.level
-									end
-
-									targetLevel = targetPlayer.level.Value
-								end
-							else
-								health 			= network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "health")
-								maxHealth 		= network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "maxHealth")
-								targetLevel 	= serverHitbox.level.Value
-								defenderStats 	= {
-									level	= serverHitbox.level.Value;
-									dex 	= network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "dex") or 0;
-									vit 	= network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "vit") or 0;
-									str 	= network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "str") or 0;
-									int 	= network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "int") or 0;
-									defense = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "defense") or 0;
-									physicalDefense = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "defense") or 0;
-									magicalDefense = network:invoke("getMonsterDataByMonsterManifest_server", serverHitbox, "defense") or 0;
-								}
-							end
-						end
-						abilityDamageMulti  = abilityStatistics.damageMultiplier or 1
-						-- note: this stuff does literally nothing with the dmg changes
-						local baseDamage = calculatePlayerDamage(player, abilityDamageType, targetLevel, isServerHitboxPlayer)
-						local abilityDamage = math.ceil(baseDamage * abilityDamageMulti)
-
-						local damageCategory = "direct"
-						local firstHitDataForSourceTag
-						local WEIRD_BLOCK do
-							for i, v in pairs(abilityDamageGUIDData.previousEntityHits) do
-								if abilityBaseData.securityData and abilityBaseData.securityData.isDamageContained then
-									-- use any first hit
-									firstHitDataForSourceTag = v.hitData[1]
-								end
-
-								if v.entityManifest == serverHitbox then
-									for _, hitData in pairs(v.hitData) do
-										if hitData.sourceTag == sourceTag then
-											hitsDoneToEntityManifestBySourceTag = hitsDoneToEntityManifestBySourceTag + 1
-										end
-									end
-
-									break
-								end
-							end
-						end
-
-						-- todo: turn this into something more elegant.
-						if configuration.getConfigurationValue("doUseAbilitySecurityData", player) then
-							if abilityBaseData.securityData then
-								local adjustServerHitboxPosition = detection.projection_Box(serverHitbox.CFrame, serverHitbox.Size, player.Character.PrimaryPart.Position)
-
-								if abilityBaseData.securityData.maxHitLockout then
-									local sumHits = 0 do
-										for i, v in pairs(abilityDamageGUIDData.previousEntityHits) do
-											sumHits = sumHits + #v.hitData
-										end
-									end
-
-									if sumHits >= abilityBaseData.securityData.maxHitLockout then
-										warn(player, abilityBaseData.name, "hit maxHitLockout")
-
-										return false
+							if abilityBaseData.securityData.maxHitLockout then
+								local sumHits = 0 do
+									for i, v in pairs(abilityDamageGUIDData.previousEntityHits) do
+										sumHits = sumHits + #v.hitData
 									end
 								end
 
-								if abilityBaseData.projectileSpeed and abilityBaseData.securityData.projectileOrigin then
-									local posDiff = 0 do
-										if abilityBaseData.securityData.projectileOrigin == "character" then
-											posDiff = (adjustServerHitboxPosition - player.Character.PrimaryPart.Position).magnitude
-										end
-									end
-
-									if posDiff > 3 * abilityBaseData.projectileSpeed * (tick() - abilityDamageGUIDData.timestamp) then
-										warn(player, abilityBaseData.name, "projectile hit way too fast")
-
-										return false
-									end
-								end
-
-								if (abilityBaseData.securityData.playerHitMaxPerTag or math.huge) <= hitsDoneToEntityManifestBySourceTag then
-									warn(player, abilityBaseData.name, "hit same entity too many times")
+								if sumHits >= abilityBaseData.securityData.maxHitLockout then
+									warn(player, abilityBaseData.name, "hit maxHitLockout")
 
 									return false
 								end
+							end
 
-								if abilityBaseData.securityData.isDamageContained and firstHitDataForSourceTag then
-									local posDiff 		= (adjustServerHitboxPosition - firstHitDataForSourceTag.hitPosition).magnitude
-									local containRadius = abilityStatistics["blast radius"] or abilityStatistics["range"] or abilityStatistics["radius"] or abilityStatistics["distance"] or 20
-
-									if posDiff > (containRadius) * 3 then
-										warn(player, abilityBaseData.name, "hit entity outside of containDamage")
-
-										return false
+							if abilityBaseData.projectileSpeed and abilityBaseData.securityData.projectileOrigin then
+								local posDiff = 0 do
+									if abilityBaseData.securityData.projectileOrigin == "character" then
+										posDiff = (adjustServerHitboxPosition - player.Character.PrimaryPart.Position).magnitude
 									end
+								end
+
+								if posDiff > 3 * abilityBaseData.projectileSpeed * (tick() - abilityDamageGUIDData.timestamp) then
+									warn(player, abilityBaseData.name, "projectile hit way too fast")
+
+									return false
+								end
+							end
+
+							if (abilityBaseData.securityData.playerHitMaxPerTag or math.huge) <= hitsDoneToEntityManifestBySourceTag then
+								warn(player, abilityBaseData.name, "hit same entity too many times")
+
+								return false
+							end
+
+							if abilityBaseData.securityData.isDamageContained and firstHitDataForSourceTag then
+								local posDiff 		= (adjustServerHitboxPosition - firstHitDataForSourceTag.hitPosition).magnitude
+								local containRadius = abilityStatistics["blast radius"] or abilityStatistics["range"] or abilityStatistics["radius"] or abilityStatistics["distance"] or 20
+
+								if posDiff > (containRadius) * 3 then
+									warn(player, abilityBaseData.name, "hit entity outside of containDamage")
+
+									return false
 								end
 							end
 						end
-
-						for statsName, statsValue in pairs(abilityStatistics) do
-							local scalingStat = string.match(statsName, "(%w+)_scaling")
-							if scalingStat and playerData.nonSerializeData.statistics_final[scalingStat] then
-								abilityDamage = abilityDamage + playerData.nonSerializeData.statistics_final[scalingStat] * statsValue
-							elseif statsName == "enemy_missing_health" then
-								abilityDamage = abilityDamage + (maxHealth - health) * statsValue
-							elseif statsName == "enemy_current_health" then
-								abilityDamage = abilityDamage + health * statsValue
-							elseif statsName == "enemy_max_health" then
-								abilityDamage = abilityDamage + maxHealth * statsValue
-							elseif statsName == "user_missing_health" then
-								warn(statsName .. " not yet implemented.")
-							elseif statsName == "user_current_health" then
-								warn(statsName .. " not yet implemented.")
-							elseif statsName == "user_max_health" then
-								warn(statsName .. " not yet implemented.")
-							end
-						end
-
-						damageData = {}
-							damageData.damage 				= abilityDamage
-							damageData.sourceType 			= sourceType
-							damageData.sourceId 			= sourceId
-							damageData.damageType			= abilityDamageType
-							damageData.isDamageDirect 		= false
-							damageData.sourcePlayerId		= player.userId
-							damageData.damageTime			= os.time()
-							damageData.category 			= damageCategory
-							damageData.sourceEntityGUID 	= utilities.getEntityGUIDByEntityManifest(player.Character.PrimaryPart)
 					end
+
+					--[[for statsName, statsValue in pairs(abilityStatistics) do
+						local scalingStat = string.match(statsName, "(%w+)_scaling")
+						if scalingStat and playerData.nonSerializeData.statistics_final[scalingStat] then
+							abilityDamage = abilityDamage + playerData.nonSerializeData.statistics_final[scalingStat] * statsValue
+						elseif statsName == "enemy_missing_health" then
+							abilityDamage = abilityDamage + (maxHealth - health) * statsValue
+						elseif statsName == "enemy_current_health" then
+							abilityDamage = abilityDamage + health * statsValue
+						elseif statsName == "enemy_max_health" then
+							abilityDamage = abilityDamage + maxHealth * statsValue
+						elseif statsName == "user_missing_health" then
+							warn(statsName .. " not yet implemented.")
+						elseif statsName == "user_current_health" then
+							warn(statsName .. " not yet implemented.")
+						elseif statsName == "user_max_health" then
+							warn(statsName .. " not yet implemented.")
+						end
+					end]]
+
+					damageData = {}
+					damageData.damage = abilityDamage
+					damageData.sourceType = sourceType
+					damageData.sourceId = sourceId
+					damageData.damageType = abilityDamageType
+					damageData.isDamageDirect = false
+					damageData.sourcePlayerId = player.userId
+					damageData.damageTime = os.time()
+					damageData.category = damageCategory
+					damageData.sourceEntityGUID = utilities.getEntityGUIDByEntityManifest(player.Character.PrimaryPart)
 				end
 			elseif sourceType == "equipment" then
 				local equipmentData = network:invoke("getPlayerEquipmentDataByEquipmentPosition", player, mapping.equipmentPosition.weapon)
@@ -885,7 +868,7 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 			elseif sourceType == "ability" then
 
 				-- if this causes problems add abilityExecutionData after playerData
-				local abilityBaseData = abilityLookup[sourceId](playerData)
+				local abilityBaseData = abilityLookup[sourceId]
 
 				if abilityBaseData._serverProcessDamageRequest then
 					local abilityDamage, abilityDamageType, abilityDamageCategory = abilityBaseData._serverProcessDamageRequest(sourceTag, damageData.damage, serverHitbox, hitsDoneToEntityManifestBySourceTag, player)
@@ -895,9 +878,9 @@ local function playerRequest_damageEntity(player, serverHitbox, damagePosition, 
 
 						return false
 					else
-						damageData.damage 			= abilityDamage;
-						damageData.damageType 		= abilityDamageType;
-						damageData.category 		= abilityDamageCategory;
+						damageData.damage = abilityDamage;
+						damageData.damageType = abilityDamageType;
+						damageData.category = abilityDamageCategory;
 					end
 				end
 			end

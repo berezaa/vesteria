@@ -11,7 +11,6 @@ local abilityAnims = replicatedStorage.assets.abilityAnimations
 local abilitySounds = replicatedStorage.assets.abilities[script.Name].sounds
 local abilityEffects = replicatedStorage.assets.abilities[script.Name].effects
 
-
 --Ability Base Data
 local abilityData = {
 	--> Identifying Information <--
@@ -19,7 +18,7 @@ local abilityData = {
 
 	--> Generic Information <--
 	name = "Regeneration";
-	image = "rbxassetid://2528903781";
+	image = "rbxassetid://2528901754";
 	description = "Regenerates all players health who are within a certain radius of cast";
 
 	--> Misc Information <--
@@ -37,7 +36,7 @@ local abilityData = {
 		healing = 5;
 		radius = 10;
 
-		manaCost = 30;
+		manaCost = 5;
 		cooldown = 4;
 
 		increasingStat = "healing";
@@ -56,12 +55,11 @@ local abilityData = {
 
 --Client Execute Function
 function abilityData:execute(abilityExecutionData, isAbilitySource)
-
 	local character = abilityExecutionData.casterCharacter
 	local renderCharacterContainer = network:invoke("getRenderCharacterContainerByEntityManifest", character.PrimaryPart)
 	local abilityGuid = abilityExecutionData.abilityGuid
 
-	if not renderCharacterContainer or not abilityExecutionData or not isAbilitySource or not abilityGuid then return false end
+	if not renderCharacterContainer or not abilityExecutionData or not abilityGuid then return false end
 	if not renderCharacterContainer.PrimaryPart then return false end
 
 	local root = renderCharacterContainer.PrimaryPart
@@ -111,7 +109,9 @@ function abilityData:execute(abilityExecutionData, isAbilitySource)
 	Tween(ring, {"Transparency"}, 1, 1)
 	game.Debris:AddItem(ring, 1)
 
-	print(1)
+	if isAbilitySource then
+		network:fireServer("requestAbilityStateUpdate", "end", abilityExecutionData)
+	end
 
 	return true, self.statistics.cooldown
 end
