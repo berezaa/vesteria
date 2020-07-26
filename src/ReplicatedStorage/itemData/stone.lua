@@ -6,7 +6,7 @@ return {
 	--> generic information <--
 	name = "Stone";
 	rarity = "Common";
-	image = "rbxassetid://5425453518";
+	image = "rbxassetid://5431762747";
 	description = "A chunk of rock that is used in many recipes.";
 
 	-- todo: wood item type icon
