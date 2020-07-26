@@ -10,9 +10,8 @@ local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SharedModules
-local Network
 local Thread
-
+local network
 
 
 local function getNodeTypeMetadataFromNode(node)
@@ -49,7 +48,7 @@ end
 
 function Resources:Start()
 	
-	Network:connect("ResourceHarvested", "OnClientEvent", function(node, dropPoint)
+	network:connect("ResourceHarvested", "OnClientEvent", function(node, dropPoint)
 		local nodeMetadata = require(getNodeTypeMetadataFromNode(node))
 		local onHarvest = nodeMetadata.Animations.OnHarvest
 		
@@ -64,7 +63,7 @@ function Resources:Start()
 		end
 	end)
 	
-	Network:connect("ResourceReplenished", "OnClientEvent", function(node)
+	network:connect("ResourceReplenished", "OnClientEvent", function(node)
 		local nodeMetadata = require(getNodeTypeMetadataFromNode(node))
 		local onReplenish = nodeMetadata.Animations.OnReplenish
 		
@@ -92,7 +91,7 @@ function Resources:Start()
 		CollectionService:AddTag(node.PrimaryPart, "attackable")
 	end)
 	
-	Network:connect("ResourceDepleted", "OnClientEvent", function(node)
+	network:connect("ResourceDepleted", "OnClientEvent", function(node)
 		local nodeMetadata = require(getNodeTypeMetadataFromNode(node))
 		local onDeplete = nodeMetadata.Animations.OnDeplete
 		
@@ -119,7 +118,7 @@ end
 function Resources:Init()
 	
 	SharedModules = require(ReplicatedStorage.modules)
-	Network = SharedModules.load("network")
+	network = SharedModules.load("network")
 	Thread = SharedModules.load("Thread")
 	
 end
