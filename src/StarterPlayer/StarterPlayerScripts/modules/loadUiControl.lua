@@ -601,7 +601,7 @@ local function createRepresentationOfItem(item)
 
 	if item:IsA("Color3Value") then
 		--print("ello")
-		repre = script.colorRepre:Clone()
+		repre = assets.entities.colorRepre:Clone()
 		repre.value.Color = item.Value
 		repre.Name = item.Name
 	else
