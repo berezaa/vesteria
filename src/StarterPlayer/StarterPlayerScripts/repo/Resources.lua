@@ -112,6 +112,16 @@ function Resources:Start()
 		CollectionService:RemoveTag(node.PrimaryPart, "attackable")
 	end)
 
+	local depletedNodes = network:invokeServer("GetDepletedResourceNodes")
+	for _, node in pairs(depletedNodes) do
+		for _, c in pairs (node:GetDescendants()) do
+			if c:IsA("BasePart") then
+				c.Transparency = 1
+				c.CanCollide = false
+			end
+		end
+	end
+
 end
 
 

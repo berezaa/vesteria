@@ -201,6 +201,7 @@ function ResourceManager:ResourceNodeReplenished(node, player)
 	-- nodeData.Durability = 0
 	nodeData.Durability = nodeTypeMetadata.Durability
 	nodeData.DropPoints = dropPoints and dropPoints:GetChildren() or {}
+	nodeData.Depleted = false
 
 	if isNodeGlobal then
 		if nodeTypeMetadata.DestroyOnDeplete then
@@ -245,6 +246,8 @@ function ResourceManager:ResourceNodeDepleted(node, player)
 	else
 		network:fireClient("ResourceDepleted", player, node)
 	end
+
+	nodeData.Depleted = true
 
 	if nodeTypeMetadata.Animations.OnDeplete then
 		nodeTypeMetadata.Animations.OnDeplete()
@@ -356,6 +359,16 @@ function ResourceManager:Init()
 
 	network:create("HarvestResource", "RemoteFunction", "OnServerInvoke", function(player, node)
 		return self:HarvestResource(node, player)
+	end)
+
+	network:create("GetDepletedResourceNodes", "RemoteFunction", "OnServerInvoke", function(player)
+		local depleted = {}
+		for node, data in pairs (globalResourceNodeData) do
+			if data.Depleted then
+				depleted[#depleted + 1] = node
+			end
+		end
+		return depleted
 	end)
 
 	network:create("ResourceHarvested", "RemoteEvent")
