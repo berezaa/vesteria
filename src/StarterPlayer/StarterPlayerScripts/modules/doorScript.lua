@@ -1,12 +1,12 @@
 local module = {}
 	module.isActive = false
 
-	
+
 if script.Parent.Name == "exit" then
 	module.interactPrompt = "Exit"
 else
 	module.interactPrompt = "Enter"
-end	
+end
  -- prompt text
 
 module.instant = true
@@ -25,20 +25,20 @@ local function getTargetDoor()
 end
 
 function module.init()
-	
+
 	local target = getTargetDoor()
 	if target and player.Character and player.Character.PrimaryPart then
-		if game.ReplicatedStorage.sounds:FindFirstChild("door") then
+		if game.ReplicatedStorage.assets.sounds:FindFirstChild("door") then
 			utilities.playSound("door", player.Character.PrimaryPart)
 		end
 		player.Character:SetPrimaryPartCFrame(player.Character.PrimaryPart.CFrame - player.Character.PrimaryPart.Position + target.Position + target.CFrame.lookVector * 8)
 	end
-	
+
 end
 
 
 function module.close()
-	
+
 end
 
 return module

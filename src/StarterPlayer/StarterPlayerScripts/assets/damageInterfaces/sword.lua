@@ -69,7 +69,6 @@ local function startDamageSequencePolling()
 	while isDamageSequenceEnabled do
 		if animationsForAnimationController.swordAnimations.strike1.IsPlaying or animationsForAnimationController.swordAnimations.strike2.IsPlaying or animationsForAnimationController.swordAnimations.strike3.IsPlaying then
 			if isWithinDamageSequence then
-				print("ahahaha")
 				network:invoke("performClientDamageCycle", "equipment", nil, currentDamageGUID)
 			end
 
