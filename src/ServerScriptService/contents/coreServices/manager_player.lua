@@ -523,11 +523,11 @@ local function applyMaxHealth(player, dontHeal)
 
 		--[[
 		player.Character.PrimaryPart.maxMana.Value 	= 15 + (3 * playerData.level) + (5 * stats.int)
-		player.Character.PrimaryPart.maxHealth.Value 	= 75 + (25 * playerData.level) + (10 * stats.vit)
+		player.Character.PrimaryPart.maxHealth.Value = 75 + (25 * playerData.level) + (10 * stats.vit)
 		]]
 
-		player.Character.PrimaryPart.maxMana.Value 		= stats.maxMana
-		player.Character.PrimaryPart.maxHealth.Value 	= stats.maxHealth
+		player.Character.PrimaryPart.maxMana.Value = stats.maxMana
+		player.Character.PrimaryPart.maxHealth.Value = stats.maxHealth
 
 		local newHealth = player.Character.PrimaryPart.maxHealth.Value
 		local newMana = player.Character.PrimaryPart.maxMana.Value
