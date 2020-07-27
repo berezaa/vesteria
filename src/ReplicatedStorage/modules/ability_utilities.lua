@@ -1,6 +1,7 @@
 local module = {}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local Modules = require(ReplicatedStorage.modules)
 local Network = Modules.load("network")
@@ -31,14 +32,19 @@ function module.canPlayerCast(player, playerData, abilityId)
 	if not Utilities.isEntityManifestValid(player.Character.PrimaryPart) then return false, "invalid_character" end
 
 	local abilityData = abilityLookup[abilityId]
-
 	local canEquip, errorCode = module.canPlayerEquipAbility(player, playerData, abilityId)
+
+	if player.Character.PrimaryPart.mana.Value < abilityData.statistics.manaCost then return false, "lacking_mana" end
 	if not canEquip then return false, errorCode end
 
-	--[[if player.Character.PrimaryPart.mana.Value < abilityData.statistics.manaCost then return false, "lacking_mana" end
+	local lastCasted
+	if RunService:IsServer() then
+		lastCasted = Network:invoke("returnAbilityCooldown", player, abilityId)
+	else
+		lastCasted = Network:invokeServer("requestAbilityCooldown", abilityId)
+	end
 
-	local lastCasted = Network:invoke("returnAbilityCooldown", player, abilityId)
-	if lastCasted ~= nil and (tick() - lastCasted) < abilityData.statistics.cooldown then return false, "on_cooldown" end]]
+	if lastCasted ~= nil and (tick() - lastCasted) < abilityData.statistics.cooldown then return false, "on_cooldown" end
 	--Check if ability is equipped???
 
 	return true
