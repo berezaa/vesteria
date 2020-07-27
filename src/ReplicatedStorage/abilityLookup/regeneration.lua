@@ -37,7 +37,7 @@ local abilityData = {
 		radius = 10;
 
 		manaCost = 5;
-		cooldown = 10;
+		cooldown = 4;
 
 		increasingStat = "healing";
 		increaseExponent = 0.2;

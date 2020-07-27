@@ -56,7 +56,7 @@ function abilityController.abilityUseRequest(abilityId)
 		}
 
 		--Call Remote for changing Ability State ("begin")
-		local canCast, err = network:fireServer("requestAbilityStateUpdate", "begin", executionData)
+		network:fireServer("requestAbilityStateUpdate", "begin", executionData)
 
 		--Execute Ability Locally
 		abilityModule:execute(executionData, true)

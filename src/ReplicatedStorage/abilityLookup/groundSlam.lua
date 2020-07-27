@@ -40,7 +40,7 @@ local abilityData = {
 		radius = 15;
 
 		manaCost = 10;
-		cooldown = 15;
+		cooldown = 4;
 
 		increasingStat = "radius";
 		increaseExponent = 0.2;

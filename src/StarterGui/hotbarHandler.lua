@@ -745,16 +745,17 @@ function module.postInit(Modules)
 				local level = abilityLevelFromAbilityData(abilityData, hotbarSlotData.id)
 
 				local playerData = network:invoke("getLocalPlayerDataCache")
-				local abilityBaseData = abilityLookup[hotbarSlotData.id]
+				local abilityBaseData = abilityLookup[hotbarSlotData.id](playerData, nil)
+				local statistics = Modules.ability_utilities.getAbilityStatisticsForRank(abilityBaseData, level)
 
-				if abilityBaseData then
+				if abilityBaseData and statistics then
 					local textSize = game.TextService:GetTextSize(hotbarButtonItem.level.Text, hotbarButtonItem.level.TextSize, hotbarButtonItem.level.Font, Vector2.new())
 					hotbarButtonItem.level.Size = UDim2.new(0, textSize.X + 2, 0, textSize.Y - 2)
 --					hotbarButtonItem.level.Visible = true
 
-					--hotbarButtonItem.level.Text = utilities.romanNumerals[level]
-					--local tier = statistics.tier or 1
-					--hotbarButtonItem.level.TextColor3 = Modules.itemAcquistion.tierColors[tier]
+					hotbarButtonItem.level.Text = utilities.romanNumerals[level]
+					local tier = statistics.tier or 1
+					hotbarButtonItem.level.TextColor3 = Modules.itemAcquistion.tierColors[tier]
 
 					hotbarButtonItem.Image = abilityBaseData.image
 					hotbarButtonItem.inputKey.Text = "[" .. tostring(hotbarSlotData.keyCode or trans_i) .. "]"

@@ -68,7 +68,7 @@ function module.init(Modules)
 		end
 	end)
 	network:create("getAbilitySlotDataByAbilitySlotUI", "BindableFunction", "OnInvoke", function(button)
-		return abilityDataPairing[button.Parent]
+		return abilityDataPairing[button.item]
 	end)
 end
 

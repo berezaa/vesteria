@@ -57,13 +57,6 @@ local function resetAbilityCooldown(player, abilityID)
 	end
 end
 
-local function returnAbilityCooldown(player, abilityID)
-	if not abilityCooldownLookup[player] then return nil end
-	if not abilityCooldownLookup[player][abilityID] then return nil end
-
-	return abilityCooldownLookup[player][abilityID]
-end
-
 -------------------------------------------------
 -------------@ Bindable Functions @--------------
 -------------------------------------------------
@@ -113,7 +106,7 @@ local function changeAbilityState(caster, requestedState, executionData)
 
 			local canCast, error = AbilityUtilities.canPlayerCast(player, casterData, abilityId)
 			if not canCast then
-				return canCast, error
+				return error
 			end
 
 			if castedAbilityGUIDs[player][abilityId] and castedAbilityGUIDs[player][abilityId][guid] then return false, "already_begun" end
@@ -185,8 +178,6 @@ local function main()
 	network:create("requestAbilityStateUpdate", "RemoteEvent", "OnServerEvent", changeAbilityState)
 	network:create("validateAbilityGUID", "BindableFunction", "OnInvoke", validateAbilityGUID)
 	network:create("resetAbilityCooldown", "BindableEvent", "Event", resetAbilityCooldown)
-	network:create("requestAbilityCooldown", "RemoteFunction", "OnServerInvoke", returnAbilityCooldown)
-	network:create("returnAbilityCooldown", "BindableFunction", "OnInvoke", returnAbilityCooldown)
 end
 
 main()
