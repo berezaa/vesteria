@@ -3,11 +3,12 @@ local MAX_CHAT_BUBBLE_COUNT = 3
 
 -- essentials
 local replicatedStorage = game:GetService("ReplicatedStorage")
+local playerScripts = game:GetService("StarterPlayerScripts")
 local modules = require(replicatedStorage:WaitForChild("modules"))
 local network = modules.load("network")
 
 local runService = game:GetService("RunService")
-local assetFolder = replicatedStorage:WaitForChild("assets")
+local assetFolder = playerScripts:WaitForChild("assets")
 
 local function getOldestChatBubble(chats)
 	local oldest
@@ -52,11 +53,11 @@ end
 
 local function createChatTagPart(entityContainer, offset, rangeMulti)
 	--[[
-	local chatTag 	= entityContainer.PrimaryPart:FindFirstChild("ChatTag") or assetFolder.ChatTag:Clone()
+	local chatTag 	= entityContainer.PrimaryPart:FindFirstChilfd("ChatTag") or assetFolder.ChatTag:Clone()
 	chatTag.Parent 	= entityContainer.PrimaryPart
 	]]
 
-	local chatTag = entityContainer:FindFirstChild("chatGui") or assetFolder.chatGui:Clone()
+	local chatTag = entityContainer:FindFirstChild("chatGui") or assetFolder.misc.chatGui:Clone()
 	chatTag.Parent = entityContainer
 	chatTag.Adornee = entityContainer.PrimaryPart
 	chatTag.Enabled = true

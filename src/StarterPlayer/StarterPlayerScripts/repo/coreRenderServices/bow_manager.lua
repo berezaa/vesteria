@@ -6,10 +6,12 @@ local modules = require(replicatedStorage:WaitForChild("modules"))
 local network 		= modules.load("network")
 local projectile 	= modules.load("projectile")
 
+local assets = game.ReplicatedStorage:WaitForChild("assets")
+
 function bow_manager.int__updateRenderCharacter(renderCharacter,inventoryCountLookup,equipmentSlotData,configuration,itemLookup)
     -- arrow is funny hehe
     -- todo: customize this per bow
-    local strap = game.ReplicatedStorage.entities.ArrowUpperTorso2.strap:Clone()
+    local strap = assets.entities.ArrowUpperTorso2.strap:Clone()
     strap.Anchored 		= false
     strap.CanCollide 	= false
 
@@ -18,12 +20,12 @@ function bow_manager.int__updateRenderCharacter(renderCharacter,inventoryCountLo
     strapprojectionWeld.Part0 	= strap
     strapprojectionWeld.Part1 	= renderCharacter.UpperTorso
     strapprojectionWeld.C0 		= CFrame.new()
-    strapprojectionWeld.C1 		= game.ReplicatedStorage.entities.ArrowUpperTorso2.CFrame:toObjectSpace(game.ReplicatedStorage.entities.ArrowUpperTorso2.strap.CFrame)
+    strapprojectionWeld.C1 		= assets.entities.ArrowUpperTorso2.CFrame:toObjectSpace(assets.entities.ArrowUpperTorso2.strap.CFrame)
 
     strap.Name 		= "!! ARROW !!"
     strap.Parent 	= renderCharacter
 
-    local quiver = game.ReplicatedStorage.entities.ArrowUpperTorso2.quiver:Clone()
+    local quiver = assets.entities.ArrowUpperTorso2.quiver:Clone()
     quiver.Anchored 		= false
     quiver.CanCollide 	= false
 
@@ -32,7 +34,7 @@ function bow_manager.int__updateRenderCharacter(renderCharacter,inventoryCountLo
     quiverprojectionWeld.Part0 	= quiver
     quiverprojectionWeld.Part1 	= renderCharacter.UpperTorso
     quiverprojectionWeld.C0 		= CFrame.new()
-    quiverprojectionWeld.C1 		= game.ReplicatedStorage.entities.ArrowUpperTorso2.CFrame:toObjectSpace(game.ReplicatedStorage.entities.ArrowUpperTorso2.quiver.CFrame)
+    quiverprojectionWeld.C1 		= assets.entities.ArrowUpperTorso2.CFrame:toObjectSpace(assets.entities.ArrowUpperTorso2.quiver.CFrame)
 
     quiver.Name 		= "!! ARROW !!"
     quiver.Parent 	= renderCharacter
