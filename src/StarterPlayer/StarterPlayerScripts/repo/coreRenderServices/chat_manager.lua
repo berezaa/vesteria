@@ -34,7 +34,7 @@ local function setPrimaryChatBubble(chatBubble)
 			chatBubble.contents.Position = chatBubble.contents.Position + UDim2.new(0, 0, 0, 5)
 			local dif = (chatBubble.titleFrame.AbsoluteSize.X + 20) - chatBubble.AbsoluteSize.X
 			if dif > 0 then
-				chatBubble.Size = size + UDim2.new(0, dif, 0, 0 )
+				chatBubble.Size = size + UDim2.new(0, dif, 0, 0)
 			end
 		end
 
