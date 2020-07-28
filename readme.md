@@ -4,4 +4,8 @@
     </a>
 </div>
 
-Vesteria https://www.roblox.com/games/2376885433/Vesteria/
+##Play Vesteria 
+https://www.roblox.com/games/2376885433/Vesteria/
+
+##The Vesteria Team
+https://www.roblox.com/groups/4238824/The-Vesteria-Team/
