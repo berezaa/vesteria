@@ -229,6 +229,7 @@ end
 -- "applyStatusEffectToEntityManifest", player.Character.PrimaryPart, "regenerate", {health = 25; duration = 5}, {sourceId = item}
 
 local function onApplyStatusEffectToEntityManifest(entityManifest, statusEffectType, statusEffectModifierData, sourceEntityManifest, sourceType, sourceId, variant)
+	print("APPLYING AN EFFECT")
 	if not statusEffectLookup[statusEffectType] then
 		return false, "invalid status effect"
 	end

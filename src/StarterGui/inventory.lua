@@ -215,6 +215,9 @@ function module.init(Modules)
 			else
 				local itemBaseData = itemData[inventorySlotData.id]
 				print("doubleclick", itemBaseData and itemBaseData.name, itemBaseData and itemBaseData.category, itemBaseData and itemBaseData.equipmentPosition)
+				
+				print(itemBaseData)
+
 				if itemBaseData then
 					if itemBaseData.category == "equipment" then
 						if itemBaseData.equipmentPosition == mapping.equipmentPosition.arrow then
@@ -237,6 +240,8 @@ function module.init(Modules)
 						-- so sad, we have to do this though.
 						-- functions use each other :(
 						local success, reason = network:invoke("activateItemRequestLocal", inventorySlotData)
+
+						print(success, reason)
 					end
 				end
 
@@ -428,7 +433,7 @@ function module.init(Modules)
 								end
 							end
 						end
-						if game.ReplicatedStorage.sounds:FindFirstChild("idolPickup") then
+						if game.ReplicatedStorage.assets.sounds:FindFirstChild("idolPickup") then
 							--game.ReplicatedStorage.sounds.idolPickup:Play()
 							utilities.playSound("idolPickup")
 						end
@@ -753,10 +758,13 @@ function module.init(Modules)
 	local isCurrentlyConsuming 		= false
 	local function activateItemRequest(inventorySlotData)
 		if itemUseDebounce then	return false end
+		print(canPlayerUseConsumable)
 		if not canPlayerUseConsumable then return false end
 		if player.Character.PrimaryPart.health.Value <= 0 then return false end
 		if network:invoke("getCharacterMovementStates").isSprinting then return end
 		if network:invoke("isCharacterStunned") then return end
+
+
 
 		itemUseDebounce = true
 
@@ -803,77 +811,27 @@ function module.init(Modules)
 
 				local playerInput = itemBaseData.playerInputFunction and itemBaseData.playerInputFunction() or {}
 
-
-				--local remainingCooldown = consumableCooldownPostCDR - (tick() - lastUseConsumable)
-				--if remainingCooldown > 0 then
-				--	network:invoke("showConsumableCooldown", remainingCooldown)
-				--end
-
-				local connectionForAnimation
-				local timeStart
-
-				-- todo: faster consume time for perks
-
 				local itemConsumeTime = (itemBaseData.consumeTime or 1) * consumeTimeReduction
+
 				network:invoke("showConsumableCooldown", itemConsumeTime)
+
 				local function onAnimationStopped()
-					if connectionForAnimation then
-						connectionForAnimation:disconnect()
-						connectionForAnimation = nil
-					end
 					isCurrentlyConsuming = false
 
-					if tick() - timeStart < itemConsumeTime * 0.90 then
-						-- cancelled early, dont do anything :P
-						return
-					end
-
-
-					--network:invoke("setIsChanneling", true)
-
 					success, errorMessage = network:invokeServer("activateItemRequest", itemBaseData.category, inventorySlotData.position, nil, playerInput)
-
-					delay(0.5, function()
-						--network:invoke("setIsChanneling", false)
-					end)
 				end
+				
+				animationInterface:replicateClientAnimationSequence("axeAnimations", "strike1")
 
-				local myClientPlayerCharacterContainer = network:invoke("getMyClientCharacterContainer")
+				delay(itemConsumeTime + 1.5, function()
+					onAnimationStopped()
+				end)
 
-				if myClientPlayerCharacterContainer then
-					local animations = animationInterface:getAnimationsForAnimationController(myClientPlayerCharacterContainer.entity.AnimationController)
-
-
-					--network:invoke("setCharacterMovementState", "isEmoting", false)
-					timeStart = tick()
-					isCurrentlyConsuming = true
-					animationInterface:replicatePlayerAnimationSequence("movementAnimations", "consume_consumable", nil, {id = itemBaseData.id; ANIMATION_DESIRED_LENGTH = itemConsumeTime})
-
-					-- wait to start playing
-					while not animations.movementAnimations.consume_loop.IsPlaying do
-						wait(0.05)
-					end
-
-
-					connectionForAnimation = animations.movementAnimations.consume_loop.Stopped:connect(onAnimationStopped)
-
-					delay(itemConsumeTime + 1.5, function()
-						if connectionForAnimation then
-							isCurrentlyConsuming = false
-							connectionForAnimation:disconnect()
-							connectionForAnimation = nil
-						end
-					end)
-				end
-
-				-- wait for this to be over
-				while connectionForAnimation do
-					wait(0.1)
-				end
 				itemUseDebounce = false
 
 				return success, errorMessage
 			end
+
 		end
 
 		itemUseDebounce = false

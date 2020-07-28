@@ -3,7 +3,10 @@ local MAX_CHAT_BUBBLE_COUNT = 3
 
 -- essentials
 local replicatedStorage = game:GetService("ReplicatedStorage")
-local playerScripts = game:GetService("StarterPlayerScripts")
+local players = game:GetService("Players")
+
+local playerScripts = players.LocalPlayer:WaitForChild("PlayerScripts")
+
 local modules = require(replicatedStorage:WaitForChild("modules"))
 local network = modules.load("network")
 

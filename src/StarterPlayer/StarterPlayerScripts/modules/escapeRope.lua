@@ -20,8 +20,8 @@ function module.init()
 	
 	local target = getTargetDoor()
 	if target and player.Character and player.Character.PrimaryPart then
-		if game.ReplicatedStorage.sounds:FindFirstChild("ladder") then
-			game.ReplicatedStorage.sounds.ladder:Play()
+		if game.ReplicatedStorage.assets.sounds:FindFirstChild("ladder") then
+			game.ReplicatedStorage.assets.sounds.ladder:Play()
 		end
 		--player.Character:SetPrimaryPartCFrame(player.Character.PrimaryPart.CFrame - player.Character.PrimaryPart.Position + target.Position)
 		network:fireServer("playerRequest_activateEscapeRope", script.Parent)

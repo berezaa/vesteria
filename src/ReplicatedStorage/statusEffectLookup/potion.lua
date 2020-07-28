@@ -12,6 +12,7 @@ local statusEffectData = {
 
 --							(renderCharacterContainer, 	targetPosition, isAbilitySource, hitNormal, nil, 	guid)
 function statusEffectData.execute(activeStatusEffectData, entityManifest, activeStatusEffectTickTimePerSecond)
+	print('WE ARE RUNNING THE POT!')
 	local healthHealed 	= activeStatusEffectData.statusEffectModifier.healthToHeal or 0
 	local manaRestored 	= activeStatusEffectData.statusEffectModifier.manaToRestore or 0
 	local duration 		= activeStatusEffectData.statusEffectModifier.duration or 5

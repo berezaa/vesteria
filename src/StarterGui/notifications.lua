@@ -18,7 +18,7 @@ function module.init(Modules)
 	function module.alert(textObject, duration, soundeffect)
 		duration = duration or 4
 		
-		if soundeffect and game.ReplicatedStorage.sounds:FindFirstChild(soundeffect) then
+		if soundeffect and game.ReplicatedStorage.assets.sounds:FindFirstChild(soundeffect) then
 			utilities.playSound(soundeffect)
 			--game.ReplicatedStorage.sounds[soundeffect]:Play()
 		end

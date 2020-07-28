@@ -24,6 +24,13 @@ return {
 	
 	--> stats information <--
 	activationEffect = function(player)
+		print(
+			player.Character,
+			player.Character.PrimaryPart,
+			player.Character.PrimaryPart.health.Value, 
+			player.Character.PrimaryPart.maxHealth.Value
+		)
+
 		if player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart.health.Value > 0 and player.Character.PrimaryPart.health.Value < player.Character.PrimaryPart.maxHealth.Value then
 			local success = network:invoke("applyPotionStatusEffectToEntityManifest_server", player.Character.PrimaryPart, 25, nil, "item", 6)
 			

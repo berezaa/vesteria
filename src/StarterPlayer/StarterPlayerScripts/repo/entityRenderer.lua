@@ -731,7 +731,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						end)
 
 						if itemBaseData.useSound and game.ReplicatedStorage:FindFirstChild("sounds") and consumableManifest then
-							local soundMirror = game.ReplicatedStorage.sounds:FindFirstChild(itemBaseData.useSound)
+							local soundMirror = game.ReplicatedStorage.assets.sounds:FindFirstChild(itemBaseData.useSound)
 							if soundMirror then
 								local sound = Instance.new("Sound")
 								for property, value in pairs(game.HttpService:JSONDecode(soundMirror.Value)) do
