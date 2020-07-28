@@ -38,6 +38,8 @@ local itemLookup = require(replicatedStorage.itemData)
 local itemAttributes = require(replicatedStorage.itemAttributes)
 local perkLookup = require(replicatedStorage.perkLookup)
 
+local assetsFolder = replicatedStorage.assets
+
 -- has to load here due to requirements on stuff above
 local projectile = modules.load("projectile")
 local PLAYER_LEVEL_CAP = 49
@@ -425,7 +427,7 @@ local function performDeathToRenderCharacter(player)
 					tombstoneTag.Value:Destroy()
 				end
 
-				local tombstone 	= script.tombstone:Clone()
+				local tombstone = assetsFolder.entities.tombstone:Clone()
 				tombstone.CanCollide = false
 
 				local offset = Vector3.new(0, previousCharacter.PrimaryPart.Size.Y / 2, 0)

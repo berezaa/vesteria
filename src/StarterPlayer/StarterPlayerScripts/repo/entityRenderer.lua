@@ -1223,8 +1223,10 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 		end
 
 		if not monsterNameTag then
-			if renderEntityData.entityContainer.PrimaryPart:FindFirstChild("monsterNameTag") then
-				monsterNameTag = renderEntityData.entityContainer.PrimaryPart.monsterNameTag
+			if renderEntityData.entityContainer.PrimaryPart then
+				if renderEntityData.entityContainer.PrimaryPart:FindFirstChild("monsterNameTag") then
+					monsterNameTag = renderEntityData.entityContainer.PrimaryPart.monsterNameTag
+				end
 			end
 		end
 
