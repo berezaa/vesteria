@@ -30,22 +30,22 @@ local rand = Random.new()
 
 
 local lootTable = {
-	
+
 	{id = "health potion"; stacks = 10; chance = 30; minLevel = 0; maxLevel = 5;};
 	{id = "mana potion"; stacks = 10; chance = 30; minLevel = 0; maxLevel = 5;};
 	{id = "health potion"; stacks = 20; chance = 5; minLevel = 0; maxLevel = 5;};
-	{id = "mana potion"; stacks = 20; chance = 5; minLevel = 0; maxLevel = 5;};	
-	
+	{id = "mana potion"; stacks = 20; chance = 5; minLevel = 0; maxLevel = 5;};
+
 	{id = "100% armor defense scroll"; stacks = 1; chance = 15; minLevel = 0; maxLevel = 100;};
 	{id = "100% weapon attack scroll"; stacks = 1; chance = 15; minLevel = 0; maxLevel = 100;};
 
-	{id = "megaphone"; stacks = 1; chance = 1; minLevel = 10; maxLevel = 100;};	
+	{id = "megaphone"; stacks = 1; chance = 1; minLevel = 10; maxLevel = 100;};
 }
 
 -- map-specific potions!!!!!!
 
 local mapSpecificLoot = {
-	
+
 	-- Whispering Dunes
 	["3303140173"] = {
 		{id = "crystal beetle"; stacks = 3; chance = 10;};
@@ -54,8 +54,8 @@ local mapSpecificLoot = {
 		{id = "broken crystal beetle"; stacks = 8; chance = 30;};
 		{id = "cactus fruit"; stacks = 15; chance = 25;};
 		{id = "item dye yellow"; stacks = 1; chance = 1;};
-	};	
-	
+	};
+
 	-- Port Fidelio
 	["2546689567"] = {
 		{id = "rune hunter"; stacks = 3; chance = 25;};
@@ -70,7 +70,7 @@ local mapSpecificLoot = {
 		{id = "hunter bandit vest"; attribute = "pristine"; stacks = 1; chance = 5;};
 		{id = "hunter bandit mask"; attribute = "pristine"; stacks = 1; chance = 5;};
 	};
-	
+
 	-- spider abyss
 	["3207211233"] = {
 		{id = "spider fang"; stacks = 30; chance = 80;};
@@ -82,7 +82,7 @@ local mapSpecificLoot = {
 		{id = "spider sword"; stacks = 1; chance = 3;};
 		{id = "item dye purple"; stacks = 1; chance = 1;};
 	};
-	
+
 	-- Scallop Shores
 	["2471035818"] = {
 		{id = "rune hunter"; stacks = 3; chance = 25;};
@@ -90,28 +90,28 @@ local mapSpecificLoot = {
 		{id = "tomahawk"; attribute = "pristine"; stacks = 1; chance = 5;};
 		{id = "arrow"; stacks = 50; chance = 20;};
 		{id = "item dye green"; stacks = 1; chance = 1;};
-	};	
+	};
 	-- Shiprock Bottom
 	["3232913902"] = {
 		{id = "snel snel shell"; stacks = 1; chance = 1;};
 		{id = "snelleth shell"; stacks = 1; chance = 1;};
 		{id = "snelly shell"; stacks = 1; chance = 1;};
 		{id = "snelvin shell"; stacks = 1; chance = 1;};
-	};	
+	};
 	-- Seaside Path
 	["2093766642"] = {
 		{id = "rune hunter"; stacks = 3; chance = 25;};
 		{id = "fish"; stacks = 10; chance = 80;};
 		{id = "tall blue fish"; stacks = 10; chance = 20;};
 		{id = "yellow puffer fish"; stacks = 3; chance = 10;};
-	};		
-	
+	};
+
 	-- The Colosseum
 	["2496503573"] = {
 		{id = "rune colosseum"; stacks = 3; chance = 25;};
 		{id = "health potion horn"; stacks = 10; chance = 80;};
 	};
-		
+
 	-- Warrior Stronghold
 	["2470481225"] = {
 		{id = "rune warrior"; stacks = 3; chance = 25;};
@@ -120,13 +120,13 @@ local mapSpecificLoot = {
 		{id = "item dye red"; stacks = 1; chance = 1;};
 		{id = "bronze helmet"; attribute = "pristine"; stacks = 1; chance = 5;};
 		{id = "bronze armor"; attribute = "pristine"; stacks = 1; chance = 5;};
-		{id = "bronze mace"; attribute = "pristine"; stacks = 1; chance = 5;};			
-	};		
+		{id = "bronze mace"; attribute = "pristine"; stacks = 1; chance = 5;};
+	};
 	-- Redwood Pass
 	["2376890690"] = {
 		{id = "rune warrior"; stacks = 3; chance = 25;};
 		{id = "strength potion"; stacks = 1; chance = 10;};
-	};			
+	};
 	-- Enchanted forest
 	["2260598172"] = {
 		{id = "rune mage"; stacks = 3; chance = 25;};
@@ -139,12 +139,12 @@ local mapSpecificLoot = {
 		{id = "item dye blue"; stacks = 1; chance = 1;};
 		{id = "mage hat 2"; attribute = "pristine"; stacks = 1; chance = 5;};
 		{id = "mage robes 2"; attribute = "pristine"; stacks = 1; chance = 5;};
-		{id = "willow staff"; attribute = "pristine"; stacks = 1; chance = 5;};		
+		{id = "willow staff"; attribute = "pristine"; stacks = 1; chance = 5;};
 	};
 	-- The Clearing
 	["2060556572"] = {
 		{id = "oak axe"; attribute = "pristine"; stacks = 1; chance = 10;};
-	};	
+	};
 	-- Nilgarf
 	["2119298605"] = {
 		{id = "rune nilgarf"; stacks = 3; chance = 25;};
@@ -158,31 +158,31 @@ local mapSpecificLoot = {
 		{id = "mushroom soup"; stacks = 1; chance = 5;};
 		{id = "rune mushtown"; stacks = 3; chance = 25;};
 		{id = "golden mushroom"; stacks = 5; chance = 35;};
-	};		
+	};
 	-- Mushroom Grotto
 	["2060360203"] = {
 		{id = "mushroom beard"; stacks = 30; chance = 20;};
 		{id = "mushroom mini"; stacks = 30; chance = 40;};
 		{id = "mushroom soup"; stacks = 1; chance = 1;};
 		{id = "rune mushtown"; stacks = 3; chance = 25;};
-	};							
+	};
 	-- Mushtown
 	["2064647391"] = {
 		{id = "rune mushtown"; stacks = 3; chance = 25;};
 		{id = "mushroom mini"; stacks = 30; chance = 25;};
 		{id = "apple"; stacks = 15; chance = 25;};
 		{id = "mushroom soup"; stacks = 1; chance = 1;};
-	};		
+	};
 	-- Mushroom Forest
 	["2035250551"] = {
 		{id = "rune mushtown"; stacks = 3; chance = 25;};
 		{id = "mushroom mini"; stacks = 30; chance = 40;};
 		{id = "mushroom soup"; stacks = 1; chance = 1;};
-	};			
+	};
 	-- Internal build (testing)
 --	["2061558182"] = {
 --		{id = "bronze helmet"; attribute = "pristine"; stacks = 1; chance = 500;};
---	};			
+--	};
 }
 
 -- since you DIDNT WANT TO DO IT YOURSELF!!!!
@@ -192,7 +192,7 @@ local conversionBlock do
 			lootDrop.id = itemLookup[lootDrop.id].id
 		end
 	end
-	
+
 	for placeId, placeLootTable in pairs(mapSpecificLoot) do
 		for i, lootDrop in pairs(placeLootTable) do
 			if type(lootDrop.id) == "string" then
@@ -274,35 +274,35 @@ end)
 local function getTreasureForChest(player, chest)
 	local placeId = utilities.originPlaceId(game.PlaceId)
 	assert(chest, "Chest cannot be nil!")
-	
-	local level = chest.chestLevel.Value 
+
+	local level = chest.chestLevel.Value
 	local goldReward = 0
-	
+
 	local playerData = network:invoke("getPlayerData", player)
-	
+
 	local mapLoot = mapSpecificLoot[tostring(placeId)]
 	local rewards = {}
-	
+
 
 	local function selectReward()
 
 		-- ethyr reward
 		local ethyrReward
-		
+
 		local globalData = playerData.globalData
-		
+
 		if globalData then
-		
+
 			local today = math.floor(getTime() / INTERVAL)
-			
+
 			globalData.ethyrRewards = globalData.ethyrRewards or 0
 			if globalData.lastEthyrReward == nil or globalData.lastEthyrReward < today then
 				globalData.ethyrRewards = 0
 				globalData.lastEthyrReward = today
 			end
-			
+
 			if globalData.ethyrRewards < 5 then
-				local chance = 0.025 
+				local chance = 0.025
 				if level >= 40 then
 					chance = 0.15
 				elseif level >= 25 then
@@ -317,21 +317,21 @@ local function getTreasureForChest(player, chest)
 					ethyrReward = true
 				end
 			end
-			
+
 			playerData.nonSerializeData.setPlayerData("globalData", globalData)
-		
-		end	
-		
+
+		end
+
 		if ethyrReward then
 			local reward = {id = "ethyr pile"; stacks = 1;}
-			table.insert(rewards, {id = reward.id; stacks = reward.stacks})	
+			table.insert(rewards, {id = reward.id; stacks = reward.stacks})
 		elseif rand:NextInteger(1,5) == 4 then
 			-- 1/5 chance to recieve money
 			goldReward = (goldReward or 0) + levels.getQuestGoldFromLevel(level or 1) * 0.5
 		else
 			-- standard loot table
 			local lottery = {}
-			
+
 			for i, lootInfo in pairs(lootTable) do
 				if (level >= (lootInfo.minLevel or 0)) and (level <= (lootInfo.maxLevel or 999999)) then
 					for i=1, (lootInfo.chance or 0) do
@@ -339,17 +339,17 @@ local function getTreasureForChest(player, chest)
 					end
 				end
 			end
-			
+
 			if mapLoot then
 				for i, lootInfo in pairs(mapLoot) do
 					if (level >= (lootInfo.minLevel or 0)) and (level <= (lootInfo.maxLevel or 999999)) then
 						for i=1, (lootInfo.chance or 0) do
 							table.insert(lottery, lootInfo)
 						end
-					end					
+					end
 				end
 			end
-			
+
 			if #lottery > 0 then
 				local reward = lottery[rand:NextInteger(1, #lottery)]
 				local rewardItemData = {}
@@ -358,18 +358,18 @@ local function getTreasureForChest(player, chest)
 						rewardItemData[key] = value
 					end
 				end
-				table.insert(rewards, rewardItemData)				
-			end										
-		end		
-	end		
-	
+				table.insert(rewards, rewardItemData)
+			end
+		end
+	end
+
 	selectReward()
-	
+
 	-- double trouble(rare)
 	if rand:NextNumber() >= 0.85 then
 		selectReward()
-	end		
-	
+	end
+
 	-- treasure hunt quest
 	for i, quest in pairs(playerData.quests.active) do
 		if quest.id == 10 then
@@ -387,7 +387,7 @@ local function getTreasureForChest(player, chest)
 			end
 		end
 	end
-	
+
 	return {
 		rewards = rewards,
 		gold = goldReward,
@@ -410,16 +410,16 @@ local function playerRequest_openTreasureChest(player, chest)
 		local playerData = network:invoke("getPlayerData", player)
 		if playerData then
 			local treasureData = playerData.treasure
-			local chestData = treasureData["place-"..game.PlaceId].chests[chest.Name] 
+			local chestData = treasureData["place-"..game.PlaceId].chests[chest.Name]
 			if chestData == nil or chestData.blocked then
 				return false, "Invalid chest"
 			end
 			local chestInfo = getTreasureForChest(player, chest) or {}
 			-- check for inventory
 			local specialContents = chest:FindFirstChild("inventory") or chest:FindFirstChild("ironChest") or chest:FindFirstChild("goldChest")
-			
+
 			local today = math.floor(getTime() / INTERVAL)
-			
+
 			if specialContents then
 				if chestData.open then
 					return false, "Already opened"
@@ -443,11 +443,11 @@ local function playerRequest_openTreasureChest(player, chest)
 				end
 				--
 			end
-			
+
 			local rewards = chestInfo.rewards or {}
 			local goldReward = chestInfo.gold or 0
-			
-			
+
+
 			if chest:FindFirstChild("minLevel") then
 				if player.level.Value < chest.minLevel.Value then
 					return false, "This chest is too sturdy to for you to break right now!"
@@ -462,20 +462,20 @@ local function playerRequest_openTreasureChest(player, chest)
 					return false, "This chest is broken! Let a dev know!"
 				end
 			end
-			
-			local rewardInfo = utilities.copyTable(rewards)					
-		
+
+			local rewardInfo = utilities.copyTable(rewards)
+
 			if goldReward > 0 then
 				table.insert(rewardInfo, {id = 1; value = goldReward})
 			end
-			
+
 			chestData.open = today
-			
-			
+
+
 			playerData.nonSerializeData.setPlayerData("treasure", treasureData)
-			
+
 --			local success = network:invoke("tradeItemsBetweenPlayerAndNPC", player, {}, 0, rewards, goldReward, "treasure:"..chest.Name, {overrideItemsRecieved = true})
-			
+
 			spawn(function()
 				wait(0.784)
 				for _, itemInfo in pairs(rewardInfo) do
@@ -484,16 +484,16 @@ local function playerRequest_openTreasureChest(player, chest)
 						dropPosition = (chest.PrimaryPart.CFrame * CFrame.new(0,chest.PrimaryPart.Size.Y*2, 0)).Position,
 						itemOwners = {player},
 					}
-					
-					local item = network:invoke("spawnItemOnGround",dropInformation.lootDropData, dropInformation.dropPosition, dropInformation.itemOwners)	
+
+					local item = network:invoke("spawnItemOnGround",dropInformation.lootDropData, dropInformation.dropPosition, dropInformation.itemOwners)
 					if item == nil then break end
-					
+
 					local attachmentTarget
 					local rand = Random.new()
-					
+
 					local cf = chest.PrimaryPart.CFrame * CFrame.Angles(0, -math.pi/2, 0)
 					local velo = Vector3.new((rand:NextNumber() - 0.5) * 10, (2 + rand:NextNumber()) * 25, (rand:NextNumber() - 0.5) * 10) + cf.lookVector * 10
-					
+
 					if item:IsA("BasePart") then
 						item.Velocity = velo
 					elseif item:IsA("Model") and (item.PrimaryPart or item:FindFirstChild("HumanoidRootPart")) then
@@ -501,13 +501,13 @@ local function playerRequest_openTreasureChest(player, chest)
 						if primaryPart then
 							primaryPart.Velocity = velo
 						end
-					end				
-					
+					end
+
 					wait(2/5)
 				end
-			end)	
-			return true		
-			
+			end)
+			return true
+
 		end
 		return false, "Not a chest"
 	end

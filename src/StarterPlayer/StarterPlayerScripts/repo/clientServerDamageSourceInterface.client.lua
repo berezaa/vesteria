@@ -367,7 +367,7 @@ local function attackInteraction(interaction, part)
 		local folder = model:FindFirstAncestorWhichIsA("Folder")
 		if collectionService:HasTag(folder, "resourceNodeTypeFolder") or collectionService:HasTag(folder, "resourceNodeGroupFolder") then
 			local nodeModel = model
-			local dropPoint = network:invokeServer("HarvestResource", nodeModel)
+			local dropPoint = network:invokeServer("harvestResource", nodeModel)
 			shake(nodeModel)
 		else
 			local hitPosition = detection.projection_Box(part.CFrame, part.Size, currentWeaponManifest.Position)

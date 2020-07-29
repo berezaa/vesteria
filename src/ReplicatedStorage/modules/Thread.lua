@@ -43,7 +43,7 @@
 
 		>	The same as Thread.Delay, except it repeats
 			indefinitely.
-		
+
 		>	Returns the Heartbeat connection, thus the
 			repeated delay can be stopped by disconnecting
 			the returned connection.
@@ -51,7 +51,7 @@
 		>	Properly bound to the time interval, thus will
 			not experience drift.
 
-	
+
 	Examples:
 
 		Thread.Spawn(function()
@@ -79,7 +79,7 @@
 
 
 	Why:
-		
+
 		The built-in 'spawn' and 'delay' functions have the
 		potential to be throttled unknowingly. This can cause
 		all sorts of problems. Developers need to be certain
@@ -88,13 +88,13 @@
 		but with the expected behavior.
 
 	Why not coroutines:
-		
+
 		Coroutines are powerful, but can be extremely difficult
 		to debug due to the ways that coroutines obscure the
 		stack trace.
 
 	Credit:
-	
+
 		evaera & buildthomas: https://devforum.roblox.com/t/coroutines-v-s-spawn-which-one-should-i-use/368966
 		Quenty: FastSpawn (AKA SpawnNow) method using BindableEvent
 

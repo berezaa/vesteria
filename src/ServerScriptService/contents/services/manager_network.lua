@@ -16,6 +16,7 @@ signal.OnServerEvent:connect(function(player, eventName, ...)
 		return event:Fire(player, ...)
 	else
 		if network then
+			warn(player.Name, "kicked for bad remote event request:", eventName)
 			network:invoke("banPlayer", player, 60 * 60 * 24, "Compromised client", "network")
 		end
 	end
@@ -33,6 +34,7 @@ playerRequest.OnServerInvoke = function(player, requestName, ...)
 		return request:Invoke(player, ...)
 	else
 		if network then
+			warn(player.Name, "kicked for bad remote function request:", requestName)
 			network:invoke("banPlayer", player, 60 * 60 * 24, "Compromised client", "network")
 		end
 	end

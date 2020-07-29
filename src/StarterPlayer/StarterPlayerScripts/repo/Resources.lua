@@ -4,26 +4,26 @@
 
 
 
-local Resources = {}
+local resources = {}
 
-local CollectionService = game:GetService("CollectionService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local collectionService = game:GetService("CollectionService")
+local replicatedStorage = game:GetService("ReplicatedStorage")
 
-local SharedModules
-local Thread
+local modules
+local thread
 local network
 
 
 local function getNodeTypeMetadataFromNode(node)
 	local containingFolder = node:FindFirstAncestorWhichIsA("Folder")
-	local isNodeGroup = CollectionService:HasTag(containingFolder, "resourceNodeGroupFolder")
+	local isNodeGroup = collectionService:HasTag(containingFolder, "resourceNodeGroupFolder")
 	local nodeTypeMetadata = isNodeGroup and containingFolder.Parent.Metadata or containingFolder.Metadata
 
 	return nodeTypeMetadata
 end
 
 
-function Resources:DoEffect(node, effect)
+function resources:DoEffect(node, effect)
 	local nodeMetadata = getNodeTypeMetadataFromNode(node)
 	local effectFolder = nodeMetadata.EffectsStorage:FindFirstChild(effect)
 
@@ -38,7 +38,7 @@ function Resources:DoEffect(node, effect)
 				effectClone:Emit(effectClone.Rate)
 			end
 
-			Thread.Delay(10, function()
+			thread.Delay(10, function()
 				effectClone:Destroy()
 			end)
 		end
@@ -46,9 +46,9 @@ function Resources:DoEffect(node, effect)
 end
 
 
-function Resources:Start()
+function resources:Start()
 
-	network:connect("ResourceHarvested", "OnClientEvent", function(node, dropPoint)
+	network:connect("resourceHarvested", "OnClientEvent", function(node, dropPoint)
 		local nodeMetadata = require(getNodeTypeMetadataFromNode(node))
 		local onHarvest = nodeMetadata.Animations.OnHarvest
 
@@ -63,7 +63,7 @@ function Resources:Start()
 		end
 	end)
 
-	network:connect("ResourceReplenished", "OnClientEvent", function(node)
+	network:connect("resourceReplenished", "OnClientEvent", function(node)
 		local nodeMetadata = require(getNodeTypeMetadataFromNode(node))
 		local onReplenish = nodeMetadata.Animations.OnReplenish
 
@@ -88,10 +88,10 @@ function Resources:Start()
 			self:DoEffect(node, "Replenish")
 		end
 
-		CollectionService:AddTag(node.PrimaryPart, "attackable")
+		collectionService:AddTag(node.PrimaryPart, "attackable")
 	end)
 
-	network:connect("ResourceDepleted", "OnClientEvent", function(node)
+	network:connect("resourceDepleted", "OnClientEvent", function(node)
 		local nodeMetadata = require(getNodeTypeMetadataFromNode(node))
 		local onDeplete = nodeMetadata.Animations.OnDeplete
 
@@ -109,10 +109,10 @@ function Resources:Start()
 		if onDeplete and type(onDeplete) == "function" then
 			onDeplete(node)
 		end
-		CollectionService:RemoveTag(node.PrimaryPart, "attackable")
+		collectionService:RemoveTag(node.PrimaryPart, "attackable")
 	end)
 
-	local depletedNodes = network:invokeServer("GetDepletedResourceNodes")
+	local depletedNodes = network:invokeServer("getDepletedResourceNodes")
 	for _, node in pairs(depletedNodes) do
 		for _, c in pairs (node:GetDescendants()) do
 			if c:IsA("BasePart") then
@@ -125,16 +125,14 @@ function Resources:Start()
 end
 
 
-function Resources:Init()
-
-	SharedModules = require(ReplicatedStorage.modules)
-	network = SharedModules.load("network")
-	Thread = SharedModules.load("Thread")
-
+function resources:Init()
+	modules = require(replicatedStorage.modules)
+	network = modules.load("network")
+	thread = modules.load("thread")
 end
 
 
-Resources:Init()
-Resources:Start()
+resources:Init()
+resources:Start()
 
-return Resources
+return resources
