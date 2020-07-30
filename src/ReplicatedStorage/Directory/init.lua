@@ -57,10 +57,11 @@ local Directory = { _internal = game:GetDescendants() } do
     end;
 
     function Directory:Environment()
-        local env = {
-            math = self.utilities.Math;
-            table = self.utilities.Table;
-        };
+        local env = {};
+
+        function env:GetPlayerData(player)
+            -- do shit
+        end;
 
         return env
     end;
@@ -106,4 +107,6 @@ local Directory = { _internal = game:GetDescendants() } do
     end;
 end;
 
-Directory:init()
+--Directory:init()
+
+return Directory
