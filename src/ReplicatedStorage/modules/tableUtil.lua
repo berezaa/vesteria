@@ -3,7 +3,7 @@
 -- September 13, 2017
 
 --[[
-	
+
 	TableUtil.Copy(Table tbl)
 	TableUtil.CopyShallow(Table tbl)
 	TableUtil.Sync(Table tbl, Table templateTbl)
@@ -89,7 +89,7 @@
 				print("Did not find value")
 			end
 
-		
+
 		Map:
 
 			This allows you to construct a new table by calling the given function
@@ -201,7 +201,7 @@
 			local tbl = {1, 2, 3, 4, 5, 6, 7, 8, 9}
 			TableUtil.Shuffle(tbl)
 			print(table.concat(tbl, ", "))  -- e.g. > 3, 6, 9, 2, 8, 4, 1, 7, 5
-	
+
 --]]
 
 
@@ -238,18 +238,18 @@ local function Sync(tbl, templateTbl)
 
 	assert(type(tbl) == "table", "First argument must be a table")
 	assert(type(templateTbl) == "table", "Second argument must be a table")
-	
+
 	-- If 'tbl' has something 'templateTbl' doesn't, then remove it from 'tbl'
 	-- If 'tbl' has something of a different type than 'templateTbl', copy from 'templateTbl'
 	-- If 'templateTbl' has something 'tbl' doesn't, then add it to 'tbl'
 	for k,v in pairs(tbl) do
-		
+
 		local vTemplate = templateTbl[k]
-		
+
 		-- Remove keys not within template:
 		if (vTemplate == nil) then
 			tbl[k] = nil
-			
+
 		-- Synchronize data types:
 		elseif (type(v) ~= type(vTemplate)) then
 			if (type(vTemplate) == "table") then
@@ -257,19 +257,19 @@ local function Sync(tbl, templateTbl)
 			else
 				tbl[k] = vTemplate
 			end
-		
+
 		-- Synchronize sub-tables:
 		elseif (type(v) == "table") then
 			Sync(v, vTemplate)
 		end
-		
+
 	end
-	
+
 	-- Add any missing keys:
 	for k,vTemplate in pairs(templateTbl) do
-		
+
 		local v = tbl[k]
-		
+
 		if (v == nil) then
 			if (type(vTemplate) == "table") then
 				tbl[k] = CopyTable(vTemplate)
@@ -277,9 +277,9 @@ local function Sync(tbl, templateTbl)
 				tbl[k] = vTemplate
 			end
 		end
-		
+
 	end
-	
+
 end
 
 
@@ -352,21 +352,21 @@ local function Print(tbl, label, deepPrint)
 
 	assert(type(tbl) == "table", "First argument must be a table")
 	assert(label == nil or type(label) == "string", "Second argument must be a string or nil")
-	
+
 	label = (label or "TABLE")
-	
+
 	local strTbl = {}
 	local indent = " - "
-	
+
 	-- Insert(string, indentLevel)
 	local function Insert(s, l)
 		strTbl[#strTbl + 1] = (indent:rep(l) .. s .. "\n")
 	end
-	
+
 	local function AlphaKeySort(a, b)
 		return (tostring(a.k) < tostring(b.k))
 	end
-	
+
 	local function PrintTable(t, lvl, lbl)
 		Insert(lbl .. ":", lvl - 1)
 		local nonTbls = {}
@@ -398,11 +398,11 @@ local function Print(tbl, label, deepPrint)
 			end
 		end
 	end
-	
+
 	PrintTable(tbl, 1, label)
-	
+
 	print(table.concat(strTbl, ""))
-	
+
 end
 
 
