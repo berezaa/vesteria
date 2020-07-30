@@ -21,15 +21,15 @@
 
 ]]--
 
-local module = {}
+local ResourceManager = {}
 
-local collectionService = game:GetService("CollectionService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
+local CollectionService = game:GetService("CollectionService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local modules
+local Modules
+local Thread
+local TableUtil
 local placeSetup
-local thread
-local tableUtil
 local network
 
 local nodesFolder
@@ -37,9 +37,11 @@ local nodesFolder
 local globalResourceNodeData = {}
 local localResourceNodeData = {}
 
+
+
 local function getNodeTypeMetadataFromNode(node)
 	local containingFolder = node:FindFirstAncestorWhichIsA("Folder")
-	local isNodeGroup = collectionService:HasTag(containingFolder, "resourceNodeGroupFolder")
+	local isNodeGroup = CollectionService:HasTag(containingFolder, "resourceNodeGroupFolder")
 	local nodeTypeMetadata = isNodeGroup and containingFolder.Parent.Metadata or containingFolder.Metadata
 
 	return nodeTypeMetadata
@@ -90,11 +92,11 @@ local function getGlobalDataForNode(node)
 end
 
 local function sumLootTableWeights(lootTable)
-	local s = 0
+	local totalWeight = 0
 	for _, item in pairs (lootTable) do
-		s = s + item.Chance
+		totalWeight = totalWeight + item.Chance
 	end
-	return s
+	return totalWeight
 end
 
 local function rollLootTable(lootTable)
@@ -126,9 +128,19 @@ local function calcDamageForNode(node, player)
 	return 1
 end
 
+local function getDepletedResourceNodes(player)
+	local depleted = {}
+	for node, data in pairs (globalResourceNodeData) do
+		if data.Depleted then
+			depleted[#depleted + 1] = node
+		end
+	end
+	return depleted
+end
+
 local function calcNumHarvests(damage, node, nodeData)
 	local nodeTypeMetadata = require(getNodeTypeMetadataFromNode(node))
-	local maxdurability = nodeTypeMetadata.durability
+	local maxdurability = nodeTypeMetadata.Durability
 	local durability = nodeData.durability
 	local harvestsLeft = nodeData.harvestsLeft
 	local toHarvest = math.floor( (damage + durability) / maxdurability )
@@ -179,7 +191,7 @@ local function resourceNodeReplenished(node, player)
 
 	nodeData.harvestsLeft = nodeTypeMetadata.Harvests
 	-- nodeData.durability = 0
-	nodeData.durability = nodeTypeMetadata.durability
+	nodeData.durability = nodeTypeMetadata.Durability
 	nodeData.DropPoints = dropPoints and dropPoints:GetChildren() or {}
 	nodeData.Depleted = false
 
@@ -192,7 +204,7 @@ local function resourceNodeReplenished(node, player)
 				end
 			end
 		end
-		collectionService:AddTag(node.PrimaryPart, "attackable")
+		CollectionService:AddTag(node.PrimaryPart, "attackable")
 		network:fireAllClients("resourceReplenished", node)
 	else
 		network:fireClient("resourceReplenished", player, node)
@@ -205,7 +217,7 @@ local function resourceNodeDepleted(node, player)
 	local nodeData = isGlobal and getGlobalDataForNode(node) or getNodeDataForPlayer(node, player)
 
 	if nodeTypeMetadata.Replenish ~= 0 then
-		thread.Delay(nodeTypeMetadata.Replenish, resourceNodeReplenished, node, player)
+		Thread.Delay(nodeTypeMetadata.Replenish, resourceNodeReplenished, node, player)
 	end
 
 	if isGlobal then
@@ -220,7 +232,7 @@ local function resourceNodeDepleted(node, player)
 				end
 			end
 		end
-		collectionService:RemoveTag(node.PrimaryPart, "attackable")
+		CollectionService:RemoveTag(node.PrimaryPart, "attackable")
 		network:fireAllClients("resourceDepleted", node)
 	else
 		network:fireClient("resourceDepleted", player, node)
@@ -256,7 +268,7 @@ local function harvestResource(player, node)
 			nodeData.durability = durability
 
 			if isNodeGlobal and not table.find(nodeData.owners, player) then
-				table.insert(nodeData.owners, player)
+				nodeData.owners[#nodeData.owners + 1] = player
 			end
 
 			if harvestsLeft > 0 then
@@ -270,12 +282,16 @@ local function harvestResource(player, node)
 					local dropPosition = dropPoint and dropPoint.Value.DropAttachment.WorldPosition or
 											node.PrimaryPart.Position + Vector3.new(0, node.PrimaryPart.Size.Y / 2 + 0.5, 0)
 
-					tableUtil.FastRemove(nodeData.DropPoints, dropPointNum)
+					TableUtil.FastRemove(nodeData.DropPoints, dropPointNum)
 					harvestsLeft = harvestsLeft - 1
 					nodeData.harvestsLeft = harvestsLeft
-					nodeData.durability = nodeTypeMetadata.durability
+					nodeData.durability = nodeTypeMetadata.Durability
 
 					if isNodeGlobal then
+						if dropPoint then
+							dropPoint.Value.Transparency = 1
+							dropPoint.Value.CanCollide = false
+						end
 						network:fireAllClients("resourceHarvested", node, dropPoint and dropPoint.Value or nil)
 					else
 						network:fireClient("resourceHarvested", player, node, dropPoint and dropPoint.Value or nil)
@@ -319,24 +335,14 @@ local function harvestResource(player, node)
 
 end
 
-local function getDepletedResourceNodes(player)
-	local depleted = {}
-	for node, data in pairs (globalResourceNodeData) do
-		if data.Depleted then
-			depleted[#depleted + 1] = node
-		end
-	end
-	return depleted
-end
 
+local function Init()
 
-local function main()
-
-	modules = require(replicatedStorage.modules)
-	network = modules.load("network")
-	placeSetup = modules.load("placeSetup")
-	thread = modules.load("thread")
-	tableUtil = modules.load("tableUtil")
+	Modules = require(ReplicatedStorage.modules)
+	network = Modules.load("network")
+	placeSetup = Modules.load("placeSetup")
+	Thread = Modules.load("thread")
+	TableUtil = Modules.load("tableUtil")
 
 	nodesFolder = placeSetup.getPlaceFolder("resourceNodes")
 
@@ -350,6 +356,6 @@ local function main()
 
 end
 
-spawn(main)
+Init()
 
-return module
+return ResourceManager
