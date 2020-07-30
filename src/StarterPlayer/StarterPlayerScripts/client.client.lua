@@ -6,7 +6,7 @@ local player = game.Players.LocalPlayer
 local PlayerScripts = script.Parent
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local directories = {ReplicatedStorage.modules, PlayerScripts}
+local directories = {ReplicatedStorage.modules, PlayerScripts.contents}
 
 local beginInit = false
 
