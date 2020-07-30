@@ -94,7 +94,7 @@ end
 local function sumLootTableWeights(lootTable)
 	local totalWeight = 0
 	for _, item in pairs (lootTable) do
-		totalWeight += item.Chance
+		totalWeight = totalWeight + item.Chance
 	end
 	return totalWeight
 end
@@ -268,7 +268,7 @@ local function harvestResource(player, node)
 			nodeData.durability = durability
 
 			if isNodeGlobal and not table.find(nodeData.owners, player) then
-				table.insert(nodeData.owners, player)
+				nodeData.owners[#nodeData.owners + 1] = player
 			end
 
 			if harvestsLeft > 0 then
