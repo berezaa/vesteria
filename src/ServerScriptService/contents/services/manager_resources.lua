@@ -1,5 +1,5 @@
 -- Resource Manager
--- Rocky28447 (for Vesteria)
+-- Rocky28447 (for Vesteria) nah bro i thought it was for World Zero
 -- May 28, 2020
 
 
