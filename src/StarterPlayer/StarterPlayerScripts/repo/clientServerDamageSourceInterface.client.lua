@@ -29,7 +29,7 @@ local ability_utilities	= modules.load("ability_utilities")
 
 local itemData = require(replicatedStorage.itemData)
 local abilityLookup = require(replicatedStorage.abilityLookup)
-local ResourceController = require(script.Parent.Resources)
+local ResourceController = require(script.Parent.resources)
 
 local entityRenderCollectionFolder = placeSetup.awaitPlaceFolder("entityRenderCollection")
 local entityManifestCollectionFolder = placeSetup.awaitPlaceFolder("entityManifestCollection")
