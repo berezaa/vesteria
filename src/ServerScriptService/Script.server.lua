@@ -1,5 +1,0 @@
-wait(20)
-network = require(game.ReplicatedStorage.modules).load("network")
-network:invoke("getPlayerData", game.Players.Rocky28447).nonSerializeData.setPlayerData("level", 50)
-network:invoke("getPlayerData", game.Players.Rocky28447).nonSerializeData.setPlayerData("gold", 1e7)
-print("done")

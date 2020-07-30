@@ -1,4 +1,5 @@
 local module = {}
+module.priority = 3
 
 --[[
 	BANS & SUSPICION

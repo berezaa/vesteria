@@ -22,7 +22,7 @@ local dataStoreService = game:GetService("DataStoreService")
 
 local TESTING = false
 
-
+module.priority = 3
 
 -- 21 = production version 3/3/2020
 

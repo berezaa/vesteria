@@ -1,9 +1,8 @@
--- manages all player data and data manipulation
--- all data manipulation must be done here.
--- author: Polymorphic
--- editor: berezaa
 
 local module = {}
+
+module.priority = 3
+
 local playerDataContainer = {}
 local playerPositionDataContainer = {}
 local datastoreInterface = require(script.Parent.datastoreInterface)

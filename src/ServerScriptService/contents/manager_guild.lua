@@ -7,6 +7,7 @@ local network = modules.load("network")
 
 local module = {}
 
+module.priority = 3
 
 local guildRankValues = {
     member = 1;
