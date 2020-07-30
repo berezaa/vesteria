@@ -31,8 +31,6 @@ return function(key)
             iterations = iterations + 1
         until Container[key] or iterations > 10
 
-        print(key, "is marked as", Container[key])
-
         return Container[key] 
     else
         return Container[key]

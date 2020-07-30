@@ -3,11 +3,15 @@ local MAX_CHAT_BUBBLE_COUNT = 3
 
 -- essentials
 local replicatedStorage = game:GetService("ReplicatedStorage")
+local players = game:GetService("Players")
+
+local playerScripts = players.LocalPlayer:WaitForChild("PlayerScripts")
+
 local modules = require(replicatedStorage:WaitForChild("modules"))
 local network = modules.load("network")
 
 local runService = game:GetService("RunService")
-local assetFolder = replicatedStorage:WaitForChild("assets")
+local assetFolder = playerScripts:WaitForChild("assets")
 
 local function getOldestChatBubble(chats)
 	local oldest
@@ -33,7 +37,7 @@ local function setPrimaryChatBubble(chatBubble)
 			chatBubble.contents.Position = chatBubble.contents.Position + UDim2.new(0, 0, 0, 5)
 			local dif = (chatBubble.titleFrame.AbsoluteSize.X + 20) - chatBubble.AbsoluteSize.X
 			if dif > 0 then
-				chatBubble.Size = size + UDim2.new(0, dif, 0, 0 )
+				chatBubble.Size = size + UDim2.new(0, dif, 0, 0)
 			end
 		end
 
@@ -52,11 +56,11 @@ end
 
 local function createChatTagPart(entityContainer, offset, rangeMulti)
 	--[[
-	local chatTag 	= entityContainer.PrimaryPart:FindFirstChild("ChatTag") or assetFolder.ChatTag:Clone()
+	local chatTag 	= entityContainer.PrimaryPart:FindFirstChilfd("ChatTag") or assetFolder.ChatTag:Clone()
 	chatTag.Parent 	= entityContainer.PrimaryPart
 	]]
 
-	local chatTag = entityContainer:FindFirstChild("chatGui") or assetFolder.chatGui:Clone()
+	local chatTag = entityContainer:FindFirstChild("chatGui") or assetFolder.misc.chatGui:Clone()
 	chatTag.Parent = entityContainer
 	chatTag.Adornee = entityContainer.PrimaryPart
 	chatTag.Enabled = true

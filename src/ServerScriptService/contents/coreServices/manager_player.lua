@@ -38,6 +38,8 @@ local itemLookup = require(replicatedStorage.itemData)
 local itemAttributes = require(replicatedStorage.itemAttributes)
 local perkLookup = require(replicatedStorage.perkLookup)
 
+local assetsFolder = replicatedStorage.assets
+
 -- has to load here due to requirements on stuff above
 local projectile = modules.load("projectile")
 local PLAYER_LEVEL_CAP = 49
@@ -425,7 +427,7 @@ local function performDeathToRenderCharacter(player)
 					tombstoneTag.Value:Destroy()
 				end
 
-				local tombstone 	= script.tombstone:Clone()
+				local tombstone = assetsFolder.entities.tombstone:Clone()
 				tombstone.CanCollide = false
 
 				local offset = Vector3.new(0, previousCharacter.PrimaryPart.Size.Y / 2, 0)
@@ -851,8 +853,7 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 	-- regular value you'd get, anything higher is considered an increase)
 	completePlayerStats.wisdom = 1 + (baseStats.wisdom or 0)
 	-- increases chance of soulbound items being given to you
-	completePlayerStats.luck 				= baseStats.luck or 0
-	completePlayerStats.luckEffectiveness 	= 1.5 + (baseStats.luckEffectiveness or 0)
+	completePlayerStats.luck = 1 + (baseStats.luck or 0)
 	-- flat movement speed of player
 	completePlayerStats.walkspeed = 18 + (baseStats.walkspeed or 0)
 	-- merchantCostReduction (1 = 100% reduction (1 gold minimum))

@@ -36,8 +36,6 @@ function item_manager.getCurrentlyEquippedForRenderCharacter(renderCharacter)
     return currentlyEquipped
 end
 
-
-
 local function isCurrentlyEquipped(currentlyEquipped, equipmentSlotData)
 	local equipmentBaseData = itemDataLookup[equipmentSlotData.id]
 
@@ -66,7 +64,6 @@ function item_manager.GetWeaponStateAppendment(renderEntityData)
             end
         end
     end
-
 
     return weaponStateAppendment
 end

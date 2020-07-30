@@ -876,7 +876,7 @@ local velocityHandler = {} do
 				end
 				]]
 
-				local soundMirror = game.ReplicatedStorage.sounds:FindFirstChild("water_in")
+				local soundMirror = game.ReplicatedStorage.assets.sounds:FindFirstChild("water_in")
 				if soundMirror then
 					local sound = Instance.new("Sound")
 					for property, value in pairs(game.HttpService:JSONDecode(soundMirror.Value)) do
@@ -921,7 +921,7 @@ local velocityHandler = {} do
 					perform_forceJump()
 				end
 
-				local soundMirror = game.ReplicatedStorage.sounds:FindFirstChild("water_out")
+				local soundMirror = game.ReplicatedStorage.assets.sounds:FindFirstChild("water_out")
 				if soundMirror then
 					local sound = Instance.new("Sound")
 					for property, value in pairs(game.HttpService:JSONDecode(soundMirror.Value)) do

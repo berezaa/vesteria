@@ -485,6 +485,7 @@ local CONSUMABLE_COOLDOWN_TIME 		= 1
 local playerConsumeCooldownTable 	= {}
 
 local function onActivateItemRequestReceived(player, category, inventorySlotPosition, _itemId, playerInput)
+	print('recieve funny acitavtion :3')
 	local playerData = network:invoke("getPlayerData", player)
 	local inventorySlotData = network:invoke("getPlayerInventorySlotDataByInventorySlotPosition",
 		player,
@@ -733,6 +734,10 @@ local function onPlayerRequest_sellItem(player, unsafeInventorySlotData, stacksT
 end
 
 local function applyPotionStatusEffectToEntityManifest_server(entityManifest, healthToRestore, manaToRestore, sourceType, sourceId)
+	print("POTPOTPOTPOTPOTPOTPOTPOTPOTPOTPOTPOT")
+
+	print(entityManifest, healthToRestore,manaToRestore,sourceType, sourceId)
+
 	if healthToRestore and healthToRestore > 0 then
 		utilities.healEntity(entityManifest, entityManifest, healthToRestore)
 		utilities.playSound("item_heal", entityManifest)
@@ -824,7 +829,6 @@ local function main()
 	network:create("generateItemManifest_server", "BindableFunction", "OnInvoke", generateItemManifest)
 
 	network:create("activateItemRequest", "RemoteFunction", "OnServerInvoke", onActivateItemRequestReceived)
-	network:create("playerRequest_activateItem", "RemoteFunction", "OnServerInvoke", onActivateItemRequestReceived)
 
 	-- buy from or sell to shop
 	network:create("playerRequest_buyItemFromShop", "RemoteFunction", "OnServerInvoke", onPlayerRequest_buyItemFromShop)

@@ -190,7 +190,7 @@ function module.postInit(Modules)
 				waiting = false
 				hotbarButtonClickedConn:Disconnect()
 			end)
-
+			print("WEAREATTHEWAITINGLOOP")
 			while waiting do
 				updateFunction(network:invoke("getAbilityExecutionData", abilityId))
 				heartbeat:Wait()
@@ -381,6 +381,9 @@ function module.postInit(Modules)
 
 	local hotbarButtonDebounce = true
 	local function onHotbarButtonDoubleClicked(hotbarButtonItem, ...)
+		print("hotbar double clicked")
+		print(hotbarButtonDebounce)
+		
 		if not hotbarButtonDebounce then return end
 		hotbarButtonDebounce = false
 		delay(0.05, function()
