@@ -107,25 +107,3 @@ local Directory = { _internal = game:GetDescendants() } do
 end;
 
 Directory:init()
-
-
-
-
-
-
-
-
-local module = {}
-
-
-function module:init(directory)
-    local table, math = directory.table, directory.math
-
-    local monsterLookup = directory.monsterLookup
-
-    table.map(monsterLookup, function(...)
-        print(...)
-    end)
-end;
-
-return module
