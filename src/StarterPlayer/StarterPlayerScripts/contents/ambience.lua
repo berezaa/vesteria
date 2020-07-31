@@ -1,25 +1,28 @@
+local module = {}
+
 -- Manages sounds and some aesthetics.
 -- One of the first local scripts made for Vesteria. Not clean, needs improvements
 -- Author: berezaa
 
-workspace:WaitForChild("Camera")
 
 if game.ReplicatedStorage:FindFirstChild("overrideAmbience") then
 	return
 end
 
-local modules = require(game.ReplicatedStorage:WaitForChild("modules"))
-	local network 			= modules.load("network")
-	local tween = modules.load("tween")
-	local placeSetup = modules.load("placeSetup")
 
-local assetFolder = script.Parent.Parent:WaitForChild("assets")
-
-local camera = workspace.CurrentCamera
+local network
+local tween
 
 local userSettings
 
 local tracks = {}
+local dead
+local step = 1/5
+local lastUpdate
+local easing = Enum.EasingStyle.Linear
+
+local camera = workspace.CurrentCamera
+
 
 local function addTrack(track)
 	track.Parent = camera
@@ -28,25 +31,12 @@ local function addTrack(track)
 	track.Looped = true
 end
 
-for i,Child in pairs(assetFolder.tracks:GetChildren()) do
-	addTrack(Child)
-end
-assetFolder.tracks.ChildAdded:Connect(addTrack)
-
 local function mergeColors(dayColor, nightColor, Brightness)
 	local dr, dg, db = Color3.toHSV(dayColor)
 	local nr, ng, nb = Color3.toHSV(nightColor)
 
 	return Color3.fromHSV(nr + (dr - nr) * Brightness, ng + (dg - ng) * Brightness, nb + (db - nb) * Brightness)
 end
-
-
-local step = 1/5
-
-local PreviousBrightness
-local lastUpdate
-
-local easing = Enum.EasingStyle.Linear
 
 local function lightingUpdate()
 	local light = game.ReplicatedStorage:FindFirstChild("lightingSettings")
@@ -98,10 +88,10 @@ local function lightingUpdate()
 	lastUpdate = tick()
 end
 
-game.ReplicatedStorage.timeOfDay.Changed:connect(lightingUpdate)
+
 --game.Lighting:GetPropertyChangedSignal("ClockTime"):connect(lightingUpdate)
 
-lightingUpdate()
+
 
 game.SoundService:GetPropertyChangedSignal("AmbientReverb"):connect(function(Value)
 	if game.SoundService.AmbientReverb == Enum.ReverbType.UnderWater then
@@ -134,10 +124,10 @@ local function setMusicVolume(volume)
 	end
 end
 
-function playTrack(trackName)
+local function playTrack(trackName)
 	if currentTrack ~= trackName then
 		currentTrack = trackName
-		for i,track in pairs(tracks) do
+		for _, track in pairs(tracks) do
 			if track.Name == trackName then
 
 					track:Play()
@@ -204,23 +194,16 @@ local function backgroundNoise()
 	end
 end
 
-backgroundNoise()
-game.Lighting:GetPropertyChangedSignal("ClockTime"):connect(backgroundNoise)
 
-userSettings = network:invoke("getCacheValueByNameTag", "userSettings")
 
-if userSettings.musicVolume then
-	setMusicVolume(userSettings.musicVolume or 0.5)
-end
 
-network:connect("propogationRequestToSelf", "Event", function(key, value)
+local function onDataUpdate(key, value)
 	if key == "userSettings" then
 		userSettings = value
 		setMusicVolume(value.musicVolume or 0.5)
 	end
-end)
+end
 
-network:create("musicVolumeChanged", "BindableEvent", "Event", setMusicVolume)
 
 local function isNight()
 	return game.Lighting.ClockTime < 5.9 or game.Lighting.ClockTime > 18.6
@@ -240,7 +223,7 @@ local function timeOfDayPitch()
 	end
 end
 
-local dead
+
 local function setIsDead(isDead)
 	dead = isDead
 	for i,track in pairs(tracks) do
@@ -248,10 +231,40 @@ local function setIsDead(isDead)
 	end
 end
 
-network:create("ambienceSetIsDead", "BindableFunction", "OnInvoke", setIsDead)
-
-while wait(1) do
-	for i,track in pairs(tracks) do
-		track.PlaybackSpeed = (dead and 0.4 or timeOfDayPitch())
+local function main()
+	workspace:WaitForChild("Camera")
+	local assetFolder = script.Parent.Parent:WaitForChild("assets")
+	camera = workspace.CurrentCamera
+	for _, child in pairs(assetFolder.tracks:GetChildren()) do
+		addTrack(child)
+	end
+	if userSettings.musicVolume then
+		setMusicVolume(userSettings.musicVolume or 0.5)
+	end
+	game.ReplicatedStorage.timeOfDay.Changed:connect(lightingUpdate)
+	assetFolder.tracks.ChildAdded:Connect(addTrack)
+	lightingUpdate()
+	backgroundNoise()
+	game.Lighting:GetPropertyChangedSignal("ClockTime"):connect(backgroundNoise)
+	while wait(1) do
+		for i,track in pairs(tracks) do
+			track.PlaybackSpeed = (dead and 0.4 or timeOfDayPitch())
+		end
 	end
 end
+
+
+function module.init(Modules)
+	network = Modules.network
+	tween = Modules.tween
+
+	userSettings = network:invoke("getCacheValueByNameTag", "userSettings")
+
+	network:create("musicVolumeChanged", "BindableEvent", "Event", setMusicVolume)
+	network:create("ambienceSetIsDead", "BindableFunction", "OnInvoke", setIsDead)
+	network:connect("propogationRequestToSelf", "Event", onDataUpdate)
+
+	spawn(main)
+end
+
+return module

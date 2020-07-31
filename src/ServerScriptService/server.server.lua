@@ -50,3 +50,4 @@ end)
 
 beginInit = true
 initialize()
+print("$ server", "all modules in queue initialized")

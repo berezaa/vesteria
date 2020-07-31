@@ -1,3 +1,5 @@
+local module = {}
+
 -- this is the service that will handle data propogation between client and server, effectively acting as the gatekeeper for data
 -- leaving the client to the server, and entering the client from the server.
 -- IMPORTANT! This can all be editted by the client, never assume the player's client cache data to be true. This will only have negative
@@ -12,15 +14,10 @@
 
 -- Author: Polymorphic
 
--- todo: eventually support client -> server data propogation (might be unnecessary)
+local cache = {}
 
-local module 	= {}
-local cache 	= {}
-
-local replicatedStorage = game:GetService("ReplicatedStorage")
-	local modules = require(replicatedStorage.modules)
-		local network 	= modules.load("network")
-		local utilities = modules.load("utilities")
+local network
+local utilities
 
 -- this runs when the server sends information to the client, store it.
 -- server will not spam this.
@@ -58,23 +55,24 @@ function module:getByPropogationNameTag(propogationNameTag)
 	return nil
 end
 
-local function main()
+function module.init(Modules)
+
+	network = Modules.network
+	utilities = Modules.utilities
 	network:create("propogationRequestToSelf", "BindableEvent")
 	network:create("propogationRequestReceived", "BindableEvent")
 	network:connect("propogateCacheDataRequest", "OnClientEvent", onPropogateCacheDataRequestToClientReceived)
 	network:connect("clientFlushPropogationCache", "OnClientEvent", onFlushPropogationCache)
-
-	module:flushPropogationCache()
-
+	spawn(function()
+		module:flushPropogationCache()
+	end)
 	network:create("getLocalPlayerDataCache", "BindableFunction", "OnInvoke", function()
 		return cache
 	end)
-
 	network:create("getCacheValueByNameTag", "BindableFunction", "OnInvoke", function(nameTag)
 		return module:getByPropogationNameTag(nameTag)
 	end)
 end
 
-main()
 
 return module

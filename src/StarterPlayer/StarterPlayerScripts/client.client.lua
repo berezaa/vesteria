@@ -13,7 +13,7 @@ local beginInit = false
 local function setup(directory)
     for _, moduleScript in pairs(directory:GetDescendants()) do
         if moduleScript:IsA("ModuleScript") then
-            print("$ client", "initialize module", moduleScript.Name)
+            print("$ client", "require module", moduleScript.Name)
             modules[moduleScript.Name] = require(moduleScript)
         end
     end
@@ -60,8 +60,9 @@ local function onCharacterAdded()
     initialize()
 end
 
-game.Players.CharacterAdded:connect(onCharacterAdded)
+player.CharacterAdded:connect(onCharacterAdded)
 local character = player.Character
 if character then
     onCharacterAdded()
 end
+print("$ client", "all modules in queue initialized")

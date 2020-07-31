@@ -59,9 +59,9 @@ end)
 local function registerTreasureChest(chestRoot)
 	local isOldStyle = game.CollectionService:HasTag(chestRoot.PrimaryPart, "interact")
 
-	local chestPropsModule = chestRoot:FindFirstChild("chestProps") or script.defaultChestProps
+	local chestPropsModule = chestRoot:FindFirstChild("chestProps") or assetsFolder.defaultChestProps
 	local chestProps = require(chestPropsModule)
-	local defaultChestProps = require(script.defaultChestProps)
+	local defaultChestProps = require(assetsFolder.defaultChestProps)
 
 	-- wierd assignment here. It's getting the chest model from the chest props, or falling back on default if undefined
 	-- this should probably be cleaned up but it's 12:50AM and im tired
@@ -109,7 +109,7 @@ local function registerTreasureChest(chestRoot)
 	chestRootPart.Transparency = 1
 
 	if not isOldStyle then
-		local attackScript = script.attackableScript:Clone()
+		local attackScript = assetFolder.attackableScript:Clone()
 		attackScript.Parent = chestModelRootPart
 
 		game.CollectionService:AddTag(chestModelRootPart, "attackable")

@@ -63,7 +63,7 @@ local isPlayerChanneling 		= false
 local basicAttacking            = false
 
 -- todo: fix
-local animationInterface = require(game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("repo"):WaitForChild("animationInterface"))
+local animationInterface = require(game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("contents"):WaitForChild("animationInterface"))
 
 local gameUI 		= player:WaitForChild("PlayerGui"):WaitForChild("gameUI")
 local itemLookup 	= require(game.ReplicatedStorage.itemData)
@@ -1112,8 +1112,6 @@ local function setupRenderSteppedConnection()
 
 		-- todo optimize
 		local ignoreList = {
-			placeSetup.awaitPlaceFolder("playerRenderCollection"),
-			placeSetup.awaitPlaceFolder("playerManifestCollection"),
 			myClientCharacterContainer,
 		}
 		local downRay = Ray.new(characterHitbox.Position, Vector3.new(0, -5, 0))

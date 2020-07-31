@@ -88,9 +88,12 @@ function module.init(Modules)
 	network = Modules.network
 	mapping = Modules.mapping
 
-	for _, player in pairs(game.Players:GetPlayers()) do
-		onPlayerAdded(player)
-	end
+	-- todo: this is really icky, should just hook into player data loaded
+	spawn(function()
+		for _, player in pairs(game.Players:GetPlayers()) do
+			onPlayerAdded(player)
+		end
+	end)
 
 	game.Players.PlayerAdded:connect(onPlayerAdded)
 	game.Players.PlayerRemoving:connect(onPlayerRemoving)

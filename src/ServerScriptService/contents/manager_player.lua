@@ -3053,6 +3053,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	tag.Value = os.time()
 	tag.Parent = player
 
+	player:LoadCharacter()
 	network:fire("playerDataLoaded", player, playerDataContainer[player])
 
 	local posTag = Instance.new("Vector3Value")
