@@ -4,22 +4,21 @@
 
 local module = {}
 
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules = require(replicatedStorage.modules)
-local network = modules.load("network")
-local placeSetup = modules.load("placeSetup")
-local physics = modules.load("physics")
-local utilities = modules.load("utilities")
-local configuration = modules.load("configuration")
-local economy = modules.load("economy")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local itemLookupContainer = replicatedStorage.itemData
+local network
+local placeSetup
+local physics
+local utilities
+local configuration
+local economy
+
+local itemLookupContainer = ReplicatedStorage.itemData
 
 local itemLookup = require(itemLookupContainer)
-local monsterLookup = require(replicatedStorage.monsterLookup)
-local itemsFolder = placeSetup.getPlaceFolder("items")
+local itemsFolder
 
-local assetFolder = replicatedStorage:FindFirstChild("assets")
+local assetFolder = ReplicatedStorage:FindFirstChild("assets")
 local itemManfiests = assetFolder.items
 local particleStorage = assetFolder.particles
 local entityStorage = assetFolder.entities
@@ -31,13 +30,13 @@ local function getItemBaseDataFromItemsPart(itemPart)
 	end
 end
 
-local IGNORE_LIST = {placeSetup.getPlaceFoldersFolder()}
+local IGNORE_LIST = {}
 
-network:create("itemsRecieved", "RemoteEvent")
-
--- todo: make important settings like below in a module to be easily sync'd between server and client scripts
+-- TODO: make important settings like below in a module to be easily sync'd between server and client scripts
 local _SERVER_ACQUISITION_RANGE = 10
-local itemPickupDebounce 		= {}
+local itemPickupDebounce = {}
+local CONSUMABLE_COOLDOWN_TIME = 1
+local playerConsumeCooldownTable = {}
 
 local function processPlayerPickUpItem(player, itemPart, isPickUpFromPet)
 	if not itemPart or itemPart.Parent ~= itemsFolder then
@@ -385,10 +384,6 @@ local function generateItemManifest(itemDropData, physItem)
 	return physItem
 end
 
-local rand = Random.new(os.time())
-
--- todo: special effects!
-local httpService = game:GetService("HttpService")
 local function spawnItemOnGround(lootDrop, dropPosition, owners, physItem)
 	if itemLookup[lootDrop.id] then
 		-- todo: refactor
@@ -478,11 +473,6 @@ local function spawnItemOnGround(lootDrop, dropPosition, owners, physItem)
 		return physItem
 	end
 end
-
-network:create("spawnItemOnGround", "BindableFunction", "OnInvoke", spawnItemOnGround)
-
-local CONSUMABLE_COOLDOWN_TIME 		= 1
-local playerConsumeCooldownTable 	= {}
 
 local function onActivateItemRequestReceived(player, category, inventorySlotPosition, _itemId, playerInput)
 	print('recieve funny acitavtion :3')
@@ -750,8 +740,6 @@ local function applyPotionStatusEffectToEntityManifest_server(entityManifest, he
 	return true
 end
 
-network:create("applyPotionStatusEffectToEntityManifest_server", "BindableFunction", "OnInvoke", applyPotionStatusEffectToEntityManifest_server)
-
 local function onPlayerAdded(player)
 	playerConsumeCooldownTable[player] = 0
 end
@@ -759,7 +747,6 @@ end
 local function onPlayerRemoving(player)
 	playerConsumeCooldownTable[player] = nil
 end
-
 
 local function playerRequest_dropItem(player, inventorySlotData)
 	local playerData = network:invoke("getPlayerData", player)
@@ -819,26 +806,35 @@ local function playerRequest_dropItem(player, inventorySlotData)
 	return false, "invalid player data"
 end
 
-local function main()
+function module.init(Modules)
+
+	network = Modules.network
+	placeSetup = Modules.placeSetup
+	physics = Modules.physics
+	utilities = Modules.utilities
+	configuration = Modules.configuration
+	economy = Modules.economy
+
+	IGNORE_LIST = {placeSetup.getPlaceFoldersFolder()}
+	itemsFolder = placeSetup.getPlaceFolder("items")
+
 	game.Players.PlayerAdded:connect(onPlayerAdded)
 	for _, player in pairs(game.Players:GetPlayers()) do
 		onPlayerAdded(player)
 	end
 	game.Players.PlayerRemoving:connect(onPlayerRemoving)
 
+	network:create("itemsRecieved", "RemoteEvent")
+
+	network:create("applyPotionStatusEffectToEntityManifest_server", "BindableFunction", "OnInvoke", applyPotionStatusEffectToEntityManifest_server)
 	network:create("generateItemManifest_server", "BindableFunction", "OnInvoke", generateItemManifest)
-
 	network:create("activateItemRequest", "RemoteFunction", "OnServerInvoke", onActivateItemRequestReceived)
-
-	-- buy from or sell to shop
+	network:create("spawnItemOnGround", "BindableFunction", "OnInvoke", spawnItemOnGround)
 	network:create("playerRequest_buyItemFromShop", "RemoteFunction", "OnServerInvoke", onPlayerRequest_buyItemFromShop)
 	network:create("playerRequest_sellItemToShop", "RemoteFunction", "OnServerInvoke", onPlayerRequest_sellItem)
-
 	network:create("pickUpItemRequest", "RemoteFunction", "OnServerInvoke", playerRequest_pickUpItem)
 	network:create("playerRequest_pickUpItem", "RemoteFunction", "OnServerInvoke", playerRequest_pickUpItem)
-
 	network:create("pickUpItemForPlayer_server", "BindableFunction", "OnInvoke", processPlayerPickUpItem)
-
 	network:create("playerRequest_dropItem", "RemoteFunction", "OnServerInvoke", playerRequest_dropItem)
 	network:create("notifyPlayerPickUpItem", "RemoteEvent")
 
@@ -846,8 +842,5 @@ local function main()
 	network:create("onMonsterDeath", "BindableEvent", "Event", function() end)
 end
 
-main()
-
--- Offshoot from player manager, needs to be integrated
 
 return module

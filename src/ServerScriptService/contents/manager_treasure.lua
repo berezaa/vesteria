@@ -1,33 +1,29 @@
 -- NEW and IMPROVED Treasure chest manager
-
-
+local module = {}
 
 local INTERVAL = 30 * 60 * 24
 
-local function getTime()
-	-- 7AM/PM PT, 10AM/PM ET
-	return os.time() - INTERVAL / 12
-end
-
 --	local current = math.floor(getTime() / INTERVAL)
-
-
-local module = {}
-
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local itemLookup = require(ReplicatedStorage.itemData)
-local modules = require(ReplicatedStorage.modules)
 
-local network = modules.load("network")
-local utilities = modules.load("utilities")
-local configuration = modules.load("configuration")
-local levels = modules.load("levels")
+local network
+local utilities
+local configuration
+local levels
 
 local rand = Random.new()
+local currentDay = 0
+local dailyChestCount = 7
+local currentChests = {}
 
+local function getTime()
+	-- 7AM/PM PT, 10AM/PM ET
+	return os.time() - INTERVAL / 12
+end
 
 local lootTable = {
 
@@ -185,45 +181,13 @@ local mapSpecificLoot = {
 --	};
 }
 
--- since you DIDNT WANT TO DO IT YOURSELF!!!!
-local conversionBlock do
-	for i, lootDrop in pairs(lootTable) do
-		if type(lootDrop.id) == "string" then
-			lootDrop.id = itemLookup[lootDrop.id].id
-		end
-	end
-
-	for placeId, placeLootTable in pairs(mapSpecificLoot) do
-		for i, lootDrop in pairs(placeLootTable) do
-			if type(lootDrop.id) == "string" then
-				local lookupLootDrop = itemLookup[lootDrop.id]
-				if (lookupLootDrop) then
-					lootDrop.id = itemLookup[lootDrop.id].id
-				else
-					if RunService:IsStudio() and game.PlaceId == placeId then
-						warn("Treasure manager: Item \"" .. lootDrop.id .. " does not exist in itemLookup!")
-					end
-				end
-			end
-		end
-	end
-end
-
-for placeId, contents in pairs(mapSpecificLoot) do
-	if tonumber(placeId) == utilities.originPlaceId(game.PlaceId) then
-		for i, lootEntry in pairs(contents) do
-			table.insert(lootTable, lootEntry)
-		end
-	end
-end
-
 local chestStorage = Instance.new("Folder")
 chestStorage.Name = "chestStorage"
 chestStorage.Parent = game.ServerStorage
 
 local dailyChests = {}
 local n = 1
-for i, chest in pairs(game.CollectionService:GetTagged("treasureChest")) do
+for _, chest in pairs(game.CollectionService:GetTagged("treasureChest")) do
 	local specialContents = chest:FindFirstChild("inventory") or chest:FindFirstChild("ironChest") or chest:FindFirstChild("goldChest")
 	if not specialContents and chest.Name == "Chest" then
 		chest.Name = "Chest" .. n
@@ -233,19 +197,13 @@ for i, chest in pairs(game.CollectionService:GetTagged("treasureChest")) do
 	end
 end
 
-
-
-local dailyChestCount = 7
-
-local currentChests = {}
-
 -- Shuffle random chests
 local function newDay()
 	local today = math.floor(getTime() / INTERVAL)
 	local rand = Random.new(today)
 	local chance = dailyChestCount / #dailyChests
 	-- remove existing chests
-	for i, chest in pairs(currentChests) do
+	for _, chest in pairs(currentChests) do
 		chest:Destroy()
 	end
 	currentChests = {}
@@ -260,16 +218,8 @@ local function newDay()
 end
 
 -- Day loop
-local currentDay = 0
-spawn(function()
-	while wait(1) do
-		local today = math.floor(getTime() / INTERVAL)
-		if today > currentDay then
-			newDay()
-			currentDay = today
-		end
-	end
-end)
+
+
 
 local function getTreasureForChest(player, chest)
 	local placeId = utilities.originPlaceId(game.PlaceId)
@@ -474,7 +424,6 @@ local function playerRequest_openTreasureChest(player, chest)
 
 			playerData.nonSerializeData.setPlayerData("treasure", treasureData)
 
---			local success = network:invoke("tradeItemsBetweenPlayerAndNPC", player, {}, 0, rewards, goldReward, "treasure:"..chest.Name, {overrideItemsRecieved = true})
 
 			spawn(function()
 				wait(0.784)
@@ -513,12 +462,57 @@ local function playerRequest_openTreasureChest(player, chest)
 	end
 end
 
-
-
-function main()
-	network:create("playerRequest_openTreasureChest","RemoteFunction","OnServerInvoke", playerRequest_openTreasureChest)
+local function dayLoop()
+	while wait(1) do
+		local today = math.floor(getTime() / INTERVAL)
+		if today > currentDay then
+			newDay()
+			currentDay = today
+		end
+	end
 end
 
-main()
+local function conversion()
+	for placeId, contents in pairs(mapSpecificLoot) do
+		if tonumber(placeId) == utilities.originPlaceId(game.PlaceId) then
+			for _, lootEntry in pairs(contents) do
+				table.insert(lootTable, lootEntry)
+			end
+		end
+	end
+
+	for _, lootDrop in pairs(lootTable) do
+		if type(lootDrop.id) == "string" then
+			lootDrop.id = itemLookup[lootDrop.id].id
+		end
+	end
+
+	for placeId, placeLootTable in pairs(mapSpecificLoot) do
+		for _, lootDrop in pairs(placeLootTable) do
+			if type(lootDrop.id) == "string" then
+				local lookupLootDrop = itemLookup[lootDrop.id]
+				if (lookupLootDrop) then
+					lootDrop.id = itemLookup[lootDrop.id].id
+				else
+					if RunService:IsStudio() and game.PlaceId == placeId then
+						warn("Treasure manager: Item \"" .. lootDrop.id .. " does not exist in itemLookup!")
+					end
+				end
+			end
+		end
+	end
+end
+
+function module.init(Modules)
+	network = Modules.network
+	utilities = Modules.utilities
+	configuration = Modules.configuration
+	levels = Modules.levels
+
+	spawn(dayLoop)
+	conversion()
+
+	network:create("playerRequest_openTreasureChest","RemoteFunction","OnServerInvoke", playerRequest_openTreasureChest)
+end
 
 return module

@@ -26,9 +26,7 @@
 
 -- manages monsters, duh
 -- author: Polymorphic
-
-local playerLastMonsterKill = {}
-local monsterManager = {}
+local module = {}
 local monsterClass = {}
 -- 'true' makes it so when you get too close
 -- it will start moving towards you to attack
@@ -87,19 +85,18 @@ local LAST_MONSTER_UPDATE_CYCLE = tick()
 local LAST_MONSTER_UPDATE_CYCLE_END = tick()
 
 local httpService = game:GetService("HttpService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules = require(replicatedStorage.modules)
-local network = modules.load("network")
-local utilities = modules.load("utilities")
-local physics = modules.load("physics")
-local placeSetup = modules.load("placeSetup")
-local projectile = modules.load("projectile")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local configuration = modules.load("configuration")
-local events = modules.load("events")
+local network
+local utilities
+local physics
+local placeSetup
+local projectile
+local configuration
+local events
 
-local monsterLookup = require(replicatedStorage.monsterLookup)
-local defaultMonsterState = require(replicatedStorage.defaultMonsterState)
+local monsterLookup = require(ReplicatedStorage.monsterLookup)
+local defaultMonsterState = require(ReplicatedStorage.defaultMonsterState)
 
 -- set the metatable up so that values not set personally
 -- to each class are redirected to the
@@ -115,40 +112,21 @@ local MONSTER_SPAWN_CYCLE_TIME = 10
 
 local MONSTER_COLLECTION = {}
 
-local itemLookupContainer = replicatedStorage.itemData
+local itemLookupContainer = ReplicatedStorage.itemData
 local itemLookup = require(itemLookupContainer)
 
 local runService = game:GetService("RunService")
 
 local collectionService = game:GetService("CollectionService")
 
-local spawnRegionCollectionsFolder = placeSetup.getPlaceFolder("spawnRegionCollections")
-local entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
-local entityRenderCollectionFolder = placeSetup.getPlaceFolder("entityRenderCollection")
-local itemsFolder = placeSetup.getPlaceFolder("items")
-local entitiesFolder = placeSetup.getPlaceFolder("entities")
-local foilage = placeSetup.getPlaceFolder("foilage")
+local spawnRegionCollectionsFolder
+local entityManifestCollectionFolder
+local entityRenderCollectionFolder
+local itemsFolder
+local entitiesFolder
+local foilage
 
-local MONSTER_RAYCAST_IGNORE_LIST = {
-	spawnRegionCollectionsFolder,
-	entityManifestCollectionFolder,
-	entityRenderCollectionFolder,
-	itemsFolder,
-	entitiesFolder,
-	foilage
-}
-
-network:create("signal_damage", "RemoteEvent")
-
-network:create("showDebugFor", "RemoteEvent", "OnServerEvent", function(client, part)
-	for _, v in pairs(entityManifestCollectionFolder:GetChildren()) do
-		if v:FindFirstChild("ParticleEmitter") then
-			v.ParticleEmitter:Destroy()
-		end
-	end
-
-	Instance.new("ParticleEmitter", part)
-end)
+local MONSTER_RAYCAST_IGNORE_LIST = {}
 
 ------------------------
 -- INTERNAL FUNCTIONS --
@@ -615,7 +593,7 @@ function stateMachineFactory.create(monster, startingState, states)
 		newStateMachine.currentState 	= startingState
 		newStateMachine.onTransition 	= Instance.new("BindableEvent")
 
-	local defaultMonsterStateMachine = utilities.copyTable(require(replicatedStorage.defaultMonsterState))
+	local defaultMonsterStateMachine = utilities.copyTable(require(ReplicatedStorage.defaultMonsterState))
 
 	setmetatable(newStateMachine.states, {
 		__index = function(_, index)
@@ -699,7 +677,6 @@ local baseHitbox do
 	levelValue.Value 	= 1
 
 	collectionService:AddTag(baseHitbox, "monster")
-	physics:setWholeCollisionGroup(baseHitbox, "monsters")
 end
 
 local blacklistedSpawnRegion = {}
@@ -707,7 +684,7 @@ local function setIsSpawnRegionCollectionDisabled(spawnRegionCollection, isDisab
 	blacklistedSpawnRegion[spawnRegionCollection.Name] = isDisabled
 end
 
-function monsterManager:getSpawnRegionCollectionsUnderPopulated()
+local function getSpawnRegionsUnderpopulated()
 	local spawnRegionsCollection_underpopulated = {}
 
 	for i, spawnRegionCollection in pairs(spawnRegionCollectionsFolder:GetChildren()) do
@@ -748,7 +725,7 @@ function monsterManager:getSpawnRegionCollectionsUnderPopulated()
 end
 
 -- fetches the real clientEntity (not a clone!)
-function monsterManager.getRealClientEntity(monsterName)
+local function getRealClientEntity(monsterName)
 	if monsterLookup[monsterName] then
 		return monsterLookup[monsterName].entity:Clone()
 	end
@@ -757,7 +734,7 @@ end
 local extentsCache = {}
 
 -- generates the server entity of the monster
-function monsterManager.getMonsterManifestFromClientEntity(realMonsterClientEntity, baseStats, monsterName)
+local function getManifestFromClientEntity(realMonsterClientEntity, baseStats, monsterName)
 	if realMonsterClientEntity and baseStats then
 		-- generate hitbox
 		local hitBox = baseHitbox:Clone()
@@ -779,7 +756,7 @@ end
 
 -- returns the baseStats of the monster
 -- based on the moduleScript of that name
-function monsterManager.getMonsterBaseStats(monsterName)
+local function getMonsterBaseStats(monsterName)
 	return monsterLookup[monsterName]
 end
 
@@ -805,12 +782,12 @@ end
 
 -- generate new monster class to interface with the
 -- control script
-function monsterManager.new(monsterName, spawnLocation, spawnRegionCollection, spawnRegion, _additionalStats, postInitCallback)
+local function newMonster(monsterName, spawnLocation, spawnRegionCollection, spawnRegion, _additionalStats, postInitCallback)
 	if not monsterName then return end
 
-	local baseStats = monsterManager.getMonsterBaseStats(monsterName)
-	local clientEntity = monsterManager.getRealClientEntity(monsterName)
-	local manifest = monsterManager.getMonsterManifestFromClientEntity(clientEntity, baseStats, monsterName)
+	local baseStats = getMonsterBaseStats(monsterName)
+	local clientEntity = getRealClientEntity(monsterName)
+	local manifest = getManifestFromClientEntity(clientEntity, baseStats, monsterName)
 
 	-- return if manifest is nil (no model for this thing)
 	if not manifest then warn("no manifest for " .. tostring(monsterName)) return end
@@ -855,7 +832,7 @@ function monsterManager.new(monsterName, spawnLocation, spawnRegionCollection, s
 
 	-- identity variables
 	newMonster.manifest = manifest
-	newMonster.clientEntity = monsterManager.getRealClientEntity(monsterName)
+	newMonster.clientEntity = getRealClientEntity(monsterName)
 
 	-- apply monster baseStats
 	for baseStat, baseStatValue in pairs(baseStats) do
@@ -868,7 +845,6 @@ function monsterManager.new(monsterName, spawnLocation, spawnRegionCollection, s
 	end
 
 	if _additionalStats then
---		variation = "poisoned"
 		local variation = _additionalStats.variation
 		local variationStats = variation and baseStats.variations[variation]
 
@@ -919,11 +895,7 @@ function monsterManager.new(monsterName, spawnLocation, spawnRegionCollection, s
 
 		end
 
---		if monsterStateMachine.states[new].animationTriggersDamage then
---			if newMonster.targetEntity then
---				network:fire("reportMonsterInDamageState_server", monsterName, manifest, newMonster.targetEntity)
---			end
---		end
+
 
 		if monsterStateMachine.states[new].execute_server then
 			spawn(function()
@@ -999,9 +971,6 @@ function monsterManager.new(monsterName, spawnLocation, spawnRegionCollection, s
 
 		newMonster.healthMulti = newMonster.healthMulti * 1000
 
---		newMonster.maxHealth 	= (newMonster.maxHealth or 1) * 1000
---		newMonster.health 		= newMonster.maxHealth
-
 		newMonster.bonusLootMulti 	= 30
 		newMonster.bonusXPMulti 	= newMonster.bonusXPMulti * 500
 		newMonster.goldMulti 		= (newMonster.goldMulti or 1) * 3.5
@@ -1032,8 +1001,6 @@ function monsterManager.new(monsterName, spawnLocation, spawnRegionCollection, s
 
 		newMonster.healthMulti = newMonster.healthMulti * 250
 
---		newMonster.maxHealth 	= (newMonster.maxHealth or 1) * 250
---		newMonster.health 		= newMonster.maxHealth
 
 		newMonster.bonusLootMulti 	= 20
 		newMonster.bonusXPMulti 	= newMonster.bonusXPMulti * 125
@@ -1066,8 +1033,7 @@ function monsterManager.new(monsterName, spawnLocation, spawnRegionCollection, s
 
 		newMonster.healthMulti = newMonster.healthMulti * 70
 
---		newMonster.maxHealth 	= (newMonster.maxHealth or 1) * 50
---		newMonster.health 		= newMonster.maxHealth
+
 
 		newMonster.bonusLootMulti 	= 10
 
@@ -1094,7 +1060,7 @@ function monsterManager.new(monsterName, spawnLocation, spawnRegionCollection, s
 
 		newMonster.attackRange = (newMonster.attackRange or 0) * scale
 	else
-		-- random size variation
+
 		local scale = 1 + rand:NextInteger(-5,5)/100
 
 		newMonster.scale = scale
@@ -1236,13 +1202,13 @@ function monsterManager.new(monsterName, spawnLocation, spawnRegionCollection, s
 	return newMonster
 end
 
-function monsterManager.new_Pet(player, id, petEquipmentData)
+local function newPet(player, id, petEquipmentData)
 	if not id then return end
 	if not itemLookup[id] then return end
 
 	local baseStats 	= itemLookup[id]
 	local clientEntity 	= itemLookup[id].entity
-	local manifest 		= monsterManager.getMonsterManifestFromClientEntity(clientEntity, baseStats, clientEntity.Name)
+	local manifest 		= getManifestFromClientEntity(clientEntity, baseStats, clientEntity.Name)
 
 	-- return if manifest is nil (no model for this thing)
 	if not manifest then warn("no manifest for pet " .. tostring(baseStats.name)) return end
@@ -1334,23 +1300,10 @@ function monsterManager.new_Pet(player, id, petEquipmentData)
 	return newMonster
 end
 
-local giantEnemyScale = 2
-
-
-local idolCaps = {
-	["1"] = 5;
-	["2"] = 10;
-	["3"] = 15;
-	["4"] = 20;
-	["5"] = 25;
-	["6"] = 30;
-	["99"] = 15;
-}
-
 -- NOTE: This spawns a monster while respecting spawnRegion's
 -- spawn limits.
 -- TODO: finish this
-function monsterManager.spawn(monsterName, spawnRegionCollection, _spawnPosition, additionalData, postInitCallback)
+local function spawnMonster(monsterName, spawnRegionCollection, _spawnPosition, additionalData, postInitCallback)
 	-- make sure we can spawn the monster here...
 	if spawnRegionCollection then
 		local spawnRegionSelection = _getSpawnRegionFromSpawnRegionCollection(spawnRegionCollection)
@@ -1370,31 +1323,31 @@ function monsterManager.spawn(monsterName, spawnRegionCollection, _spawnPosition
 			end
 
 			local spawnPosition = _spawnPosition or _getPositionFromSpawnRegion(spawnRegion)
-			local newMonster = monsterManager.new(monsterName, spawnPosition, spawnRegionCollection, spawnRegion, additionalData, postInitCallback)
+			local newMonster = newMonster(monsterName, spawnPosition, spawnRegionCollection, spawnRegion, additionalData, postInitCallback)
 
 			----------------- handle monster stuff
 
 			return newMonster
 		end
 	elseif _spawnPosition then
-		local newMonster = monsterManager.new(monsterName, _spawnPosition, nil, nil, additionalData, postInitCallback)
+		local newMonster = newMonster(monsterName, _spawnPosition, nil, nil, additionalData, postInitCallback)
 
 		return newMonster
 	end
 end
 
-function monsterManager.spawnPet(player, id, ...)
-	return monsterManager.new_Pet(player, id, ...)
+local function spawnMonsterPet(player, id, ...)
+	return newPet(player, id, ...)
 end
 
 local function onSpawnMonster(monsterName, spawnPosition, spawnRegionCollection, additionalData, postInitCallback)
-	return monsterManager.spawn(monsterName, spawnRegionCollection, spawnPosition, additionalData, postInitCallback)
+	return spawnMonster(monsterName, spawnRegionCollection, spawnPosition, additionalData, postInitCallback)
 end
 
-network:create("spawnMonster", "BindableFunction", "OnInvoke", onSpawnMonster)
+
 
 local function onSpawnMonsterPet(player, id, ...)
-	local monsterPet = monsterManager.spawnPet(player, id, ...)
+	local monsterPet = spawnMonsterPet(player, id, ...)
 
 	return monsterPet.manifest
 end
@@ -1864,8 +1817,6 @@ local function onMonsterDamageRequestReceived(player, monsterManifest, damageDat
 	return false, false
 end
 
-local errormsg = Instance.new("Message")
-
 local function updateMonsterLogic()
 	LAST_MONSTER_UPDATE_CYCLE = tick()
 
@@ -2188,8 +2139,8 @@ local function main()
 		return game.Lighting.ClockTime < 5.9 or game.Lighting.ClockTime > 18.6
 	end
 	spawn(function() while wait(isNight() and MONSTER_SPAWN_CYCLE_TIME * 0.5 or MONSTER_SPAWN_CYCLE_TIME) do
-		for i, monsterSpawnInformation in pairs(monsterManager:getSpawnRegionCollectionsUnderPopulated()) do
-			monsterManager.spawn(monsterSpawnInformation.monsterNameToSpawn, monsterSpawnInformation.spawnRegionCollection)
+		for i, monsterSpawnInformation in pairs(getSpawnRegionsUnderpopulated()) do
+			spawnMonster(monsterSpawnInformation.monsterNameToSpawn, monsterSpawnInformation.spawnRegionCollection)
 		end
 	end end)
 
@@ -2198,7 +2149,38 @@ local function main()
 	end
 end
 
--- run separately
-spawn(main)
+function module.init(Modules)
+	network = Modules.network
+	utilities = Modules.utilities
+	physics = Modules.physics
+	placeSetup = Modules.placeSetup
+	projectile = Modules.projectile
+	configuration = Modules.configuration
+	events = Modules.events
 
-return monsterManager
+	spawnRegionCollectionsFolder = placeSetup.getPlaceFolder("spawnRegionCollections")
+	entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
+	entityRenderCollectionFolder = placeSetup.getPlaceFolder("entityRenderCollection")
+	itemsFolder = placeSetup.getPlaceFolder("items")
+	entitiesFolder = placeSetup.getPlaceFolder("entities")
+	foilage = placeSetup.getPlaceFolder("foilage")
+
+	MONSTER_RAYCAST_IGNORE_LIST = {
+		spawnRegionCollectionsFolder,
+		entityManifestCollectionFolder,
+		entityRenderCollectionFolder,
+		itemsFolder,
+		entitiesFolder,
+		foilage
+	}
+
+	physics:setWholeCollisionGroup(baseHitbox, "monsters")
+
+	network:create("signal_damage", "RemoteEvent")
+	network:create("spawnMonster", "BindableFunction", "OnInvoke", onSpawnMonster)
+
+	spawn(main)
+end
+
+
+return module

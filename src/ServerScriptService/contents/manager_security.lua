@@ -1,17 +1,28 @@
 local module = {}
 module.priority = 3
 
+local CollectionService = game:GetService("CollectionService")
+local RunService = game:GetService("RunService")
+
+local network
+local utilities
+local configuration
+local abilityLookup
+
 --[[
 	BANS & SUSPICION
 --]]
-local collectionService = game:GetService("CollectionService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules = require(replicatedStorage:WaitForChild("modules"))
-local network = modules.load("network")
-local utilities = modules.load("utilities")
-local configuration = modules.load("configuration")
-local abilityLookup = modules.load("abilityLookup")
+-- unban
+--[[
+local banRecord = game:GetService("DataStoreService"):GetDataStore("banRecord")
+banRecord:UpdateAsync(userId, function(history)
+	history.unbanTime = 0
+	return history
+end)
 
+]]
+
+local banRecord = game:GetService("DataStoreService"):GetDataStore("banRecord")
 local playerPositionDataContainer = {}
 
 local function handleBanHistory(player, playerBanHistory)
@@ -28,24 +39,15 @@ local function handleBanHistory(player, playerBanHistory)
 	end
 end
 
-local banRecord = game:GetService("DataStoreService"):GetDataStore("banRecord")
-
-game.Players.PlayerAdded:connect(function(player)
-	local playerBanHistory = banRecord:GetAsync(player.userId)
-	if playerBanHistory then
-		handleBanHistory(player, playerBanHistory)
+local function onPlayerAdded(player)
+	if not RunService:IsStudio() then
+		local playerBanHistory = banRecord:GetAsync(player.userId)
+		if playerBanHistory then
+			handleBanHistory(player, playerBanHistory)
+		end
 	end
-end)
+end
 
--- unban
---[[
-local banRecord = game:GetService("DataStoreService"):GetDataStore("banRecord")
-banRecord:UpdateAsync(userId, function(history)
-	history.unbanTime = 0
-	return history
-end)
-
-]]
 
 
 local function banPlayer(player, duration, reason, source)
@@ -91,8 +93,6 @@ local function banPlayer(player, duration, reason, source)
 
 	handleBanHistory(player, playerBanHistory)
 end
-
-network:create("banPlayer", "BindableFunction", "OnInvoke", banPlayer)
 
 local function addSuspicion(player, amount)
 	local playerData = network:invoke("getPlayerData", player)
@@ -157,15 +157,13 @@ local function addSuspicion(player, amount)
 	end
 end
 
-network:create("addSuspicion", "BindableFunction", "OnInvoke", addSuspicion)
-
 -- tp exploit stuff
 local function init__exploitBlock()
 	local positionCheckHeartbeatTick = 1 / 3
 
-	local doors 		= collectionService:GetTagged("door")
-	local cannons 		= collectionService:GetTagged("cannon")
-	local escapeRopes 	= collectionService:GetTagged("escapeRope")
+	local doors 		= CollectionService:GetTagged("door")
+	local cannons 		= CollectionService:GetTagged("cannon")
+	local escapeRopes 	= CollectionService:GetTagged("escapeRope")
 
 	local ACCEPTABLE_THRESHOLD_FOR_NEARBY = 50
 	local function isNearbyAcceptableObject(pos, objTable, label)
@@ -224,7 +222,6 @@ local function init__exploitBlock()
 						player:Kick("TP Exploiting")
 					elseif response == "redirect" then
 						player:Kick("Anti-exploit")
---						game:GetService("TeleportService"):Teleport(2376885433, player, nil, game.ReplicatedStorage.returnToLobby)
 					end
 				end
 			end
@@ -241,7 +238,7 @@ local function init__exploitBlock()
 	end
 
 	network:create("playerRequest_activateEscapeRope", "RemoteEvent", "OnServerEvent", function(player, cEscapeRope)
-		if cEscapeRope and collectionService:HasTag(cEscapeRope, "escapeRope") then
+		if cEscapeRope and CollectionService:HasTag(cEscapeRope, "escapeRope") then
 			local isNearbyEscapeRope, nearestEscapeRope = isNearbyAcceptableObject(player.Character.PrimaryPart.Position, escapeRopes)
 
 			if isNearbyEscapeRope and nearestEscapeRope == cEscapeRope then
@@ -271,7 +268,6 @@ local function init__exploitBlock()
 					player:Kick("TP Exploiting")
 				elseif response == "redirect" then
 					player:Kick("Anti-exploit")
---					game:GetService("TeleportService"):Teleport(2376885433, player, nil, game.ReplicatedStorage.returnToLobby)
 				end
 			end
 		end
@@ -447,6 +443,21 @@ local function init__exploitBlock()
 	end
 end
 
-spawn(init__exploitBlock)
+function module.init(Modules)
+	network = Modules.network
+	utilities = Modules.utilities
+	configuration = Modules.configuration
+	abilityLookup = Modules.abilityLookup
+
+	network:create("banPlayer", "BindableFunction", "OnInvoke", banPlayer)
+	network:create("addSuspicion", "BindableFunction", "OnInvoke", addSuspicion)
+
+	game.Players.PlayerAdded:connect(onPlayerAdded)
+	for _, player in pairs(game.Players:GetPlayers()) do
+		onPlayerAdded(player)
+	end
+	spawn(init__exploitBlock)
+end
+
 
 return module

@@ -1,14 +1,11 @@
--- manages items, duh
 -- author: Polymorphic
 
 local module = {}
 
+local HttpService = game:GetService("HttpService")
 
-local httpService = game:GetService("HttpService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules = require(replicatedStorage.modules)
-local network = modules.load("network")
-local utilities = modules.load("utilities")
+local network
+local utilities
 
 local MAX_PARTY_MEMBERS = 6
 
@@ -26,8 +23,9 @@ local MAX_PARTY_MEMBERS = 6
 	partyDataContainer {partyData}
 --]]
 
-local partyDataContainer 	= {}
-local pendingPartyInvites 	= {}
+local partyDataContainer = {}
+local pendingPartyInvites = {}
+local invitationCD = {}
 
 local function getPartyDataByPlayer(player)
 	for _, partyData in pairs(partyDataContainer) do
@@ -73,7 +71,7 @@ local function propogatePartyDataChangedToPartyMembers(partyData)
 end
 
 -- makes `playerInvited` join the party of `playerInviting`
-local invitationCD = {}
+
 local function invitePlayerToMyParty(playerInviting, playerInvited)
 	local partyData_playerInviting, partyMemberData_playerInviting 	= getPartyDataByPlayer(playerInviting)
 	local partyData_playerInvited, 	________________________ 		= getPartyDataByPlayer(playerInvited)
@@ -82,7 +80,7 @@ local function invitePlayerToMyParty(playerInviting, playerInvited)
 		if not invitationCD[playerInviting] or (tick() - invitationCD[playerInviting] > 3) then
 			invitationCD[playerInviting] = tick()
 
-			local guid 					= httpService:GenerateGUID(false)
+			local guid 					= HttpService:GenerateGUID(false)
 			pendingPartyInvites[guid] 	= {
 				partyData 		= partyData_playerInviting;
 				playerInviting 	= playerInviting;
@@ -154,7 +152,7 @@ local function playerRequest_acceptMyPartyInvitation(player, guid)
 						end
 					else
 						local partyData = {}
-							partyData.guid 		= httpService:GenerateGUID(false)
+							partyData.guid 		= HttpService:GenerateGUID(false)
 							partyData.members 	= {}
 
 						local partyMemberData_player = {}
@@ -357,7 +355,6 @@ local function playerRequest_startGroupTeleport(player, teleportPart)
 					end
 
 					if #playersToTeleport > 0 and partyLeaderUserId then
---						teleportService:TeleportPartyAsync(teleportPart.teleportDestination.Value, playersToTeleport)
 						local success, message = network:invoke("teleportParty", playersToTeleport, teleportPart.teleportDestination.Value, partyLeaderUserId)
 						return success, message
 					else
@@ -428,10 +425,6 @@ local function playerRequest_acceptMyPartyInvitationByTeleportation(player, guid
 	end
 end
 
-
-network:create("resumePartyAfterTeleport", "BindableFunction", "OnInvoke", playerRequest_acceptMyPartyInvitationByTeleportation)
-network:create("playerRequest_acceptMyPartyInvitationByTeleportation", "RemoteFunction", "OnServerInvoke", function() warn("playerRequest_acceptMyPartyInvitationByTeleportation has been moved to the server.") end)
-
 local function playerRequest_cancelGroupTeleport(player)
 	local partyData_player, partyMemberData_player = getPartyDataByPlayer(player)
 
@@ -487,13 +480,17 @@ local function onPlayerRemoving(player)
 	end
 end
 
-local function main()
+function module.init(Modules)
+	network = Modules.network
+	utilities = Modules.utilities
+
 	game.Players.PlayerAdded:connect(onPlayerAdded)
-	for i,player in pairs(game.Players:GetPlayers()) do
+	for _, player in pairs(game.Players:GetPlayers()) do
 		onPlayerAdded(player)
 	end
 	game.Players.PlayerRemoving:connect(onPlayerRemoving)
 
+	network:create("resumePartyAfterTeleport", "BindableFunction", "OnInvoke", playerRequest_acceptMyPartyInvitationByTeleportation)
 	network:create("playerRequest_getPartyMembersInMyParty", "RemoteFunction", "OnServerInvoke", getPartyMembersInMyParty)
 	network:create("playerRequest_getMyPartyData", "RemoteFunction", "OnServerInvoke", playerRequest_getMyPartyData)
 	network:create("playerRequest_invitePlayerToMyParty", "RemoteFunction", "OnServerInvoke", invitePlayerToMyParty)
@@ -510,7 +507,5 @@ local function main()
 	network:create("signal_playerInvitedToParty", "RemoteEvent")
 	network:create("signal_myPartyDataChanged", "RemoteEvent")
 end
-
-main()
 
 return module

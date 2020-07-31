@@ -5,48 +5,37 @@ module.priority = 3
 
 local playerDataContainer = {}
 local playerPositionDataContainer = {}
-local datastoreInterface = require(script.Parent.datastoreInterface)
 
 local shuttingDown = false
 local runService = game:GetService("RunService")
 
-local collectionService = game:GetService("CollectionService")
-local httpService = game:GetService("HttpService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules = require(replicatedStorage.modules)
-local network = modules.load("network")
-local utilities = modules.load("utilities")
-local physics = modules.load("physics")
-local levels = modules.load("levels")
-local mapping = modules.load("mapping")
-local configuration = modules.load("configuration")
-local placeSetup = modules.load("placeSetup")
-local events = modules.load("events")
-local detection = modules.load("detection")
+local CollectionService = game:GetService("CollectionService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- todo: phase out
-local entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
-local temporaryEquipmentFolder = placeSetup.getPlaceFolder("temporaryEquipment")
-local playerRenderCollectionFolder = placeSetup.getPlaceFolder("playerRenderCollection")
-local playerManifestCollectionFolder = placeSetup.getPlaceFolder("playerManifestCollection")
-local monsterManifestCollectionFolder = placeSetup.getPlaceFolder("monsterManifestCollection")
-local entityRenderCollectionFolder = placeSetup.getPlaceFolder("entityRenderCollection")
-local pvpZoneCollectionFolder = placeSetup.getPlaceFolder("pvpZoneCollection")
+local datastoreInterface
+local network
+local utilities
+local physics
+local levels
+local mapping
+local configuration
+local placeSetup
+local events
+local detection
+local projectile
 
-local itemLookup = require(replicatedStorage.itemData)
-local itemAttributes = require(replicatedStorage.itemAttributes)
-local perkLookup = require(replicatedStorage.perkLookup)
+local entityManifestCollectionFolder
+local temporaryEquipmentFolder
 
-local assetsFolder = replicatedStorage.assets
+local itemLookup = require(ReplicatedStorage.itemData)
+local itemAttributes = require(ReplicatedStorage.itemAttributes)
+local perkLookup = require(ReplicatedStorage.perkLookup)
+
+local assetsFolder = ReplicatedStorage.assets
 
 -- has to load here due to requirements on stuff above
-local projectile = modules.load("projectile")
 local PLAYER_LEVEL_CAP = 49
-
--- free weekend has no level cap
-if game.gameId == 712031239 or game.PlaceId == 2103419922 then
-	PLAYER_LEVEL_CAP = 999999999
-end
 
 local function getPlayerData(player)
 	return playerDataContainer[player]
@@ -403,9 +392,9 @@ local function performDeathToRenderCharacter(player)
 		end
 
 		local respawnType do
-			if replicatedStorage:FindFirstChild("safeZone") or (game.PlaceId == 2061558182) then
+			if ReplicatedStorage:FindFirstChild("safeZone") or (game.PlaceId == 2061558182) then
 				respawnType = "normal"
-			elseif replicatedStorage:FindFirstChild("overrideDeathBehavior") then
+			elseif ReplicatedStorage:FindFirstChild("overrideDeathBehavior") then
 				respawnType = "custom"
 			else
 				respawnType = "dangerous"
@@ -414,7 +403,7 @@ local function performDeathToRenderCharacter(player)
 
 		local tombstoneDuration = 300
 
-		if not replicatedStorage:FindFirstChild("safeZone") then
+		if not ReplicatedStorage:FindFirstChild("safeZone") then
 			delay(3, function()
 				local tombstoneTag = player:FindFirstChild("tombstone")
 				if tombstoneTag == nil then
@@ -839,7 +828,6 @@ local function generatecompletePlayerStats(player, isInitializing, playerData)
 	completePlayerStats.attackSpeed = 0 + (equipAttackSpeed - 3)/3.5
 	completePlayerStats.woodcutting = math.max(baseStats.woodcutting or 1, 1)
 	completePlayerStats.mining = math.max(baseStats.mining or 1, 1)
---	completePlayerStats.attackSpeed 			= ((2 / 100) / 3) * completePlayerStats.dex + (baseStats.attackSpeed or 0)
 	completePlayerStats.criticalStrikeChance 	= ((0.5 / 100) / 3) * completePlayerStats.dex + (baseStats.criticalStrikeChance or 0)
 	completePlayerStats.blockChance 			= math.clamp(0.20 * (completePlayerStats.dex / (3 * playerData.level)), 0, 1) + (baseStats.blockChance or 0)
 	-- how much damage critical strikes do (decimal multiplier)
@@ -1294,7 +1282,7 @@ local function onCharacterAdded(player, character)
 
 			local origin = manifest.Position - Vector3.new(0, manifest.Size.Y / 2, 0)
 			local direction = Vector3.new(0, -2, 0)
-			local parts = collectionService:GetTagged("deathTrap")
+			local parts = CollectionService:GetTagged("deathTrap")
 
 			for _, part in pairs(parts) do
 				local hitATrap = checkDeathTrap(part, now)
@@ -1322,19 +1310,15 @@ local function onCharacterAdded(player, character)
 		end
 
 		]]
---		if player:FindFirstChild("developer") then
---			script.adminUI:Clone().Parent = player.PlayerGui
---		end
+
 	end
 end
-
 
 local function forceCharacterPosition(player, cf)
 	if player.Character and player.Character.PrimaryPart then
 		player.Character:SetPrimaryPartCFrame(cf)
 	end
 end
-
 
 local function onClientRequestFlushPropogationCache(client)
 	if not playerDataContainer[client] then
@@ -1365,7 +1349,7 @@ local function replicatePlayerCharacterAppearance(player, playerData)
 			characterAppearanceData.temporaryEquipment 	= playerData.nonSerializeData.temporaryEquipment
 
 		if player.Character and player.Character.PrimaryPart then
-			player.Character.PrimaryPart.appearance.Value = httpService:JSONEncode(characterAppearanceData)
+			player.Character.PrimaryPart.appearance.Value = HttpService:JSONEncode(characterAppearanceData)
 		end
 	end
 end
@@ -2192,26 +2176,6 @@ end
 
 
 local function flagCheck(player, playerData)
---	if not playerData.flags.referralCheck then
---		if (playerData.globalData.referrals or 0) >= 50 or playerData.globalData.doWipeReferrals then
---			warn("WIPING DUE TO REFERRALS")
---
---			local referrals = playerData.globalData.referrals
---
---			playerData.globalData.referrals 		= 0
---			playerData.globalData.doWipeReferrals 	= true
---
---			completelyNukeSaveFile(player, playerData)
---
---			spawn(function()
---				local Error = "A user ("..player.Name..") had their data wiped for having "..tostring(referrals).." referrals"
---				network:invoke("reportError", player, "debug", Error)
---				network:fireClient("signal_alertChatMessage", player, {Text = "Your data was wiped for abusing a referral exploit."; Font = Enum.Font.SourceSansBold; Color = Color3.fromRGB(255, 0, 0)} )
---			end)
---		end
---
---		playerData.flags.referralCheck = true
---	end
 
 	if not playerData.flags.arrowChangeXD then
 		playerData.flags.arrowChangeXD = true
@@ -2325,11 +2289,7 @@ local function flagCheck(player, playerData)
 		end
 	end
 
---	if (playerData.class == "Hunter" or playerData.class == "Warrior") and not playerData.flags.resetAbilityBookPoints1 then
---		playerData.flags.resetAbilityBookPoints1 = true
---
---
---	end
+
 
 	if not playerData.flags.resetStatPointsForV23 then
 		playerData.flags.resetStatPointsForV23 = true
@@ -2369,35 +2329,6 @@ local function onGetPlayerEquipmentDataByEquipmentPosition(player, equipmentPosi
 
 	return nil
 end
-
--- local function grantPlayerAbilityBook(player, abilityBook)
--- 	local playerData = playerDataContainer[player]
-
--- 	if playerData then
-
--- 		abilityBook = string.lower(abilityBook)
--- 		if not playerData.abilityBooks[abilityBook] and abilityBookLookup[abilityBook] then
-
--- 			local abilityBookData = {}
--- 				abilityBookData.pointsAssigned = 0
-
--- 			playerData.abilityBooks[abilityBook] = abilityBookData
-
--- 			-- let the game know we changed abilities
--- 			playerData.nonSerializeData.playerDataChanged:Fire("abilityBooks")
-
--- 			return true, "successfully granted"
--- 		else
--- 			if playerData.abilityBooks[abilityBook] then
--- 				return false, "already has book"
--- 			else
--- 				return false, "invalid book"
--- 			end
--- 		end
--- 	end
-
--- 	return false, "invalid playerData"
--- end
 
 -- couldn't find a better place to put this
 -- spawn point logic
@@ -2464,12 +2395,9 @@ local function signal_inputChanged(player, input)
 	end
 end
 
-
-
 local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	if player:FindFirstChild("DataLoaded") or playerDataContainer[player] then
 		spawn(function()
---			network:invoke("reportError", player, "debug", "onPlayerAdded called when player data already exists.")
 		end)
 		return false, nil, "Data already loaded"
 	end
@@ -2499,14 +2427,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 
 
 
---[[
-		teleportData.destination 				= destination
-		teleportData.dataTimestamp 				= timestamp
-		teleportData.dataSlot					= player.dataSlot.Value
-		teleportData.analyticsSessionId 		= player.AnalyticsSessionId.Value
-		teleportData.joinTime					= player.JoinTime.Value
-		teleportData.partyData 					= network:invoke("getPartyDataByPlayer", player)
---]]
+
 
 
 	local existingAnalyticsSession
@@ -2577,9 +2498,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 
 	-- defaults
 	desiredSlot = desiredSlot or 1
---	desiredTimeStamp = desiredTimeStamp or 0
 
-	-- get playerData
 	local success, playerData, errorMsg = datastoreInterface:getPlayerSaveFileData(player, desiredSlot, desiredTimeStamp)
 
 	if not success then
@@ -2657,7 +2576,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 
 	local entityGUIDTag = Instance.new("StringValue")
 	entityGUIDTag.Name = "entityGUID"
-	entityGUIDTag.Value = httpService:GenerateGUID(false)
+	entityGUIDTag.Value = HttpService:GenerateGUID(false)
 	entityGUIDTag.Parent = player
 
 	local playerSpawnTimeTag = Instance.new("IntValue")
@@ -2752,7 +2671,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 		if accessories then
 			playerData.accessories = accessories
 		else
-			playerData.accessories = require(replicatedStorage.defaultCharacterAppearance).accessories
+			playerData.accessories = require(ReplicatedStorage.defaultCharacterAppearance).accessories
 		end
 		playerData.hasCustomizedCharacter = true
 	end
@@ -2767,7 +2686,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	if game.PrivateServerId == "" and game.PrivateServerOwnerId == 0 then
 		playerData.locations[tostring(game.PlaceId)] = playerData.locations[tostring(game.PlaceId)] or {}
 		local spawns = {} do
-			for i, spawnPart in pairs(collectionService:GetTagged("spawnPoint")) do
+			for i, spawnPart in pairs(CollectionService:GetTagged("spawnPoint")) do
 				spawns[spawnPart.Name] = spawnPart
 			end
 		end
@@ -2902,9 +2821,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 				return a.position > b.position
 			end)
 		elseif index == "level" then
---			playerData.statistics.pointsUnassigned = playerData.statistics.pointsUnassigned + STAT_POINTS_GAINED_PER_LEVEL
-			--playerData.nonSerializeData.playerDataChanged:Fire("statistics")
-			--generatecompletePlayerStats(player)
+
 		elseif index == "statistics" then
 			generatecompletePlayerStats(player)
 		elseif index == "accessories" then
@@ -2989,8 +2906,8 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 		local targetCharacterSpawnPosition do
 			if lastCharacterPostion then
 				targetCharacterSpawnPosition = CFrame.new(lastCharacterPostion) + Vector3.new(0, 4, 0)
-			elseif replicatedStorage:FindFirstChild("spawnPoints") then
-				local spawnPoint = teleportData and ((teleportData.spawnLocation and replicatedStorage.spawnPoints:FindFirstChild(teleportData.spawnLocation)) or teleportData.arrivingFrom and replicatedStorage.spawnPoints:FindFirstChild(teleportData.arrivingFrom)) or replicatedStorage.spawnPoints:FindFirstChild("default")
+			elseif ReplicatedStorage:FindFirstChild("spawnPoints") then
+				local spawnPoint = teleportData and ((teleportData.spawnLocation and ReplicatedStorage.spawnPoints:FindFirstChild(teleportData.spawnLocation)) or teleportData.arrivingFrom and ReplicatedStorage.spawnPoints:FindFirstChild(teleportData.arrivingFrom)) or ReplicatedStorage.spawnPoints:FindFirstChild("default")
 
 				-- if the player has a set respawn point, use that
 				if player:FindFirstChild("respawnPoint") and player.respawnPoint.Value then
@@ -3009,11 +2926,11 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 					end
 
 					targetCharacterSpawnPosition = goalCFrame
-				elseif #replicatedStorage.spawnPoints:GetChildren() > 0 then
+				elseif #ReplicatedStorage.spawnPoints:GetChildren() > 0 then
 					warn(">> spawn point missing!",	teleportData and teleportData.arrivingFrom or "no default found")
 					warn(">> using first spawnPoint")
 
-					local cf = replicatedStorage.spawnPoints:GetChildren()[1].Value
+					local cf = ReplicatedStorage.spawnPoints:GetChildren()[1].Value
 					local goalCFrame = characterPrimaryPart.CFrame - characterPrimaryPart.CFrame.p + cf.p + cf.lookVector * 30 + Vector3.new(math.random() * 3, 4, math.random() * 3)
 
 					targetCharacterSpawnPosition = goalCFrame
@@ -3038,7 +2955,6 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 			if hitPart then
 				wait(0.1)
 
---				while (characterPrimaryPart.Position - targetCharacterSpawnPosition.p).magnitude > 3 do
 				for _ = 1, 8 do
 					network:invoke("teleportPlayerCFrame_server", player, targetCharacterSpawnPosition)
 
@@ -3361,7 +3277,6 @@ game:BindToClose(function()
 			if success then
 				playersToSave[playerName] = nil
 				playerCount = playerCount - 1
---				player:Kick("Your data has been saved. Please rejoin.")
 				local destination = 2376885433
 				if game.GameId == 712031239 then
 					destination = 2015602902
@@ -4260,40 +4175,7 @@ local function onRemovePlayerInventorySlotData(player, inventorySlotData, stacks
 		end
 	end
 
---	if inventorySlotPosition then
---		-- provided inventorySlotPosition, ONLY remove from this stack.
---		for trueInventorySlotDataPosition, inventorySlotData in pairs(playerDataContainer[player].inventory) do
---			if inventorySlotData.id == itemId then
---				local stacksRemoved = int__decrementStackSizeForInventorySlotData(player, trueInventorySlotDataPosition, _stacks)
---
---				warn("straight byebye", stacksRemoved)
---				return true, stacksRemoved
---			end
---		end
---	else
---		local itemBaseData = itemLookup[itemId]
---
---		if itemBaseData.canStack then
---			-- item is stackable and inventorySlotPosition wasn't taken, take from it in order
---			local stackSizeToRemoveLeft = _stacks
---			for trueInventorySlotDataPosition, inventorySlotData in pairs(playerDataContainer[player].inventory) do
---				if inventorySlotData.id == itemId then
---					local stacksRemoved 	= int__decrementStackSizeForInventorySlotData(player, trueInventorySlotDataPosition, stackSizeToRemoveLeft)
---					stackSizeToRemoveLeft 	= stackSizeToRemoveLeft - stacksRemoved
---
---					if stackSizeToRemoveLeft <= 0 then
---						break
---					end
---				end
---			end
---
---			warn("all good")
---			return stackSizeToRemoveLeft < _stacks, _stacks - stackSizeToRemoveLeft
---		else
---			warn("rejecting nil `inventorySlotPosition` for canStack item")
---			return false, 0
---		end
---	end
+
 
 	warn("just nothing found")
 	return false, 0
@@ -4522,7 +4404,22 @@ local function playerRequest_transferStorageToInventory(player, storageSlotData)
 	return false, "PlayerData not found."
 end
 
-local function main()
+function module.init(Modules)
+	datastoreInterface = Modules.datastoreInterface
+	network = Modules.network
+	utilities = Modules.utilities
+	physics = Modules.physics
+	levels = Modules.levels
+	mapping = Modules.mapping
+	configuration = Modules.configuration
+	placeSetup = Modules.placeSetup
+	events = Modules.events
+	detection = Modules.detection
+	projectile = Modules.projectile
+
+	entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
+	temporaryEquipmentFolder = placeSetup.getPlaceFolder("temporaryEquipment")
+
 	-- data manipulation
 	network:create("switchInventorySlotData", "RemoteFunction", "OnServerInvoke", onSwitchInventorySlotDataRequestReceived)
 	network:create("playerRequest_switchInventorySlotData", "RemoteFunction", "OnServerInvoke", onSwitchInventorySlotDataRequestReceived)
@@ -4623,7 +4520,5 @@ local function main()
 
 	game.Players.PlayerRemoving:connect(onPlayerRemoving)
 end
-
-spawn(main)
 
 return module

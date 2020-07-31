@@ -1,12 +1,7 @@
 local module = {}
 
-local httpService = game:GetService("HttpService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
+local network
 
-local modules = require(replicatedStorage.modules)
-local network = modules.load("network")
-local utilities = modules.load("utilities")
-local questLookup = require(replicatedStorage.questLookupNew)
 
 local cachedPlayerQuestData = {}
 
@@ -33,12 +28,11 @@ function module.saveQuestData(player)
 
 end
 
-local function main()
+function module.init(Modules)
+	network = Modules.network
 	network:create("questTriggerOccurred", "BindableEvent", "Event", function(player, trigger, data)
 		-- TODO: implement (ctrl+shift+F for occurances of questTriggerOccurred)
 	end)
 end
-
-spawn(main)
 
 return module

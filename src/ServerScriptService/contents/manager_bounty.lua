@@ -1,9 +1,11 @@
 local module = {}
 
-local modules = require(game.ReplicatedStorage:WaitForChild("modules"))
-local network = modules.load("network")
-local levels = modules.load("levels")
-local monsterLookup = require(game.ReplicatedStorage:WaitForChild("monsterLookup"))
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local network
+local levels
+
+local monsterLookup = require(ReplicatedStorage:WaitForChild("monsterLookup"))
 
 local function playerRequest_claimBounty(player, monsterName)
 	local playerData = network:invoke("getPlayerData", player)
@@ -41,6 +43,13 @@ local function playerRequest_claimBounty(player, monsterName)
 	end
 end
 
-network:create("playerRequest_claimBounty", "RemoteFunction", "OnServerInvoke", playerRequest_claimBounty)
+function module.init(Modules)
+	network = Modules.network
+	levels = Modules.levels
+
+	network:create("playerRequest_claimBounty", "RemoteFunction", "OnServerInvoke", playerRequest_claimBounty)
+end
+
+
 
 return module

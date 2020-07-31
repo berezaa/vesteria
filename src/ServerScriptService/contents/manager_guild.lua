@@ -1,11 +1,9 @@
-local httpService = game:GetService("HttpService")
-local teleportService = game:GetService("TeleportService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules = require(replicatedStorage.modules)
-local network = modules.load("network")
-
-
 local module = {}
+
+local HttpService = game:GetService("HttpService")
+local TeleportService = game:GetService("TeleportService")
+
+local network
 
 module.priority = 3
 
@@ -19,7 +17,7 @@ local guildRankValues = {
 local function getRankNumberFromRank(rank)
 	return guildRankValues[rank]
 end
-network:create("getRankNumberFromRank", "BindableFunction", "OnInvoke", getRankNumberFromRank)
+
 
 local DATA_MODIFY_COOLDOWN = 5
 
@@ -72,7 +70,6 @@ local guildMessagingConnections = {}
 
 -- Update cache and replicated storage entry with new data.
 
-network:create("signal_guildDataUpdated", "RemoteEvent")
 
 local function guildDataUpdated(guid, guildDataEntry)
 	guildDataCache[guid] = guildDataEntry
@@ -82,7 +79,7 @@ local function guildDataUpdated(guid, guildDataEntry)
 		dataFolderEntry.Name = guid
 		dataFolderEntry.Parent = guildDataFolder
 	end
-	dataFolderEntry.Value = httpService:JSONEncode(guildDataEntry)
+	dataFolderEntry.Value = HttpService:JSONEncode(guildDataEntry)
 	for i,player in pairs(game.Players:GetPlayers()) do
 		if player:FindFirstChild("guildId") and player.guildId.Value == guid then
 			network:fireClient("signal_guildDataUpdated", player, guildDataEntry)
@@ -148,7 +145,6 @@ local function sendGuildMessage(guid, messageData)
 	end)
 	return messageSuccess, messageError
 end
-network:create("sendGuildMessage", "BindableFunction", "OnInvoke", sendGuildMessage)
 
 local function sendGuildChat(player, message)
 	local guildId = player:FindFirstChild("guildId") and player.guildId.Value
@@ -174,7 +170,6 @@ local function sendGuildChat(player, message)
 		return false, "You're not in a guild!"
 	end
 end
-network:create("sendGuildChat", "BindableFunction", "OnInvoke", sendGuildChat)
 
 -- Used to add/remove a player from a guild.
 local function setPlayerGuildId(player, guildId)
@@ -223,14 +218,15 @@ local function getGuildData(player, guid)
 		end
 	end
 end
-network:create("getGuildData", "BindableFunction", "OnInvoke", getGuildData)
-network:create("playerRequest_getGuildData", "RemoteFunction", "OnServerInvoke", function(requestingPlayer, player)
+
+local function playerRequest_getGuildData(requestingPlayer, player)
 	local guildId = player:FindFirstChild("guildId")
 	if not guildId then
 		return false, "No guildId found."
 	end
 	return getGuildData(player, guildId.Value)
-end)
+end
+
 
 
 -- Fetches a player's data entry within a guild, if it exists
@@ -254,14 +250,16 @@ local function getGuildPlayerData(player, guid)
 	end
 	return guildPlayerData
 end
-network:create("getGuildMemberData", "BindableFunction", "OnInvoke", getGuildPlayerData)
-network:create("playerRequest_getGuildMemberData", "RemoteFunction", "OnServerInvoke", function(requestingPlayer, player)
+
+
+local function playerRequest_getGuildMemberData(requestingPlayer, player)
 	local guildId = player:FindFirstChild("guildId")
 	if not guildId then
 		return false, "No guildId found."
 	end
 	return getGuildPlayerData(player, guildId.Value)
-end)
+end
+
 
 -- Master function used for donating to the guild, other actions
 local function modifyGuildDataValue(player, guid, action, key, value, atomic, notice)
@@ -479,7 +477,7 @@ local function onPlayerLoaded(player, playerData)
         end
     end)
 end
-network:connect("playerDataLoaded", "Event", onPlayerLoaded)
+
 
 local function onPlayerRemoving(player)
 	playerGuildChanged(player, nil)
@@ -554,7 +552,7 @@ local function playerRequest_createGuild(player, properties)
 
 	if playerData.gold >= guildCreationCost then
 
-		local guildId = httpService:GenerateGUID(false)
+		local guildId = HttpService:GenerateGUID(false)
 
 
 		-- Run the desired guild name through the Roblox Filter.
@@ -692,11 +690,9 @@ local function playerRequest_createGuild(player, properties)
 		return false, "You don't have enough money to found a guild."
 	end
 end
-network:create("playerRequest_createGuild", "RemoteFunction", "OnServerInvoke", playerRequest_createGuild)
 
 local pendingGuildInvites = {}
 
-network:create("serverPrompt_playerInvitedToServer", "RemoteFunction")
 
 local function playerRequest_invitePlayerToGuild(player, invitedPlayer)
 	if invitedPlayer.guildId.Value ~= "" then
@@ -769,7 +765,6 @@ local function playerRequest_invitePlayerToGuild(player, invitedPlayer)
 	end
 end
 
-network:create("playerRequest_invitePlayerToGuild", "RemoteFunction", "OnServerInvoke", playerRequest_invitePlayerToGuild)
 
 local function playerRequest_exileUserIdFromGuild(player, exiledUserId)
 	local guid = player.guildId.Value
@@ -824,7 +819,6 @@ local function playerRequest_exileUserIdFromGuild(player, exiledUserId)
     end
 end
 
-network:create("playerRequest_exileUserIdFromGuild","RemoteFunction","OnServerInvoke", playerRequest_exileUserIdFromGuild)
 
 local function abandonGuild(player, guid)
 	local success, problem = pcall(function()
@@ -888,7 +882,6 @@ local function playerRequest_leaveMyGuild(player, confirmAbandon)
         return false, "Failed to leave: "..reason
     end
 end
-network:create("playerRequest_leaveMyGuild","RemoteFunction","OnServerInvoke",playerRequest_leaveMyGuild)
 
 local function playerRequest_changeUserIdRankValue(player, rankedUserId, newRankValue)
     local guid = player.guildId.Value
@@ -951,7 +944,6 @@ local function playerRequest_changeUserIdRankValue(player, rankedUserId, newRank
     end
 end
 
-network:create("playerRequest_changeUserIdRankValue", "RemoteFunction", "OnServerInvoke", playerRequest_changeUserIdRankValue)
 
 local guildHallPlaceId = 4653017449
 
@@ -970,12 +962,11 @@ local properNamesByHallLocation = {
 	["portFidelio"] = "Port Fidelio",
 }
 
-function getHallLocationFromPlaceId()
+local function getHallLocationFromPlaceId()
 	return hallLocationsByPlaceId[game.PlaceId]
 end
-network:create("playerRequest_getHallLocationFromPlaceId", "RemoteFunction", "OnServerInvoke", getHallLocationFromPlaceId)
 
-function getPlaceIdFromHallLocation(hallLocationIn)
+local function getPlaceIdFromHallLocation(hallLocationIn)
 	for placeId, hallLocation in pairs(hallLocationsByPlaceId) do
 		if hallLocation == hallLocationIn then
 			return placeId
@@ -983,10 +974,11 @@ function getPlaceIdFromHallLocation(hallLocationIn)
 	end
 	return nil
 end
-network:create("playerRequest_getPlaceIdFromHallLocation", "RemoteFunction", "OnServerInvoke", function(player, hallLocation)
+
+local function playerRequest_getPlaceIdFromHallLocation(player, hallLocation)
 	return getPlaceIdFromHallLocation(hallLocation)
-end)
-network:create("getPlaceIdFromHallLocation", "BindableFunction", "OnInvoke", getPlaceIdFromHallLocation)
+end
+
 
 local function resetGuildHallServer()
 	-- TODO: broadcast a message which boots everyone from guild hall in event of update, move, etc.
@@ -1027,7 +1019,7 @@ local function changeGuildHallLocation(player)
 	notice.Font = "SourceSansBold"
 	notice.Color = {r = 161, g = 132, b = 194}
 
-	local hallServerId = teleportService:ReserveServer(guildHallPlaceId)
+	local hallServerId = TeleportService:ReserveServer(guildHallPlaceId)
 	local serverIdSuccess, serverIdProblem = modifyGuildDataValue(player, guid, "set", "hallServerId", hallServerId, false)
 	if not serverIdSuccess then
 		return false, serverIdProblem
@@ -1051,7 +1043,6 @@ local function changeGuildHallLocation(player)
 		return false, reason
 	end
 end
-network:create("playerRequest_changeGuildHallLocation", "RemoteFunction", "OnServerInvoke", changeGuildHallLocation)
 
 local function getGuildUpgradeCost(player)
 	local guildId = player:FindFirstChild("guildId")
@@ -1072,7 +1063,6 @@ local function getGuildUpgradeCost(player)
 		return nil, "No next level."
 	end
 end
-network:create("playerRequest_getGuildUpgradeCost", "RemoteFunction", "OnServerInvoke", getGuildUpgradeCost)
 
 local function upgradeGuild(player)
 	if (game.PlaceId ~= 2546689567) and (game.PlaceId ~= 2061558182) and (game.PlaceId ~= 3372071669) then
@@ -1132,7 +1122,6 @@ local function upgradeGuild(player)
 
 	return true, ""
 end
-network:create("playerRequest_upgradeGuild", "RemoteFunction", "OnServerInvoke", upgradeGuild)
 
 local function donateToGuild(player, amount)
 	if typeof(amount) ~= "number" then
@@ -1173,7 +1162,6 @@ local function donateToGuild(player, amount)
 
 	return true, ""
 end
-network:create("playerRequest_donateToGuild", "RemoteFunction", "OnServerInvoke", donateToGuild)
 
 local function teleportPlayersToGuildHall(players, guid)
 	local leadPlayer = players[1]
@@ -1191,8 +1179,8 @@ local function teleportPlayersToGuildHall(players, guid)
 
 	return true, ""
 end
-network:create("teleportPlayersToGuildHall", "BindableFunction", "OnInvoke", teleportPlayersToGuildHall)
-network:create("playerRequest_teleportToGuildHall", "RemoteFunction", "OnServerInvoke", function(player)
+
+local function playerRequest_teleportToGuildHall(player)
 	local guildId = player:FindFirstChild("guildId")
 	if not guildId then
 		return false, "No guildId."
@@ -1228,7 +1216,8 @@ network:create("playerRequest_teleportToGuildHall", "RemoteFunction", "OnServerI
 		-- teleport the individual
 		teleportPlayersToGuildHall({player}, guid)
 	end
-end)
+end
+
 
 local function expelPlayerHelper(player, target)
 	network:fireAllClients("signal_alertChatMessage", {
@@ -1290,11 +1279,41 @@ local function expelPlayer(player, target)
 		end
 	end
 end
-network:create("playerRequest_expelPlayer", "RemoteFunction", "OnServerInvoke", expelPlayer)
 
 local function leaveGuildHall(player)
 	network:invoke("teleportPlayer", player, game.ReplicatedStorage.lastLocationOverride.Value, "guildHall")
 end
-network:create("playerRequest_leaveGuildHall", "RemoteFunction", "OnServerInvoke", leaveGuildHall)
+
+function module.init(Modules)
+	network = Modules.network
+
+	network:connect("playerDataLoaded", "Event", onPlayerLoaded)
+
+	network:create("signal_guildDataUpdated", "RemoteEvent")
+	network:create("sendGuildMessage", "BindableFunction", "OnInvoke", sendGuildMessage)
+	network:create("sendGuildChat", "BindableFunction", "OnInvoke", sendGuildChat)
+	network:create("getGuildData", "BindableFunction", "OnInvoke", getGuildData)
+	network:create("playerRequest_getGuildData", "RemoteFunction", "OnServerInvoke", playerRequest_getGuildData)
+	network:create("getGuildMemberData", "BindableFunction", "OnInvoke", getGuildPlayerData)
+	network:create("playerRequest_getGuildMemberData", "RemoteFunction", "OnServerInvoke", playerRequest_getGuildMemberData)
+	network:create("playerRequest_createGuild", "RemoteFunction", "OnServerInvoke", playerRequest_createGuild)
+	network:create("serverPrompt_playerInvitedToServer", "RemoteFunction")
+	network:create("playerRequest_invitePlayerToGuild", "RemoteFunction", "OnServerInvoke", playerRequest_invitePlayerToGuild)
+	network:create("playerRequest_exileUserIdFromGuild","RemoteFunction","OnServerInvoke", playerRequest_exileUserIdFromGuild)
+	network:create("playerRequest_leaveMyGuild","RemoteFunction","OnServerInvoke",playerRequest_leaveMyGuild)
+	network:create("playerRequest_changeUserIdRankValue", "RemoteFunction", "OnServerInvoke", playerRequest_changeUserIdRankValue)
+	network:create("playerRequest_getHallLocationFromPlaceId", "RemoteFunction", "OnServerInvoke", getHallLocationFromPlaceId)
+	network:create("playerRequest_getPlaceIdFromHallLocation", "RemoteFunction", "OnServerInvoke", playerRequest_getPlaceIdFromHallLocation)
+	network:create("getPlaceIdFromHallLocation", "BindableFunction", "OnInvoke", getPlaceIdFromHallLocation)
+	network:create("playerRequest_changeGuildHallLocation", "RemoteFunction", "OnServerInvoke", changeGuildHallLocation)
+	network:create("playerRequest_getGuildUpgradeCost", "RemoteFunction", "OnServerInvoke", getGuildUpgradeCost)
+	network:create("playerRequest_upgradeGuild", "RemoteFunction", "OnServerInvoke", upgradeGuild)
+	network:create("playerRequest_donateToGuild", "RemoteFunction", "OnServerInvoke", donateToGuild)
+	network:create("teleportPlayersToGuildHall", "BindableFunction", "OnInvoke", teleportPlayersToGuildHall)
+	network:create("playerRequest_teleportToGuildHall", "RemoteFunction", "OnServerInvoke", playerRequest_teleportToGuildHall)
+	network:create("playerRequest_expelPlayer", "RemoteFunction", "OnServerInvoke", expelPlayer)
+	network:create("playerRequest_leaveGuildHall", "RemoteFunction", "OnServerInvoke", leaveGuildHall)
+	network:create("getRankNumberFromRank", "BindableFunction", "OnInvoke", getRankNumberFromRank)
+end
 
 return module

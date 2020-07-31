@@ -1,7 +1,8 @@
-local collectionService = game:GetService("CollectionService")
+local module = {}
+
+local CollectionService = game:GetService("CollectionService")
 --
-local modules = require(game.ReplicatedStorage.modules)
-local network = modules.load("network")
+local network
 
 local assetsFolder = game.ReplicatedStorage:WaitForChild("assets")
 
@@ -39,15 +40,17 @@ local placeIdList do
 end
 
 local orbSpawn do
-	local orbSpawnParts = collectionService:GetTagged("orbSpawn")
-	assert(#orbSpawnParts == 1, "There must be only one part in the game tagged \"orbSpawn\"")
+	local orbSpawnParts = CollectionService:GetTagged("orbSpawn")
+	if #orbSpawnParts == 1 then
+		orbSpawn = Instance.new("Vector3Value")
+		orbSpawn.Name = "orbSpawn"
+		orbSpawn.Value = orbSpawnParts[1].Position
+		orbSpawn.Parent = game:GetService("ReplicatedStorage")
 
-	orbSpawn = Instance.new("Vector3Value")
-	orbSpawn.Name = "orbSpawn"
-	orbSpawn.Value = orbSpawnParts[1].Position
-	orbSpawn.Parent = game:GetService("ReplicatedStorage")
-
-	orbSpawnParts[1]:Destroy()
+		orbSpawnParts[1]:Destroy()
+	else
+		warn("Orb manager requires exactly 1 orb spawn location")
+	end
 end
 
 local orb = assetsFolder.entities.orb
@@ -112,22 +115,8 @@ local function update()
 	end
 end
 
-local function startUpdating()
-	while true do
-		update()
-		wait(1)
-	end
-end
 
-spawn(startUpdating)
-spawn(function()
-	if game.PlaceId == 2061558182 then
-		spawnOrb()
-		wait(30)
-		despawnOrb()
-	end
-end)
-
+-- defunct
 local function playerRequest_enchantAbility(player, orb, requestData)
 	local playerData = playerDataContainer[player]
 	if playerData then
@@ -192,6 +181,18 @@ local function playerRequest_enchantAbility(player, orb, requestData)
 	end
 end
 
-network:create("playerRequest_enchantAbility", "RemoteFunction", "OnServerInvoke", playerRequest_enchantAbility)
+local function startUpdating()
+	while wait(1) do
+		update()
+	end
+end
 
-return {}
+function module.init(Modules)
+	network = Modules.network
+	network:create("playerRequest_enchantAbility", "RemoteFunction", "OnServerInvoke", playerRequest_enchantAbility)
+	spawn(startUpdating)
+end
+
+
+
+return module

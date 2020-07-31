@@ -4,18 +4,8 @@
 
 local module = {}
 
-local replicatedStorage = game:GetService("ReplicatedStorage")
-	local modules = require(replicatedStorage.modules)
-		local network 		= modules.load("network")
-		local utilities 	= modules.load("utilities")
-		local physics 		= modules.load("physics")
-		local placeSetup 	= modules.load("placeSetup")
-		local projectile 	= modules.load("projectile")
-		local mapping 		= modules.load("mapping")
-		local levels 		= modules.load("levels")
-		local pathfinding 	= modules.load("pathfinding")
-
-	local itemData = require(replicatedStorage.itemData)
+local network
+local mapping
 
 local playerPetDataCollection = {}
 --[[
@@ -34,11 +24,11 @@ end
 local function spawnPlayerPet(player, petEquipmentData)
 	if not playerPetDataCollection[player] then
 		local petManifest = network:invoke("spawnMonsterPet", player, petEquipmentData.id, petEquipmentData)
-		
+
 		local playerPetData = {}
 			playerPetData.id 		= petEquipmentData.id
 			playerPetData.manifest 	= petManifest
-		
+
 		playerPetDataCollection[player] = playerPetData
 	end
 end
@@ -49,7 +39,7 @@ local function getPlayerPetEquipment(player, equipment)
 			return equipmentData
 		end
 	end
-	
+
 	return nil
 end
 
@@ -63,21 +53,21 @@ end
 
 local function onPlayerEquipmentChanged_server(player, equipment)
 	local playerPetEquipmentData = getPlayerPetEquipment(player, equipment)
-	
+
 	int__processPlayerPetEquipmentData(player, playerPetEquipmentData)
 end
 
 local function onPlayerAdded(player)
-	-- get the player's data, waiting until they either leave or 
+	-- get the player's data, waiting until they either leave or
 	-- we successfully fetch their player data
 	local playerData do
 		while not playerData and player.Parent == game.Players do
 			playerData = network:invoke("getPlayerData", player)
-			
+
 			wait(0.1)
 		end
 	end
-	
+
 	if playerData then
 		onPlayerEquipmentChanged_server(player, playerData.equipment)
 	end
@@ -86,24 +76,26 @@ end
 local function onPlayerRemoving(player)
 	if playerPetDataCollection[player] then
 		-- despawn pet here!
-		
+
 		despawnPlayerPet(player)
 	end
-	
+
 	playerPetDataCollection[player] = nil
 end
 
-local function main()
-	for i, player in pairs(game.Players:GetPlayers()) do
+function module.init(Modules)
+
+	network = Modules.network
+	mapping = Modules.mapping
+
+	for _, player in pairs(game.Players:GetPlayers()) do
 		onPlayerAdded(player)
 	end
-	
+
 	game.Players.PlayerAdded:connect(onPlayerAdded)
 	game.Players.PlayerRemoving:connect(onPlayerRemoving)
-	
+
 	network:connect("playerEquipmentChanged_server", "Event", onPlayerEquipmentChanged_server)
 end
-
-spawn(main)
 
 return module

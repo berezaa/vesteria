@@ -1,11 +1,6 @@
 local module = {}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local Modules = require(ReplicatedStorage.modules)
-local network = Modules.load("network")
-local Utilities = Modules.load("utilities")
-local AbilityUtilities = Modules.load("ability_utilities")
 local AbilityLookup = require(ReplicatedStorage.abilityLookup)
 
 local abilityCooldownLookup = {}
@@ -14,6 +9,11 @@ local castedAbilityGUIDs = {}
 
 local latencyForgiveness = 0.25
 local maximumAbilityRenderDistance = 100
+
+local network
+local utilities
+local abilityUtilities
+
 
 -------------------------------------------------
 ---------------@ Core Functions @----------------
@@ -76,7 +76,7 @@ end
 --onUpdate Event
 local function changeAbilityState(caster, requestedState, executionData)
 	local casterContainer = executionData.casterCharacter
-	if not casterContainer or not casterContainer.PrimaryPart or not Utilities.isEntityManifestValid(casterContainer.PrimaryPart) then return "invalid_character" end
+	if not casterContainer or not casterContainer.PrimaryPart or not utilities.isEntityManifestValid(casterContainer.PrimaryPart) then return "invalid_character" end
 
 	local serverExecuteTick = tick()
 	local casterData = nil
@@ -106,12 +106,12 @@ local function changeAbilityState(caster, requestedState, executionData)
 			--Get player level, add the exponent and calculate ability modifier TODO
 			executionData["abilityData"] = abilityData
 
-			local increasingStat, calculatedStat = AbilityUtilities.calculateStats(casterData, abilityId)
+			local increasingStat, calculatedStat = abilityUtilities.calculateStats(casterData, abilityId)
 			if increasingStat and calculatedStat then
 				executionData["abilityData"][increasingStat] = calculatedStat
 			end
 
-			local canCast, error = AbilityUtilities.canPlayerCast(player, casterData, abilityId)
+			local canCast, error = abilityUtilities.canPlayerCast(player, casterData, abilityId)
 			if not canCast then
 				return canCast, error
 			end
@@ -133,7 +133,7 @@ local function changeAbilityState(caster, requestedState, executionData)
 			abilityData:execute_server()
 
 			--Send Ability Cast to Clients
-			local nearbyPlayers = AbilityUtilities.returnNearbyPlayers(player.Character.PrimaryPart.CFrame, maximumAbilityRenderDistance)
+			local nearbyPlayers = abilityUtilities.returnNearbyPlayers(player.Character.PrimaryPart.CFrame, maximumAbilityRenderDistance)
 			if nearbyPlayers then
 				network:fireClients("replicateAbilityLocally", nearbyPlayers, executionData, false)
 			end
@@ -148,7 +148,7 @@ local function changeAbilityState(caster, requestedState, executionData)
 		if validateAbilityGUID(player, abilityId, guid) then
 			executionData["abilityData"] = abilityData
 
-			local increasingStat, calculatedStat = AbilityUtilities.calculateStats(casterData, abilityId)
+			local increasingStat, calculatedStat = abilityUtilities.calculateStats(casterData, abilityId)
 			if increasingStat and calculatedStat then
 				executionData["abilityData"][increasingStat] = calculatedStat
 			end
@@ -157,7 +157,7 @@ local function changeAbilityState(caster, requestedState, executionData)
 			abilityData:execute_server_update()
 
 			--Send Ability Cast to Clients
-			local nearbyPlayers = Utilities.returnNearbyPlayers(player.Character.PrimaryPart.CFrame, maximumAbilityRenderDistance)
+			local nearbyPlayers = utilities.returnNearbyPlayers(player.Character.PrimaryPart.CFrame, maximumAbilityRenderDistance)
 			if nearbyPlayers then
 				network:fireClients("replicateAbilityUpdateLocally", nearbyPlayers, executionData, false)
 			end
@@ -176,7 +176,11 @@ end
 ----------------@ Main Function @----------------
 -------------------------------------------------
 
-local function main()
+function module.init(Modules)
+	network = Modules.network
+	utilities = Modules.utilities
+	abilityUtilities = Modules.abilityUtilities
+
 	--Register Player Added and Remove Functions Defined Above
 	network:connect("playerDataLoaded", "Event", onPlayerAdded)
 	game.Players.PlayerRemoving:Connect(onPlayerRemoving)
@@ -188,7 +192,5 @@ local function main()
 	network:create("requestAbilityCooldown", "RemoteFunction", "OnServerInvoke", returnAbilityCooldown)
 	network:create("returnAbilityCooldown", "BindableFunction", "OnInvoke", returnAbilityCooldown)
 end
-
-main()
 
 return module

@@ -1,12 +1,11 @@
 local module = {}
 module.priority = 3
 
-local teleportService = game:GetService("TeleportService")
+local TeleportService = game:GetService("TeleportService")
 
-local modules = require(game:GetService("ReplicatedStorage"):WaitForChild("modules"))
-local network = modules.load("network")
-local utilities = modules.load("utilities")
-local configuration = modules.load("configuration")
+local network
+local utilities
+local configuration
 
 local function preparePlayerToTeleport(player, destination)
 	if player:FindFirstChild("DataSaveFailed") then
@@ -101,7 +100,7 @@ local function getReserveServerKeyForMirrorDestination(destination)
 		local mirrorWorldStore = game:GetService("DataStoreService"):GetDataStore("mirrorWorld"..mwv)
 		reserveServerKey = mirrorWorldStore:GetAsync(tostring(destination))
 		if reserveServerKey == nil then
-			reserveServerKey = teleportService:ReserveServer(destination)
+			reserveServerKey = TeleportService:ReserveServer(destination)
 			mirrorWorldStore:SetAsync(tostring(destination), reserveServerKey)
 		end
 	end)
@@ -112,7 +111,7 @@ local function teleportPlayersToReserveServer(players, destination, spawnLocatio
 	destination = utilities.placeIdForGame(destination)
 	teleportType = teleportType or "default"
 
-	reserveServerKey = reserveServerKey or teleportService:ReserveServer(destination)
+	reserveServerKey = reserveServerKey or TeleportService:ReserveServer(destination)
 
 	for _, player in pairs(players) do
 		spawn(function()
@@ -137,12 +136,12 @@ local function teleportPlayersToReserveServer(players, destination, spawnLocatio
 				if game.ReplicatedStorage:FindFirstChild("mirrorWorld") or realm == "mirror" then
 					local reserveServerKey = getReserveServerKeyForMirrorDestination(destination)
 					if reserveServerKey then
-						teleportService:TeleportToPrivateServer(destination, reserveServerKey, {player}, nil, teleportData)
+						TeleportService:TeleportToPrivateServer(destination, reserveServerKey, {player}, nil, teleportData)
 					else
 						return false, "Failed to find mirror world reserve server key"
 					end
 				else
-					teleportService:TeleportToPrivateServer(destination, reserveServerKey, {player}, nil, teleportData)
+					TeleportService:TeleportToPrivateServer(destination, reserveServerKey, {player}, nil, teleportData)
 				end
 			end
 
@@ -150,7 +149,6 @@ local function teleportPlayersToReserveServer(players, destination, spawnLocatio
 		end)
 	end
 end
-
 
 local function teleportParty(playersToTeleport, destination, partyLeaderUserId, spawnLocation)
 	destination = utilities.placeIdForGame(destination)
@@ -171,13 +169,12 @@ local function teleportParty(playersToTeleport, destination, partyLeaderUserId, 
 		if game.ReplicatedStorage:FindFirstChild("mirrorWorld") then
 			local reserveServerKey = getReserveServerKeyForMirrorDestination(destination)
 			if reserveServerKey then
-				teleportService:TeleportToPrivateServer(destination, reserveServerKey, playersSuccessfullySaved, nil, groupTeleportData)
---TeleportToPrivateServer ( int64 placeId , string reservedServerAccessCode , Objects players , string spawnName , Variant teleportData , Instance customLoadingScreen )
+				TeleportService:TeleportToPrivateServer(destination, reserveServerKey, playersSuccessfullySaved, nil, groupTeleportData)
 			else
 				return false, "Failed to find key for mirror world teleport"
 			end
 		else
-			teleportService:TeleportPartyAsync(destination, playersSuccessfullySaved, groupTeleportData --[[, replicatedStorage.teleportUI]])
+			TeleportService:TeleportPartyAsync(destination, playersSuccessfullySaved, groupTeleportData --[[, replicatedStorage.teleportUI]])
 		end
 
 		spawn(function()
@@ -193,7 +190,6 @@ local function teleportParty(playersToTeleport, destination, partyLeaderUserId, 
 	end
 	return false, "Failed to teleport"
 end
-
 
 local function teleportPlayerToJobId(player, destination, jobId, spawnLocation)
 	destination = utilities.placeIdForGame(destination)
@@ -218,7 +214,7 @@ local function teleportPlayerToJobId(player, destination, jobId, spawnLocation)
 
 
 		spawn(function()
-			game:GetService("TeleportService"):TeleportToPlaceInstance(destination, jobId, player, nil, teleportData)
+			TeleportService:TeleportToPlaceInstance(destination, jobId, player, nil, teleportData)
 		end)
 		return true, "teleporting"
 
@@ -226,7 +222,6 @@ local function teleportPlayerToJobId(player, destination, jobId, spawnLocation)
 
 	return false, "failed to prepare teleportdata"
 end
-
 
 local function teleportPlayer(player, destination, spawnLocation, realm, teleportType)
 	destination = utilities.placeIdForGame(destination)
@@ -255,14 +250,14 @@ local function teleportPlayer(player, destination, spawnLocation, realm, telepor
 		if game.ReplicatedStorage:FindFirstChild("mirrorWorld") or realm == "mirror" then
 			local reserveServerKey = getReserveServerKeyForMirrorDestination(destination)
 			if reserveServerKey then
-				teleportService:TeleportToPrivateServer(destination, reserveServerKey, {player}, nil, teleportData)
+				TeleportService:TeleportToPrivateServer(destination, reserveServerKey, {player}, nil, teleportData)
 				return true, "teleporting"
 			else
 				return false, "Failed to find key for mirror world teleport"
 			end
 		else
 			spawn(function()
-				game:GetService("TeleportService"):Teleport(destination, player, teleportData)
+				TeleportService:Teleport(destination, player, teleportData)
 			end)
 			if teleportType == "death" and not player:FindFirstChild("disconnected") then
 				network:fireAllClients("signal_alertChatMessage", {
@@ -279,7 +274,6 @@ local function teleportPlayer(player, destination, spawnLocation, realm, telepor
 
 	return false, "failed to prepare teleportdata"
 end
-
 
 local function teleportPlayer_rune(player, destination)
 	destination = utilities.placeIdForGame(destination)
@@ -322,13 +316,12 @@ local function playerRequest_useTeleporter(player, teleporter)
 	return false
 end
 
+function module.init(Modules)
 
+	network = Modules.network
+	utilities = Modules.utilities
+	configuration = Modules.configuration
 
-teleportService.TeleportInitFailed:connect(function(player, teleportResult, errorMessage)
-	network:invoke("reportError", player, "warning", "Player failed to teleport: "..errorMessage)
-end)
-
-local function main()
 	network:create("getPlayerTeleportData", "BindableFunction", "OnInvoke", preparePlayerToTeleport)
 	network:create("teleportPlayersToReserveServer", "BindableFunction", "OnInvoke", teleportPlayersToReserveServer)
 	network:create("createPartyTeleportData", "BindableFunction", "OnInvoke", createPartyTeleportData)
@@ -340,6 +333,5 @@ local function main()
 	network:create("signal_teleport", "RemoteEvent")
 end
 
-spawn(main)
 
 return module

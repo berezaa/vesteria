@@ -1,9 +1,6 @@
 local module = {}
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local Modules = require(ReplicatedStorage.modules)
-local network = Modules.load("network")
+local network
 
 local numberGenerator_enchantment = Random.new()
 -- item location view is either "inventory" or "equipment"
@@ -226,6 +223,9 @@ local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlo
 	return false
 end
 
-network:create("playerRequest_enchantEquipment", "RemoteFunction", "OnServerInvoke", onEnchantEquipmentRequestReceived)
+function module.init(Modules)
+	network = Modules.network
+	network:create("playerRequest_enchantEquipment", "RemoteFunction", "OnServerInvoke", onEnchantEquipmentRequestReceived)
+end
 
 return module

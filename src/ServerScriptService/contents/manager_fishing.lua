@@ -1,23 +1,23 @@
-local fishManager = {}
+local module = {}
 
-local collectionService = game:GetService("CollectionService")
+local CollectionService = game:GetService("CollectionService")
 
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules = require(replicatedStorage.modules)
-local network= modules.load("network")
-local placeSetup = modules.load("placeSetup")
-local physics = modules.load("physics")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local assetsFolder = replicatedStorage.assets
+local network
+local placeSetup
+local physics
+
+local assetsFolder = ReplicatedStorage.assets
 
 local httpService = game:GetService("HttpService")
-local itemLookupContainer = replicatedStorage.itemData
+local itemLookupContainer = ReplicatedStorage.itemData
 local itemLookup = require(itemLookupContainer)
 
 local LATENCY_FORGIVENESS_AFTER_BOBBING = 2.2
 
 
-local spawnRegionCollectionsFolder = placeSetup.getPlaceFolder("fishingRegionCollections")
+local spawnRegionCollectionsFolder
 
 -- keep leveling data for the fish here
 local fishpedia = {
@@ -54,25 +54,8 @@ local fishPool = {
 	};
 }
 
-local baseHitbox do
-	baseHitbox = assetsFolder.entities.spot:Clone() --Instance.new("Part")
-	--[[baseHitbox.TopSurface = Enum.SurfaceType.Smooth
-	baseHitbox.BottomSurface = Enum.SurfaceType.Smooth
-	baseHitbox.Shape = Enum.PartType.Cylinder
-	baseHitbox.Orientation = Vector3.new(0, 0, -90)
-	baseHitbox.Size = Vector3.new(1, 3, 3)
-	baseHitbox.Transparency = 1]]--
+local baseHitbox
 
-	baseHitbox.CanCollide = true
-	baseHitbox.Anchored = true
-	--script.bubbles:Clone().Parent = baseHitbox
-	--script.SurfaceLight:Clone().Parent = baseHitbox
-
-	-- add min level tag if its a restricted/unlockable area
-
-	collectionService:AddTag(baseHitbox, "fishingSpot")
-	physics:setWholeCollisionGroup(baseHitbox, "fishingSpots")
-end
 
 local playerFishingDataContainer = {}
 
@@ -232,7 +215,20 @@ end
 
 local FISH_SPAWN_CYCLE_TIME 			= 1.5
 
-local function main()
+function module.init(Modules)
+
+	network = Modules.network
+	placeSetup = Modules.placeSetup
+	physics = Modules.physics
+
+	spawnRegionCollectionsFolder = placeSetup.getPlaceFolder("fishingRegionCollections")
+
+	baseHitbox = assetsFolder.entities.spot:Clone()
+	baseHitbox.CanCollide = true
+	baseHitbox.Anchored = true
+	CollectionService:AddTag(baseHitbox, "fishingSpot")
+	physics:setWholeCollisionGroup(baseHitbox, "fishingSpots")
+
 	game.Players.PlayerRemoving:connect(onPlayerRemoving)
 
 	network:create("playerRequest_startFishing", "RemoteFunction", "OnServerInvoke", playerRequest_startFishing)
@@ -280,6 +276,4 @@ local function main()
 	end)
 end
 
-main()
-
-return fishManager
+return module

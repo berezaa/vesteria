@@ -1,41 +1,37 @@
 local module = {}
 
-local debris = game:GetService("Debris")
-local httpService = game:GetService("HttpService")
 local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules = require(replicatedStorage.modules)
-local network = modules.load("network")
-local placeSetup = modules.load("placeSetup")
-local physics = modules.load("physics")
-local utilities = modules.load("utilities")
-local mapping = modules.load("mapping")
-local levels = modules.load("levels")
-local damage = modules.load("damage")
-local detection = modules.load("detection")
-local configuration = modules.load("configuration")
-local projectile = modules.load("projectile")
-local events = modules.load("events")
 
-local serverStorage 		= game:GetService("ServerStorage")
-local itemLookupContainer 	= replicatedStorage.itemData
-local itemLookup 			= require(itemLookupContainer)
+local network
+local placeSetup
+local utilities
+local mapping
+local levels
+local damage
+local detection
+local configuration
+local projectile
+local events
+
+local itemLookupContainer = replicatedStorage.itemData
+local itemLookup = require(itemLookupContainer)
 local itemFolderLookup = replicatedStorage.assets:WaitForChild("items")
-local perkLookup			= require(replicatedStorage.perkLookup)
-local abilityLookup 		= require(replicatedStorage.abilityLookup)
-local monsterLookup 		= require(replicatedStorage.monsterLookup)
+local perkLookup = require(replicatedStorage.perkLookup)
+local abilityLookup = require(replicatedStorage.abilityLookup)
+local monsterLookup = require(replicatedStorage.monsterLookup)
 
-local entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
+local entityManifestCollectionFolder
 
-local rand 				= Random.new()
-local critChanceRandom 	= Random.new()
+local rand = Random.new()
+local critChanceRandom = Random.new()
 local dodgeChanceRandom = Random.new()
 
-local monsterDamageValidationData 	= {}
-local weaponValidationData 			= {}
-local playerDamageAnimationState 	= {}
-local arrowsShotByPlayers 			= {}
-local playerAbilityHitData 			= {}
-local magicBallsByPlayer 			= {}
+local monsterDamageValidationData = {}
+local weaponValidationData = {}
+local playerDamageAnimationState = {}
+local arrowsShotByPlayers = {}
+local playerAbilityHitData = {}
+local magicBallsByPlayer = {}
 
 local WEAPON_TYPES_TO_SCAN 	= {"dagger"; "staff"; "sword"; "greatsword"; "dual"; "swordAndShield"}
 local SAMPLE_POINTS_TO_TAKE = 5
@@ -163,12 +159,10 @@ local perksMaid = {} do
 	end
 end
 
-network:create("playerKilledByPlayer", "BindableEvent")
-network:create("signal_playerKilledByPlayer", "RemoteEvent")
+
 
 -- called when killing damage is applied to any entity
 local function processEntityKillingBlow(serverHitbox, killer, damageData)
-	print("X_X")
 	local killedMonster
 	local killedPlayer
 	if serverHitbox.entityType.Value == "monster" then
@@ -308,7 +302,7 @@ local function processEntityKillingBlow(serverHitbox, killer, damageData)
 	end
 end
 
-network:create("entityKillingBlow", "BindableEvent", "Event", processEntityKillingBlow)
+
 
 -- monster is dealing damage to a player
 -- player is dealing damage to a player
@@ -1516,7 +1510,24 @@ local function onPlayerRemoving(player)
 	end
 end
 
-local function main()
+function module.init(Modules)
+
+	network = Modules.network
+	placeSetup = Modules.placeSetup
+	utilities = Modules.utilities
+	mapping = Modules.mapping
+	levels = Modules.levels
+	damage = Modules.damage
+	detection = Modules.detection
+	configuration = Modules.configuration
+	projectile = Modules.projectile
+	events = Modules.events
+
+	entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
+
+	network:create("entityKillingBlow", "BindableEvent", "Event", processEntityKillingBlow)
+	network:create("playerKilledByPlayer", "BindableEvent")
+	network:create("signal_playerKilledByPlayer", "RemoteEvent")
 	network:create("signal_damageModificationByActiveAbility", "RemoteEvent")
 	network:create("playerRequest_damageEntity", "RemoteEvent", "OnServerEvent", playerRequest_damageEntity)
 	network:create("playerRequest_damageEntity_server", "BindableEvent", "Event", playerRequest_damageEntity)
@@ -1734,7 +1745,5 @@ local function main()
 		end)
 --	end
 end
-
-main()
 
 return module

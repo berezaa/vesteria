@@ -1,13 +1,15 @@
 -- Fluid day and night script
 -- berezaa 6/26/18
 
-DAY_TIME_SECONDS = 1200
+local DAY_TIME_SECONDS = 1200
 
 if game.PlaceId == 4561988219 or game.PlaceId == 4041427413 then
 	DAY_TIME_SECONDS = 600
 end
 
 local module = {}
+
+local network
 
 local dynamicParts = {}
 local ReplicatedStorage = game.ReplicatedStorage
@@ -23,7 +25,7 @@ local atmosphere = assets.misc.Atmosphere
 
 local Rand = Random.new(os.time())
 
-for i,v in pairs(workspace:GetDescendants()) do
+for _, v in pairs(workspace:GetDescendants()) do
 	if v.Name == "WindowPart" or (v.Name == "Light" and v.Parent.Name == "Lantern") then
 		table.insert(dynamicParts,{Part = v, Num = Rand:NextNumber()})
 	end
@@ -32,7 +34,6 @@ end
 -- Sunrise: 5.0 - 6.5
 -- Sunset: 17.6 - 18.6
 
-local RunService = game:GetService("RunService")
 --[[
 game.ReplicatedStorage.timeOfDay.Value = 10
 game.Lighting.ClockTime = 10
@@ -264,40 +265,42 @@ end)
 
 
 -- some time of day perks are handled here
-local modules = require(game.ReplicatedStorage.modules)
-local network = modules.load("network")
+
 
 local perkLookup = require(game.ReplicatedStorage.perkLookup)
 
-local function updateTimeOfDayPerksForPlayer(player, dt)
-	local playerData = network:invoke("getPlayerData", player)
-	if not playerData then return end
+function module.init(Modules)
+	network = Modules.network
 
-	local perks = playerData.nonSerializeData.statistics_final.activePerks
-	for perkName, active in pairs(perks) do
-		if active then
-			local perkData = perkLookup[perkName]
-			if perkData.onTimeOfDayUpdated then
-				perkData.onTimeOfDayUpdated(player, game.Lighting.ClockTime, dt)
+	local function updateTimeOfDayPerksForPlayer(player, dt)
+		local playerData = network:invoke("getPlayerData", player)
+		if not playerData then return end
+
+		local perks = playerData.nonSerializeData.statistics_final.activePerks
+		for perkName, active in pairs(perks) do
+			if active then
+				local perkData = perkLookup[perkName]
+				if perkData.onTimeOfDayUpdated then
+					perkData.onTimeOfDayUpdated(player, game.Lighting.ClockTime, dt)
+				end
 			end
 		end
 	end
-end
 
-local function update(dt)
-	for _, player in pairs(game:GetService("Players"):GetPlayers()) do
-		updateTimeOfDayPerksForPlayer(player, dt)
+	local function update(dt)
+		for _, player in pairs(game:GetService("Players"):GetPlayers()) do
+			updateTimeOfDayPerksForPlayer(player, dt)
+		end
 	end
-end
 
-local function startUpdating()
-	while true do
-		update(wait(1))
+	local function startUpdating()
+		while true do
+			update(wait(1))
+		end
 	end
+
+	spawn(startUpdating)
 end
-
-spawn(startUpdating)
-
 
 
 return module

@@ -1,10 +1,9 @@
 local module = {}
 
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules = require(game.ReplicatedStorage:WaitForChild("modules"))
-local network = modules.load("network")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local itemLookup = require(ReplicatedStorage:WaitForChild("itemData"))
 
-local itemLookup = require(replicatedStorage:WaitForChild("itemData"))
+local network
 
 local function playerRequest_craftItem(player, itemId)
 	local item = itemLookup[itemId]
@@ -21,10 +20,9 @@ local function playerRequest_craftItem(player, itemId)
 	end
 end
 
-local function main()
+function module.init(Modules)
+	network = Modules.network
 	network:create("playerRequest_craftItem", "RemoteFunction", "OnServerInvoke", playerRequest_craftItem)
 end
-
-spawn(main)
 
 return module

@@ -2,6 +2,14 @@
 -- Rocky28447 (for Vesteria) nah bro i thought it was for World Zero
 -- May 28, 2020
 
+local module = {}
+
+local CollectionService = game:GetService("CollectionService")
+
+local thread
+local tableUtil
+local placeSetup
+local network
 
 --[[
 
@@ -21,23 +29,10 @@
 
 ]]--
 
-local ResourceManager = {}
-
-local CollectionService = game:GetService("CollectionService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local Modules
-local Thread
-local TableUtil
-local placeSetup
-local network
-
 local nodesFolder
 
 local globalResourceNodeData = {}
 local localResourceNodeData = {}
-
-
 
 local function getNodeTypeMetadataFromNode(node)
 	local containingFolder = node:FindFirstAncestorWhichIsA("Folder")
@@ -217,7 +212,7 @@ local function resourceNodeDepleted(node, player)
 	local nodeData = isGlobal and getGlobalDataForNode(node) or getNodeDataForPlayer(node, player)
 
 	if nodeTypeMetadata.Replenish ~= 0 then
-		Thread.Delay(nodeTypeMetadata.Replenish, resourceNodeReplenished, node, player)
+		thread.Delay(nodeTypeMetadata.Replenish, resourceNodeReplenished, node, player)
 	end
 
 	if isGlobal then
@@ -282,7 +277,7 @@ local function harvestResource(player, node)
 					local dropPosition = dropPoint and dropPoint.Value.DropAttachment.WorldPosition or
 											node.PrimaryPart.Position + Vector3.new(0, node.PrimaryPart.Size.Y / 2 + 0.5, 0)
 
-					TableUtil.FastRemove(nodeData.DropPoints, dropPointNum)
+					tableUtil.FastRemove(nodeData.DropPoints, dropPointNum)
 					harvestsLeft = harvestsLeft - 1
 					nodeData.harvestsLeft = harvestsLeft
 					nodeData.durability = nodeTypeMetadata.Durability
@@ -336,13 +331,12 @@ local function harvestResource(player, node)
 end
 
 
-local function Init()
+function module.init(Modules)
 
-	Modules = require(ReplicatedStorage.modules)
-	network = Modules.load("network")
-	placeSetup = Modules.load("placeSetup")
-	Thread = Modules.load("thread")
-	TableUtil = Modules.load("tableUtil")
+	network = Modules.network
+	placeSetup = Modules.placeSetup
+	thread = Modules.thread
+	tableUtil = Modules.tableUtil
 
 	nodesFolder = placeSetup.getPlaceFolder("resourceNodes")
 
@@ -353,9 +347,7 @@ local function Init()
 	network:create("resourceHarvested", "RemoteEvent")
 	network:create("resourceDepleted", "RemoteEvent")
 	network:create("resourceReplenished", "RemoteEvent")
-
 end
 
-Init()
 
-return ResourceManager
+return module

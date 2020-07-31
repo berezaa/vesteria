@@ -1,10 +1,11 @@
 local module = {}
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local modules = require(game.ReplicatedStorage:WaitForChild("modules"))
-local network = modules.load("network")
-local levels = modules.load("levels")
-local professionLookup = require(game.ReplicatedStorage:WaitForChild("professionLookup"))
+local network
+local levels
+
+local professionLookup = require(ReplicatedStorage:WaitForChild("professionLookup"))
 
 local function getProfessionLevel(player, profession)
 	local playerData = network:invoke("getPlayerData", player)
@@ -15,8 +16,6 @@ local function getProfessionLevel(player, profession)
 		end
 	end
 end
-
-network:create("getProfessionLevel", "BindableFunction", "OnInvoke", getProfessionLevel)
 
 local function grantProfessionExp(player, profession, exp)
 	local playerData = network:invoke("getPlayerData", player)
@@ -66,6 +65,12 @@ local function grantProfessionExp(player, profession, exp)
 	end
 end
 
-network:create("grantProfessionExp", "BindableFunction", "OnInvoke", grantProfessionExp)
+function module.init(Modules)
+	network = Modules.network
+	levels = Modules.levels
+
+	network:create("getProfessionLevel", "BindableFunction", "OnInvoke", getProfessionLevel)
+	network:create("grantProfessionExp", "BindableFunction", "OnInvoke", grantProfessionExp)
+end
 
 return module

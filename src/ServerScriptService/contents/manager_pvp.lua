@@ -2,9 +2,9 @@ local module = {}
 
 -- from Player Manager, needs to be set up
 
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules = require(replicatedStorage:WaitForChild("modules"))
-local network = modules.load("network")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local network
 
 local shuttingDown = false
 
@@ -41,7 +41,7 @@ local function isPlayerInPVPZone(pvpZone, player)
 end
 
 local function int__tickForPVP()
-	if #pvpZoneCollectionFolder:GetChildren() == 0 and not replicatedStorage:FindFirstChild("isPVPGloballyEnabled") then return end
+	if #pvpZoneCollectionFolder:GetChildren() == 0 and not ReplicatedStorage:FindFirstChild("isPVPGloballyEnabled") then return end
 
 	while not shuttingDown do
 		for _, player in pairs(game.Players:GetPlayers()) do
@@ -49,7 +49,7 @@ local function int__tickForPVP()
 			if not playerData then return end
 			local currentPVPValue = playerData.nonSerializeData.isGlobalPVPEnabled
 
-			if replicatedStorage:FindFirstChild("isPVPGloballyEnabled") and replicatedStorage.isPVPGloballyEnabled.Value then
+			if ReplicatedStorage:FindFirstChild("isPVPGloballyEnabled") and ReplicatedStorage.isPVPGloballyEnabled.Value then
 				if currentPVPValue == false then
 					playerData.nonSerializeData.isGlobalPVPEnabled = true
 					playerData.nonSerializeData.playerDataChanged:Fire("nonSerializeData")
@@ -134,9 +134,16 @@ local function revokePVPWhitelistPlayer_server(player, playerToRevokeWhitelist)
 	end
 end
 
-spawn(int__tickForPVP)
 
-network:create("requestPVPWhitelistPlayer_server", "BindableFunction", "OnInvoke", requestPVPWhitelistPlayer_server)
-network:create("revokePVPWhitelistPlayer_server", "BindableFunction", "OnInvoke", revokePVPWhitelistPlayer_server)
+
+function module.init(Modules)
+	network = Modules.network
+
+	network:create("requestPVPWhitelistPlayer_server", "BindableFunction", "OnInvoke", requestPVPWhitelistPlayer_server)
+	network:create("revokePVPWhitelistPlayer_server", "BindableFunction", "OnInvoke", revokePVPWhitelistPlayer_server)
+	spawn(int__tickForPVP)
+end
+
+
 
 return module

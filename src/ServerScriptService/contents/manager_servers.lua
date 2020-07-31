@@ -4,14 +4,13 @@ local module = {}
 
 local placeKey = "pl-"..tostring(game.PlaceId)
 
-local httpService 		= game:GetService("HttpService")
-local messaging			= game:GetService("MessagingService")
-local runService 		= game:GetService("RunService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
-	local modules 		= require(replicatedStorage.modules)
-		local network 		= modules.load("network")
-		local utilities 	= modules.load("utilities")
-		
+local httpService = game:GetService("HttpService")
+local messaging = game:GetService("MessagingService")
+
+
+local network
+
+
 local success, err
 local messagingConnection
 
@@ -27,7 +26,7 @@ end
 
 local function registerMessage(message)
 	local data = message.Data
-	local timestamp = message.Sent	
+	local timestamp = message.Sent
 	local jobId = data.jobId
 	if jobId ~= game.JobId then
 		if data.status == "open" then
@@ -37,60 +36,12 @@ local function registerMessage(message)
 			}
 		elseif data.status == "close" then
 			servers[tostring(jobId)] = nil
-		end	
+		end
 		serversDataUpdated()
 	end
 end
 
-local serverClosing
-
-local function main()
-	if game.PrivateServerId == "" and game.PlaceId ~= 4561988219 and game.PlaceId ~= 4041427413 then
-		local success, err
-		repeat	
-			wait(1)	
-			success, err = pcall(function()
-				messagingConnection = messaging:SubscribeAsync(
-					placeKey, 
-					registerMessage
-				)
-			end)
-		until success
-		
-		game:BindToClose(function()
-			serverClosing = true
-			if game:GetService("RunService"):IsStudio() then return end
-			local message = {
-				jobId = game.JobId;
-				status = "close";
-			}	
-			local success, err
-			repeat
-				success, err = pcall(function()
-					messaging:PublishAsync(placeKey, message)
-				end)	
-				wait(1)
-			until success
-			
-		end)
-		
-		while not serverClosing do
-			local message = {
-				jobId = game.JobId;
-				status = "open";
-				players = #game.Players:GetPlayers();
-			}			
-			local messageSent, err = pcall(function()
-				messaging:PublishAsync(placeKey, message)
-			end)				
-			wait(messageSent and 60 or 20)			
-		end		
-	end
-end		
-
-spawn(main)		
-
-network:create("playerRequest_teleportToJobId", "RemoteFunction", "OnServerInvoke", function(player, jobId)
+local function playerRequest_teleportToJobId(player, jobId)
 	if servers[jobId] then
 		if player.Character and player.Character.PrimaryPart then
 			if player.Character.PrimaryPart.state.Value ~= "dead" and player.Character.PrimaryPart.health.Value > 0 then
@@ -100,14 +51,71 @@ network:create("playerRequest_teleportToJobId", "RemoteFunction", "OnServerInvok
 		return true
 	end
 	return false
-end)
+end
 
-network:create("playerRequest_returnToMainMenu", "RemoteFunction", "OnServerInvoke", function(player)
+local function playerRequest_returnToMainMenu(player)
 	if player.Character and player.Character.PrimaryPart then
 		if player.Character.PrimaryPart.state.Value ~= "dead" and player.Character.PrimaryPart.health.Value > 0 then
 			network:invoke("teleportPlayer", player, 2376885433)
 		end
 	end
-end)
+end
+
+
+local serverClosing
+
+local function connect()
+	if game.PrivateServerId == "" and game.PlaceId ~= 4561988219 and game.PlaceId ~= 4041427413 then
+		local success, err
+		repeat
+			wait(1)
+			success, err = pcall(function()
+				messagingConnection = messaging:SubscribeAsync(
+					placeKey,
+					registerMessage
+				)
+			end)
+		until success
+
+		game:BindToClose(function()
+			serverClosing = true
+			if game:GetService("RunService"):IsStudio() then return end
+			local message = {
+				jobId = game.JobId;
+				status = "close";
+			}
+			local success, err
+			repeat
+				success, err = pcall(function()
+					messaging:PublishAsync(placeKey, message)
+				end)
+				wait(1)
+			until success
+
+		end)
+
+		while not serverClosing do
+			local message = {
+				jobId = game.JobId;
+				status = "open";
+				players = #game.Players:GetPlayers();
+			}
+			local messageSent, err = pcall(function()
+				messaging:PublishAsync(placeKey, message)
+			end)
+			wait(messageSent and 60 or 20)
+		end
+	end
+end
+
+function module.init(Modules)
+
+	network = Modules.network
+
+	network:create("playerRequest_teleportToJobId", "RemoteFunction", "OnServerInvoke", playerRequest_teleportToJobId)
+	network:create("playerRequest_returnToMainMenu", "RemoteFunction", "OnServerInvoke", playerRequest_returnToMainMenu)
+
+	spawn(connect)
+end
 
 return module

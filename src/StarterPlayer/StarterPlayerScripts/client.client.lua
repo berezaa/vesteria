@@ -13,14 +13,16 @@ local beginInit = false
 local function setup(directory)
     for _, moduleScript in pairs(directory:GetDescendants()) do
         if moduleScript:IsA("ModuleScript") then
+            print("$ client", "initialize module", moduleScript.Name)
             modules[moduleScript.Name] = require(moduleScript)
         end
     end
 end
 
 local function initialize()
-    for _, module in pairs(modules) do
-        if module.init and not module.__initialized then
+    for moduleName, module in pairs(modules) do
+        if typeof(module) == "table" and (module.init and not module.__initialized) then
+            print("$ client", "initialize module", moduleName)
             module.init(modules)
             module.__initialized = true
         end
@@ -33,9 +35,11 @@ for _, directory in pairs(directories) do
     -- Ongoing support
     directory.DescendantAdded:connect(function(moduleScript)
         if moduleScript:IsA("ModuleScript") then
+            print("$ client", "require module", moduleScript.Name)
             local module = require(moduleScript)
             modules[moduleScript.Name] = module
-            if module.init and beginInit then
+            if typeof(module) == "table" and module.init and beginInit then
+                print("$ client", "initialize module", moduleScript.Name)
                 module.init(modules)
             end
         end
