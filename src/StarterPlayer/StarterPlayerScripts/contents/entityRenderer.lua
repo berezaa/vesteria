@@ -1,6 +1,4 @@
 -- Master script that handles entity rendering
--- Main Author: Polymorphic
--- Co-Author: berezaa
 
 local module = {}
 local client = game.Players.LocalPlayer
@@ -20,40 +18,36 @@ local item_manager = coreRenderServices("item_manager")
 -- services
 local assetFolder = repo.Parent:WaitForChild("assets")
 
-local runService = game:GetService("RunService")
-local httpService = game:GetService("HttpService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
-local modules = require(replicatedStorage:WaitForChild("modules"))
+local RunService = game:GetService("RunService")
+local HttpService = game:GetService("HttpService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- load modules
-local network = modules.load("network")
-local tween = modules.load("tween")
-local utilities = modules.load("utilities")
-local physics = modules.load("physics")
-local placeSetup = modules.load("placeSetup")
-local projectile = modules.load("projectile")
-local configuration = modules.load("configuration")
-local events = modules.load("events")
-local levels = modules.load("levels")
+-- modules
+local network
+local tween
+local utilities
+local physics
+local placeSetup
+local projectile
+local configuration
+local events
 
 -- assets
-local replicatedStorageAssetFolder = replicatedStorage:WaitForChild("assets")
+local ReplicatedStorageAssetFolder = ReplicatedStorage:WaitForChild("assets")
 
-local defaultCharacterAppearance = require(replicatedStorage:WaitForChild("defaultCharacterAppearance"))
-local defaultMonsterStateStates = require(replicatedStorage.defaultMonsterState).states
+local defaultCharacterAppearance = require(ReplicatedStorage:WaitForChild("defaultCharacterAppearance"))
+local defaultMonsterStateStates = require(ReplicatedStorage.defaultMonsterState).states
 
-local entityManifestCollectionFolder = placeSetup.awaitPlaceFolder("entityManifestCollection")
-local entityRenderCollectionFolder = placeSetup.awaitPlaceFolder("entityRenderCollection")
+local entityManifestCollectionFolder
+local entityRenderCollectionFolder
 
 local animationInterface
-local accessoryLookup = replicatedStorage.assets.accessories
-local itemLookup = require(replicatedStorage.itemData)
-local monsterLookup = require(replicatedStorage.monsterLookup)
-local abilityLookup = require(replicatedStorage.abilityLookup)
-local statusEffectLookup = require(replicatedStorage.statusEffectLookup)
+local accessoryLookup = ReplicatedStorage.assets.accessories
+local itemLookup = require(ReplicatedStorage.itemData)
+local monsterLookup = require(ReplicatedStorage.monsterLookup)
+local abilityLookup = require(ReplicatedStorage.abilityLookup)
+local statusEffectLookup = require(ReplicatedStorage.statusEffectLookup)
 local entitiesBeingRendered = {}
-
-local rand  = Random.new()
 
 -- builds a table of whats currently equipped on a renderCharacter,
 -- id rather do this than store what every renderCharacter is wearing and
@@ -104,7 +98,7 @@ local function int__updateRenderCharacter(renderCharacter, appearanceData, _enti
 		end
 	end
 
-	appearance_manager.ApplySkinColor(appearanceData, renderCharacter, accessoryLookup, replicatedStorageAssetFolder)
+	appearance_manager.ApplySkinColor(appearanceData, renderCharacter, accessoryLookup, ReplicatedStorageAssetFolder)
 
 	local hatEquipmentData
 	local inventoryCountLookup = getInventoryCountLookupTableByItemId()
@@ -113,13 +107,13 @@ local function int__updateRenderCharacter(renderCharacter, appearanceData, _enti
 		item_manager.iterateThroughappearanceData(appearanceData,renderCharacter,bow_manager,hatEquipmentData,inventoryCountLookup)
 	end
 
---[[
+	--[[
 	playerStoreForCurrentlyEquipped[equipmentData.position] = {
 		baseData = weaponBaseData;
 		manifest = weaponManifest;
 		equipmentData = equipmentData;
 	}
---]]
+	--]]
 
 	-- iterate through equipped on character and actual
 	item_manager.IterateThroughItems(renderCharacter,appearanceData)
@@ -128,13 +122,13 @@ local function int__updateRenderCharacter(renderCharacter, appearanceData, _enti
 	item_manager.EquipNewItem(appearanceData,renderCharacter,_entityManifest,entitiesBeingRendered,animationInterface,associatePlayer,client,assetFolder)
 
 	if appearanceData and appearanceData.accessories then
-		appearance_manager.LoadAppearence(replicatedStorageAssetFolder.accessories,appearanceData,hatEquipmentData,itemLookup,renderCharacter)
+		appearance_manager.LoadAppearence(ReplicatedStorageAssetFolder.accessories,appearanceData,hatEquipmentData,itemLookup,renderCharacter)
 	end
 
 	if appearanceData and appearanceData.temporaryEquipment then
 		for temporaryEquipmentName, _ in pairs(appearanceData.temporaryEquipment) do
-			if replicatedStorage:FindFirstChild("temporaryEquipment") and replicatedStorage.temporaryEquipment:FindFirstChild(temporaryEquipmentName) then
-				local applicationFunction = require(replicatedStorage.temporaryEquipment[temporaryEquipmentName].application)
+			if ReplicatedStorage:FindFirstChild("temporaryEquipment") and ReplicatedStorage.temporaryEquipment:FindFirstChild(temporaryEquipmentName) then
+				local applicationFunction = require(ReplicatedStorage.temporaryEquipment[temporaryEquipmentName].application)
 
 				applicationFunction(renderCharacter)
 			end
@@ -173,7 +167,7 @@ local function int__assembleRenderCharacter(manifest)
 
 
 
-	local characterBaseModel = replicatedStorage.playerBaseCharacter:Clone()
+	local characterBaseModel = ReplicatedStorage.playerBaseCharacter:Clone()
 	characterBaseModel.Name = "entity"
 	characterBaseModel.Parent = entityContainer
 
@@ -958,7 +952,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 
 					-- kind of a messy solution but this is needed for emotes to properly work with the control script
 					if extraEmoteInfo[animationName] and  extraEmoteInfo[animationName].singleAction then
-						network:fire("endEmote")
+						control.endEmote()
 					end
 
 					connection:disconnect()
@@ -1135,7 +1129,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 						spawn(function()
 							local guildDataValue = guildDataFolder:WaitForChild(associatePlayer.guildId.Value, 10)
 							if guildDataValue then
-								local guildData = httpService:JSONDecode(guildDataValue.Value)
+								local guildData = HttpService:JSONDecode(guildDataValue.Value)
 								if guildData.name then
 									nameTag.SurfaceGui.bottom.guild.Text = guildData.name
 									local nameBounds = game.TextService:GetTextSize(guildData.name, nameTag.SurfaceGui.bottom.guild.TextSize, nameTag.SurfaceGui.bottom.guild.Font, Vector2.new()).X + 10
@@ -1604,7 +1598,7 @@ local function int__connectEntityEvents(entityManifest, renderEntityData)
 	end
 end
 
-events:registerForEvent("playersXpGained", function(playerXpRewards)
+local function playersXpGained(playerXpRewards)
 	for playerName,xpgained in pairs(playerXpRewards) do
 		local player = game.Players:FindFirstChild(playerName)
 		if player then
@@ -1642,7 +1636,7 @@ events:registerForEvent("playersXpGained", function(playerXpRewards)
 			end
 		end
 	end
-end)
+end
 
 local function int__updateMonsterNameTag(renderData)
 	local entityContainer = renderData.entityContainer
@@ -1651,7 +1645,6 @@ local function int__updateMonsterNameTag(renderData)
 	if nameTagPart then
 		local nameTag = nameTagPart:FindFirstChild("SurfaceGui")
 		if nameTag then
---			local distanceAway = utilities.magnitude(entityContainer.PrimaryPart.Position - workspace.CurrentCamera.CFrame.p)
 
 			local focus = client.Character and client.Character.PrimaryPart or workspace.CurrentCamera
 			local distanceAway = utilities.magnitude(entityContainer.PrimaryPart.Position - focus.CFrame.p)
@@ -1678,7 +1671,6 @@ local function int__updateMonsterNameTag(renderData)
 				if not renderData.disableHealthBarUI and healthTag then
 
 						healthTag.Enabled = damagedByPlayer
---					end
 				elseif healthTag then
 					healthTag.Enabled = false
 				end
@@ -1911,7 +1903,7 @@ local function assembleCharacterRenderEntity(entityManifest)
 		end
 	end
 
-	local appearanceData 	= httpService:JSONDecode(entityManifest.appearance.Value)
+	local appearanceData 	= HttpService:JSONDecode(entityManifest.appearance.Value)
 	local entityContainer 	= int__assembleRenderCharacter(entityManifest)
 	entityContainer.Parent 	= entityRenderCollectionFolder
 
@@ -2298,8 +2290,7 @@ spawn(function()
 	end
 end)
 
--- damage signal
-network:connect("signal_damage", "OnClientEvent", function(entityManifest, damageInfo)
+local function signal_damage(entityManifest, damageInfo)
 
 	local renderEntityData = entitiesBeingRendered[entityManifest]
 	if renderEntityData then
@@ -2331,30 +2322,30 @@ network:connect("signal_damage", "OnClientEvent", function(entityManifest, damag
 		local damageIndicator = container:FindFirstChild("damageIndicator")
 
 		if damageIndicator == nil then
-			damageIndicator = replicatedStorageAssetFolder.entities.damageIndicator:Clone()
+			damageIndicator = ReplicatedStorageAssetFolder.entities.damageIndicator:Clone()
 			local thickness = math.max((container.PrimaryPart.Size.X + container.PrimaryPart.Size.Z) / 2, 3)
 
 			damageIndicator.Size = UDim2.new(thickness, 50, 6, 75)
-			damageIndicator.Parent 		= container
+			damageIndicator.Parent = container
 		end
 		if not damageIndicator.Adornee then
-			damageIndicator.Adornee		= container.PrimaryPart
-			damageIndicator.Enabled 	= true
+			damageIndicator.Adornee = container.PrimaryPart
+			damageIndicator.Enabled = true
 		end
 
-		local template 					= damageIndicator.template:Clone()
+		local template = damageIndicator.template:Clone()
 
-		local offset 					= 0.5 - (math.random() - 0.5) * 0.5
-		template.Text 					= tostring(math.floor(math.abs(damageInfo.damage) or 0))
-		template.TextTransparency 		= 1
+		local offset = 0.5 - (math.random() - 0.5) * 0.5
+		template.Text = tostring(math.floor(math.abs(damageInfo.damage) or 0))
+		template.TextTransparency = 1
 		template.TextStrokeTransparency = 1
-		template.Position 				= UDim2.new(offset,0,0.85,0)
-		template.Parent 				= damageIndicator
+		template.Position = UDim2.new(offset,0,0.85,0)
+		template.Parent = damageIndicator
 		game.Debris:AddItem(template, 3)
 
 
-		template.Size 					= UDim2.new(0.7,0,0.1,0)
-		template.Visible 				= true
+		template.Size = UDim2.new(0.7,0,0.1,0)
+		template.Visible = true
 
 
 		if damageInfo.damage < 0 then
@@ -2370,7 +2361,7 @@ network:connect("signal_damage", "OnClientEvent", function(entityManifest, damag
 
 		if isSecondary then
 			local startTime = tick()
-			local tweenConnection = runService.Heartbeat:connect(function(step)
+			local tweenConnection = RunService.Heartbeat:connect(function(step)
 				local t = (tick()-startTime)/1.5
 				template.Position = UDim2.new(offset,0, 0.85 - 0.55*t ,0)
 				if t > 0.5 then
@@ -2434,7 +2425,8 @@ network:connect("signal_damage", "OnClientEvent", function(entityManifest, damag
 		end
 
 	end
-end)
+end
+
 
 local function onEntityManifestCollectionFolderChildAdded(entityManifest)
 	--assuming Damiens up to some mischief in here for monster rework
@@ -2499,9 +2491,9 @@ local function onPlayerAppliedScroll(serverPlayer, scrollItemId, successfullyApp
 
 					local connection
 					if serverPlayer == game.Players.LocalPlayer then
-						connection = runService.RenderStepped:connect(render)
+						connection = RunService.RenderStepped:connect(render)
 					else
-						connection = runService.Heartbeat:connect(render)
+						connection = RunService.Heartbeat:connect(render)
 					end
 
 					tween(positionOffset,{"Value"},Vector3.new(0,5,0),0.3)
@@ -2561,19 +2553,51 @@ local function onPlayerAppliedScroll(serverPlayer, scrollItemId, successfullyApp
 	end
 end
 
+local function getMyClientCharacterContainer()
+	while not client.Character or not client.Character.PrimaryPart or not entitiesBeingRendered[client.Character.PrimaryPart] do
+		wait(0.1)
+	end
 
-local function main()
-	network:create("getMyClientCharacterContainer", "BindableFunction", "OnInvoke", function()
-		-- wait for character!
---		while not myClientPlayerCharacterContainer do wait(0.1) end
---
---		return myClientPlayerCharacterContainer
-		while not client.Character or not client.Character.PrimaryPart or not entitiesBeingRendered[client.Character.PrimaryPart] do
-			wait(0.1)
-		end
+	return entitiesBeingRendered[client.Character.PrimaryPart].entityContainer
+end
 
-		return entitiesBeingRendered[client.Character.PrimaryPart].entityContainer
-	end)
+local function createRenderCharacterContainerFromCharacterAppearanceData(manifestContainer, appearanceData)
+	local renderCharacterContainer = int__assembleRenderCharacter(manifestContainer.PrimaryPart)
+	int__updateRenderCharacter(renderCharacterContainer.entity, appearanceData)
+
+	return renderCharacterContainer
+end
+
+local function applyCharacterAppearanceToRenderCharacter(entity, appearanceData)
+	int__updateRenderCharacter(entity, appearanceData)
+end
+
+local function assembleEntityByManifest(entityManifest)
+	if entityManifest.entityType.Value == "character" then
+		return assembleCharacterRenderEntity(entityManifest)
+	elseif entityManifest.entityType.Value == "monster" or entityManifest.entityType.Value == "pet" then
+		return assembleMonsterRenderEntity(entityManifest)
+	end
+end
+
+function module.init(Modules)
+
+	network = Modules.network
+	tween = Modules.tween
+	utilities = Modules.utilities
+	physics = Modules.physics
+	placeSetup = Modules.placeSetup
+	projectile = Modules.projectile
+	configuration = Modules.configuration
+	events = Modules.events
+
+	events:registerForEvent("playersXpGained", playersXpGained)
+
+	entityManifestCollectionFolder = placeSetup.awaitPlaceFolder("entityManifestCollection")
+	entityRenderCollectionFolder = placeSetup.awaitPlaceFolder("entityRenderCollection")
+
+	network:connect("signal_damage", "OnClientEvent", signal_damage)
+	network:create("getMyClientCharacterContainer", "BindableFunction", "OnInvoke", getMyClientCharacterContainer)
 
 	--run manager connections
 	item_manager.createNetworkConnections(client,entitiesBeingRendered)
@@ -2583,12 +2607,7 @@ local function main()
 	network:create("myClientCharacterContainerChanged", "BindableEvent")
 
 	-- todo: convert all manifestContainer calls to just manifest!
-	network:create("createRenderCharacterContainerFromCharacterAppearanceData", "BindableFunction", "OnInvoke", function(manifestContainer, appearanceData)
-		local renderCharacterContainer = int__assembleRenderCharacter(manifestContainer.PrimaryPart)
-		int__updateRenderCharacter(renderCharacterContainer.entity, appearanceData)
-
-		return renderCharacterContainer
-	end)
+	network:create("createRenderCharacterContainerFromCharacterAppearanceData", "BindableFunction", "OnInvoke", createRenderCharacterContainerFromCharacterAppearanceData)
 
 	network:create("createRenderMonsterContainer", "BindableFunction", "OnInvoke", function(entityManifest)
 		local renderMonsterContainer = assembleMonsterRenderEntity(entityManifest)
@@ -2597,21 +2616,13 @@ local function main()
 	end)
 
 	-- todo: convert all manifestContainer calls to just manifest!
-	network:create("applyCharacterAppearanceToRenderCharacter", "BindableFunction", "OnInvoke", function(entity, appearanceData)
-		int__updateRenderCharacter(entity, appearanceData)
-	end)
+	network:create("applyCharacterAppearanceToRenderCharacter", "BindableFunction", "OnInvoke", applyCharacterAppearanceToRenderCharacter)
 
 	network:create("myClientCharacterDied", "BindableEvent")
 
 	network:create("myClientCharacterWeaponChanged", "BindableEvent")
 
-	network:create("assembleEntityByManifest", "BindableFunction", "OnInvoke", function(entityManifest)
-		if entityManifest.entityType.Value == "character" then
-			return assembleCharacterRenderEntity(entityManifest)
-		elseif entityManifest.entityType.Value == "monster" or entityManifest.entityType.Value == "pet" then
-			return assembleMonsterRenderEntity(entityManifest)
-		end
-	end)
+	network:create("assembleEntityByManifest", "BindableFunction", "OnInvoke", assembleEntityByManifest)
 
 	network:create("setStopRenderingPlayers", "BindableFunction", "OnInvoke", function() end)
 	network:create("monsterDamagedAtPosition", "BindableEvent", "Event", showDamageAtPosition)
@@ -2712,7 +2723,7 @@ local function main()
 	local deferredEntities = {}
 	local priorityEntities = {}
 
-	runService:BindToRenderStep("updateEntityRendering", 50, function()
+	RunService:BindToRenderStep("updateEntityRendering", 50, function()
 		deferredEntities = {}
 		priorityEntities = {}
 		local n = 0
@@ -2728,7 +2739,7 @@ local function main()
 		updateEntitiesBeingRendered(priorityEntities)
 	end)
 
-	runService.Heartbeat:connect(function()
+	RunService.Heartbeat:connect(function()
 		updateEntitiesBeingRendered(deferredEntities)
 	end)
 
@@ -2745,6 +2756,5 @@ local function main()
 	spawn(int__updateNearbyEntities)
 end
 
-main()
 
 return module

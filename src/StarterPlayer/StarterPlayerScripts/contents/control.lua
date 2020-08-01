@@ -17,55 +17,49 @@ local currentEquipType
 local playerMovementSpeed = 16
 
 local total_statistics = {}
+
+
+local UserInputService = game:GetService("UserInputService")
+
+local placeSetup
+local network
+local client_utilities
+local tween
+local utilities
+local terrainUtil
+local damage
+
+
+local isMenuInFocus
+local function signal_menuFocusChanged(value)
+	isMenuInFocus = value
+end
+
+
+local entityRenderCollectionFolder
+local entityManifestCollectionFolder
+
+local IGNORE_LIST
+local userInputService = game:GetService("UserInputService")
+local camera = workspace.Camera
+local myClientCharacterContainer
+
+local isPlayerJumpEnabled = true
+local isPlayerSprintingEnabled = true
+local IS_PLAYER_CAMERA_LOCKED = false
+local playerWalkspeedMultiplier = 1
+local isPlayerChanneling = false
+
+local basicAttacking = false
+
 local function onPlayerStatisticsChanged(base, tot)
 	total_statistics = tot
 	playerMovementSpeed = total_statistics.walkspeed or 14
 end
 
-local USI = game:GetService("UserInputService")
-
-local modules = require(game.ReplicatedStorage:WaitForChild("modules"))
-	local placeSetup 		= modules.load("placeSetup")
-	local network 			= modules.load("network")
-	local client_utilities 	= modules.load("client_utilities")
-	local tween 			= modules.load("tween")
-	local utilities 		= modules.load("utilities")
-	local terrainUtil		= modules.load("terrainUtil")
-	local damage			= modules.load("damage")
-	local configuration		= modules.load("configuration")
-
-
-local isMenuInFocus
-network:create("signal_menuFocusChanged", "BindableEvent", "Event", function(value)
-	isMenuInFocus = value
-end)
-
---[[
-network:create("setMobileMovementDirection", "BinableFunction", "OnInvoke", function(direction)
-	mobileMovementDirection = direction
-end)
-]]
-
-local entityRenderCollectionFolder 		= placeSetup.awaitPlaceFolder("entityRenderCollection")
-local entityManifestCollectionFolder 	= placeSetup.awaitPlaceFolder("entityManifestCollection")
-
-local IGNORE_LIST 					= {placeSetup.getPlaceFoldersFolder()}
-local userInputService 				= game:GetService("UserInputService")
-local camera 						= workspace.Camera
-local myClientCharacterContainer
-
-local isPlayerJumpEnabled 		= true
-local isPlayerSprintingEnabled 	= true
-local IS_PLAYER_CAMERA_LOCKED 	= false
-local playerWalkspeedMultiplier = 1
-local isPlayerChanneling 		= false
-
-local basicAttacking            = false
-
 -- todo: fix
-local animationInterface = require(game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("contents"):WaitForChild("animationInterface"))
+local animationInterface
 
-local gameUI 		= player:WaitForChild("PlayerGui"):WaitForChild("gameUI")
 local itemLookup 	= require(game.ReplicatedStorage.itemData)
 
 local function getServerHitboxFromClientHitbox(clientHitbox)
@@ -74,7 +68,7 @@ local function getServerHitboxFromClientHitbox(clientHitbox)
 	end
 end
 
--- my only purpose is to make you walk slower while using a bow :D
+-- my only purpose is to make you walk slower while UserInputServiceng a bow :D
 local function onSetIsChanneling(isChanneling)
 	isPlayerChanneling = isChanneling
 
@@ -162,13 +156,10 @@ local function doesCharacterHaveStatusEffect(statusEffectType, sourceId, sourceV
 	return false
 end
 
--- this is literally only used by the stamina meter UI
-network:create("doesPlayerHaveStatusEffect", "BindableFunction", "OnInvoke", doesCharacterHaveStatusEffect)
 
 local function isCharacterStunned()
 	return doesCharacterHaveStatusEffect("stunned")
 end
-network:create("isCharacterStunned", "BindableFunction", "OnInvoke", isCharacterStunned)
 
 local function begin_sprint()
 	network:invoke("setCharacterMovementState", "isSprinting", true)
@@ -200,9 +191,9 @@ local movementUnitVector
 
 local mobileMovementDirection
 
-network:create("mobileMovementDirectionChanged", "BindableEvent", "Event", function(direction)
+local function mobileMovementDirectionChanged(direction)
 	mobileMovementDirection = direction
-end)
+end
 
 -- youre gonna need to live with this
 local function getMovementAngle()
@@ -241,7 +232,7 @@ local function getMovementAngle()
 		return movementAngle
 	end
 
-	local state = USI:GetGamepadState(Enum.UserInputType.Gamepad1)
+	local state = UserInputService:GetGamepadState(Enum.UserInputType.Gamepad1)
 	if state then
 		for index, input in pairs(state) do
 			if input.KeyCode == Enum.KeyCode.Thumbstick1 then
@@ -266,8 +257,8 @@ end
 
 local function isOnScreen(position)
 	return
-		position.X >= 0 and position.X <= gameUI.AbsoluteSize.X
-		and position.Y >= 0 and position.Y <= gameUI.AbsoluteSize.Y
+		position.X >= 0 and position.X <= workspace.CurrentCamera.ViewportSize.X
+		and position.Y >= 0 and position.Y <= workspace.CurrentCamera.ViewportSize.Y
 		and position.Z > 0
 end
 
@@ -472,7 +463,7 @@ local defaultEmotes = {
 	["pushups"]   = true;
 }
 
-network:create("playerRequest_performEmote", "BindableFunction", "OnInvoke", function(emote)
+local function performEmote(emote)
 
 
 	if states.isSprinting or states.isInAir or	states.isMoving or	states.isJumping or	states.isSitting or	states.isExhausted or states.isDoubleJumping or states.isFalling or states.isFishing or states.isGettingUp or states.isSwimming then
@@ -522,14 +513,16 @@ network:create("playerRequest_performEmote", "BindableFunction", "OnInvoke", fun
 	end
 
 
-end)
+end
 
-network:create("endEmote", "BindableEvent", "Event", function()
+
+function module.endEmote()
 	if isPlayerEmoting then
 		curEmote = ""
-    	isPlayerEmoting = false
+		isPlayerEmoting = false
 	end
-end)
+end
+
 
 -- this is all crappy bad code but you cant burn it all down because you need it so figure out how to
 -- use it in a way that isnt crappy bad code thank you good luck have fun we're praying for your
@@ -695,13 +688,11 @@ local function setCharacterArrested(arrested, arrestedCFrame)
 	if arrested then
 		characterArrested 	= true
 		movementVelocity 	= Vector3.new()
---		externalVelocity 	= Vector3.new()
 
 		if states.isSprinting then
 			stopSprinting_animations(true)
 		end
 
---		setCharacterMovementState("isJumping", false)
 		setCharacterMovementState("isMoving", false)
 		setCharacterMovementState("isSprinting", false)
 		setCharacterMovementState("isSitting", false)
@@ -742,328 +733,21 @@ local function setCharacterArrested(arrested, arrestedCFrame)
 	end
 end
 
-network:create("isCharacterArrested", "BindableFunction", "OnInvoke", function()
-	return characterArrested
-end)
 
-network:create("setCharacterArrested", "BindableFunction", "OnInvoke", setCharacterArrested)
+
 
 local lastJump = 0
 
-local totalStats = network:invoke("getCacheValueByNameTag", "nonSerializeData").statistics_final
+local totalStats
 
-network:connect("playerStatisticsChanged","OnClientEvent",function(base, total)
+local function playerStatisticsChanged(base, total)
 	totalStats = total
-end)
+end
+
+
 
 local isPlayerUnderwater
-local velocityHandler = {} do
-	local airResistance = 20
-
-
-	function velocityHandler:applyJoltVelocity(vel)
-		if isPlayerUnderwater then
-			vel = vel * 0.5
-		end
-
-		externalVelocity = externalVelocity + vel
-	end
-
-	-- this is what i think of your oop damien
-	local function jolt(vel)
-		velocityHandler:applyJoltVelocity(vel)
-	end
-
-	network:create("applyJoltVelocityToCharacter","BindableEvent","Event",jolt)
-	network:connect("deathTrapKnockback", "OnClientEvent", jolt)
-
-	local cameraUnderwater
-
-	local underwaterBlur = Instance.new("BlurEffect")
-	underwaterBlur.Size = 4
-	underwaterBlur.Enabled = false
-	underwaterBlur.Parent = game.Lighting
-
-	local underwaterCorrect = Instance.new("ColorCorrectionEffect")
-	underwaterCorrect.Saturation = 0.35
-	underwaterCorrect.Contrast = 0.05
-	underwaterCorrect.Enabled = false
-	underwaterCorrect.Parent = game.Lighting
-
-	local underwaterBloom = Instance.new("BloomEffect")
-	underwaterBloom.Enabled = false
-	underwaterBloom.Parent = game.Lighting
-
-	local defaultReverb = game.SoundService.AmbientReverb
-
-
-
-	function velocityHandler:stepCurrentVelocity(step)
-		local characterHitbox 	= player.Character and player.Character.PrimaryPart
-		local frictionApplied 	= false
-		local observedVelocity 	= characterHitbox.Velocity
-		local heatExhausted = doesCharacterHaveStatusEffect("heat exhausted")
-
-		if states.isSprinting and characterHitbox.Velocity.Magnitude > 0.2 then
-			characterHitbox.stamina.Value = math.max(characterHitbox.stamina.Value - step, 0)
-		elseif not states.isExhausted and not states.isJumping and not states.isDoubleJumping then --and not states.isFalling then
-			local recovery = totalStats.staminaRecovery
-			if (tick() - lastJump) > 1 / (recovery) then
-				local scalar = recovery
-				if heatExhausted then
-					scalar = scalar - 1
-				end
-
-				characterHitbox.stamina.Value = math.min(characterHitbox.stamina.Value + (characterHitbox.maxStamina.Value * step/3 * scalar), characterHitbox.maxStamina.Value)
-			end
-		end
-
-		if heatExhausted then
-			characterHitbox.stamina.Value = math.max(characterHitbox.stamina.Value - step / 16, 0)
-		end
-
-		if characterHitbox.health.Value <= 0 or characterHitbox.state.Value == "dead" then
-			if states.isExhausted then
-				setCharacterMovementState("isExhausted", false)
-			end
-		elseif characterHitbox.stamina.Value <= 0 and not states.isExhausted then
-			setCharacterMovementState("isSprinting", false)
-			setCharacterMovementState("isExhausted", true)
-			spawn(function()
-				wait(2)
-				characterHitbox.stamina.Value = 0
-				setCharacterMovementState("isExhausted", false)
-			end)
-			network:fireServer("playerWasExhausted")
-		end
-
-		local desiredFOV = 70 + sprintFOV.Value + math.clamp(utilities.magnitude(observedVelocity) / 5 - 10, 0, 40)
-	    local currentFOV = workspace.CurrentCamera.FieldOfView
-
-		if desiredFOV ~= currentFOV then
-			local difference = desiredFOV - currentFOV
-			local change = math.abs(difference) * step * 3 + 0.1
-			if desiredFOV > currentFOV then
-				if desiredFOV > currentFOV + change then
-					currentFOV = currentFOV + change
-				else
-					currentFOV = desiredFOV
-				end
-			else
-				if desiredFOV < currentFOV - change then
-					currentFOV = currentFOV - change
-				else
-					currentFOV = desiredFOV
-				end
-			end
-			if not workspace.CurrentCamera:FindFirstChild("overridden") then
-				workspace.CurrentCamera.FieldOfView = currentFOV
-			end
-		end
-
-		local char = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character.PrimaryPart
-
-		if char then
-			if (not isPlayerUnderwater) and terrainUtil.isPointUnderwater(char.Position) then
-
-				externalVelocity = externalVelocity / 5
-				isPlayerUnderwater = true
-
-				-- bubbles should be tied to your head being underwater, not your torso
-				--[[
-				if myClientCharacterContainer and myClientCharacterContainer:FindFirstChild("entity") and myClientCharacterContainer.entity:FindFirstChild("Head") and myClientCharacterContainer.entity.Head:FindFirstChild("MouthAttachment") then
-					myClientCharacterContainer.entity.Head.MouthAttachment.bubbleParticles.Enabled = true
-				end
-				]]
-
-				local soundMirror = game.ReplicatedStorage.assets.sounds:FindFirstChild("water_in")
-				if soundMirror then
-					local sound = Instance.new("Sound")
-					for property, value in pairs(game.HttpService:JSONDecode(soundMirror.Value)) do
-						sound[property] = value
-					end
-					sound.Parent = game.Players.LocalPlayer.Character.PrimaryPart
-					sound.PlaybackSpeed = math.random(105,120)/100
-					sound:Play()
-					game.Debris:AddItem(sound,5)
-				end
-
-				local splashPart = game.ReplicatedStorage:FindFirstChild("fishingBob")
-				if splashPart then
-					splashPart = splashPart:Clone()
-					splashPart.Transparency = 1
-					splashPart.CanCollide = false
-					splashPart.CFrame = CFrame.new() + char.Position
-					splashPart.splash.Color = ColorSequence.new(workspace.Terrain.WaterColor)
-					splashPart.splash:Emit(20)
-					splashPart.Parent = workspace.CurrentCamera
-					game.Debris:AddItem(splashPart,5)
-				end
-
-				network:fireServer("onPlayerEnteredWater", char.Position)
-
-			elseif isPlayerUnderwater and not terrainUtil.isPointUnderwater(char.Position - Vector3.new(0, 0.5, 0)) then
-
-				--[[
-				if myClientCharacterContainer and myClientCharacterContainer:FindFirstChild("entity") and myClientCharacterContainer.entity:FindFirstChild("Head") and myClientCharacterContainer.entity.Head:FindFirstChild("MouthAttachment") then
-					myClientCharacterContainer.entity.Head.MouthAttachment.bubbleParticles.Enabled = false
-				end
-				]]
-
-
-				isPlayerUnderwater = false
-
-				if states.isSwimming then
-					setCharacterMovementState("isSwimming", false)
-					setCharacterMovementState("isJumping", false)
-					setCharacterMovementState("isDoubleJumping", false)
-
-					perform_forceJump()
-				end
-
-				local soundMirror = game.ReplicatedStorage.assets.sounds:FindFirstChild("water_out")
-				if soundMirror then
-					local sound = Instance.new("Sound")
-					for property, value in pairs(game.HttpService:JSONDecode(soundMirror.Value)) do
-						sound[property] = value
-					end
-					sound.Parent = game.Players.LocalPlayer.Character.PrimaryPart
-					sound.PlaybackSpeed = math.random(105,120)/100
-					sound:Play()
-					game.Debris:AddItem(sound,5)
-				end
-			end
-		end
-
-		if terrainUtil.isPointUnderwater(workspace.CurrentCamera.CFrame.Position) then
-			if not cameraUnderwater then
-				cameraUnderwater = true
-				game.SoundService.AmbientReverb = "UnderWater"
-				underwaterBlur.Enabled = true
-				underwaterCorrect.Enabled = true
-				underwaterBloom.Enabled = true
-			end
-		elseif cameraUnderwater and not terrainUtil.isPointUnderwater(workspace.CurrentCamera.CFrame.Position + Vector3.new(0, 0.25, 0)) then
-			cameraUnderwater = false
-			game.SoundService.AmbientReverb = defaultReverb
-			underwaterBlur.Enabled = false
-			underwaterCorrect.Enabled = false
-			underwaterBloom.Enabled = false
-		end
-
-		if not states.isSwimming and (utilities.magnitude(externalVelocity) > 0 or states.isInAir) then
-
-			-- Collision velocity decrement
-			local expectedVelocity = externalVelocity + movementVelocity
-			local observedVelocity = characterHitbox.Velocity
-
-			local collideDecrementX = math.abs(expectedVelocity.X - observedVelocity.X) * step * 3
-			local collideDecrementZ = math.abs(expectedVelocity.Z - observedVelocity.Z)	* step * 3
-
-			local externalXZ = Vector3.new(externalVelocity.X, 0, externalVelocity.Z)
-
-			local gravityDecrement = Vector3.new(0, workspace.Gravity * step, 0)
-
-			if isPlayerUnderwater then
-				gravityDecrement = gravityDecrement / 5
-			end
-
-			-- Normal velocity decrement (Friction/Air resist)
-			if states.isInAir then
-				local volumeGoal = math.clamp((observedVelocity.magnitude - 100) / 500, windBaseVolume, 2)
-				local delta = math.abs(volumeGoal - wind.Volume)
-				if wind.Volume < volumeGoal then
-					wind.Volume = wind.Volume + math.clamp(delta, 0.01, 0.1)
-				else
-					wind.Volume = wind.Volume - math.clamp(delta, 0.01, 0.1)
-				end
-
-				--local airDecrement = airResistance * step
-
-				local airDecrementX = airResistance * step * (math.abs(externalVelocity.X) / utilities.magnitude(externalXZ)) + collideDecrementX
-				local airDecrementZ = airResistance * step * (math.abs(externalVelocity.Z) / utilities.magnitude(externalXZ)) + collideDecrementZ
-
-				if math.abs(externalVelocity.X) > airDecrementX then
-					externalVelocity = Vector3.new(externalVelocity.X - airDecrementX * math.sign(externalVelocity.X), externalVelocity.Y, externalVelocity.Z)
-				else
-					externalVelocity = Vector3.new(0, externalVelocity.Y, externalVelocity.Z)
-				end
-
-				if math.abs(externalVelocity.Z) > airDecrementZ then
-					externalVelocity = Vector3.new(externalVelocity.X, externalVelocity.Y, externalVelocity.Z - airDecrementZ * math.sign(externalVelocity.Z))
-				else
-					externalVelocity = Vector3.new(externalVelocity.X, externalVelocity.Y, 0)
-				end
-
-				externalVelocity = externalVelocity - gravityDecrement
-			else
-				if wind.Volume > windBaseVolume then
-					wind.Volume = wind.Volume - 0.02
-				end
-
-				local frictionDecrementX = friction * step * (math.abs(externalVelocity.X) / utilities.magnitude(externalXZ)) + collideDecrementX
-				local frictionDecrementZ = friction * step * (math.abs(externalVelocity.Z) / utilities.magnitude(externalXZ)) + collideDecrementZ
-
-				if frictionDecrementX > 0 then
-					if math.abs(externalVelocity.X) > frictionDecrementX then
-						externalVelocity = Vector3.new(externalVelocity.X - frictionDecrementX * math.sign(externalVelocity.X), externalVelocity.Y, externalVelocity.Z)
-						frictionApplied = true
-					else
-						externalVelocity = Vector3.new(0, externalVelocity.Y, externalVelocity.Z)
-					end
-				end
-
-				if frictionDecrementZ > 0 then
-					if math.abs(externalVelocity.Z) > frictionDecrementZ then
-						externalVelocity = Vector3.new(externalVelocity.X, externalVelocity.Y, externalVelocity.Z - frictionDecrementZ * math.sign(externalVelocity.Z))
-						frictionApplied = true
-					else
-						externalVelocity = Vector3.new(externalVelocity.X, externalVelocity.Y, 0)
-					end
-				end
-
-				if externalVelocity.Y >= gravityDecrement.Y then
-					externalVelocity = externalVelocity - gravityDecrement
-				else
-					externalVelocity = Vector3.new(externalVelocity.X, 0, externalVelocity.Z)
-				end
-			end
-		else
-			if wind.Volume > windBaseVolume then
-				wind.Volume = wind.Volume - 0.02
-			end
-		end
-
-		if myClientCharacterContainer and myClientCharacterContainer:FindFirstChild("entity") then
-			if frictionApplied then
-				local speed = math.clamp(utilities.magnitude(externalVelocity) / 3, 5, 60)
-
-				myClientCharacterContainer.entity.RightFoot.smoke.Rate 	= speed
-				myClientCharacterContainer.entity.LeftFoot.smoke.Rate 	= speed
-			end
-
-			myClientCharacterContainer.entity.RightFoot.smoke.Enabled = frictionApplied
-			myClientCharacterContainer.entity.LeftFoot.smoke.Enabled = frictionApplied
-		end
-
-		local velocityMulti = 1
-		if isPlayerUnderwater then
-			velocityMulti = 0.7
-		end
-
-		if player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart.state.Value == "dead" then
-			movementVelocity = Vector3.new()
-		end
-
-		if isPlayerUnderwater and states.isSwimming then
-			externalVelocity = Vector3.new()
-
-			return movementVelocity * velocityMulti + Vector3.new(0, 16, 0)
-		else
-			return (movementVelocity + externalVelocity) * velocityMulti
-		end
-	end
-end
+local velocityHandler
 
 local function raycastDownIgnoreCancollideFalse(ray, ignoreList)
 	local hitPart, hitPosition, hitDown, hitMaterial = workspace:FindPartOnRayWithIgnoreList(ray, ignoreList, true)
@@ -1338,7 +1022,6 @@ local function setupRenderSteppedConnection()
 
 		if not characterArrested and final_direction and player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart.state.Value ~= "dead" and not isPlayerEmoting   then
 			if IS_PLAYER_CAMERA_LOCKED then
---				bodyGyro.CFrame = bodyGyro.CFrame:lerp(final_direction, 0.5)
 				bodyGyro.CFrame = final_direction
 			else
 				bodyGyro.CFrame = bodyGyro.CFrame:lerp(final_direction, 0.1)
@@ -1368,7 +1051,6 @@ local function setupRenderSteppedConnection()
 		end
 		characterOrientationUpdateConnection = runService.Stepped:connect(updateCharacterOrientationFaceManifest)
 
---		runService:BindToRenderStep("updateCharacterOrientation", Enum.RenderPriority.Camera.Value, updateCharacterOrientationFaceManifest)
 	end
 end
 
@@ -1388,7 +1070,7 @@ end
 
 local isJumping = false
 local hasDoubleJumped = false
-function perform_forceJump(inputObject)
+local function perform_forceJump(inputObject)
 	if not player.Character or not player.Character.PrimaryPart then return end
 	if isCharacterStunned() then return end
 
@@ -1465,22 +1147,22 @@ local function onInputBegan(inputObject, absorbed)
 	end
 end
 
-network:create("doJump", "BindableFunction", "OnInvoke", function()
+function module.doJump()
 	if not characterArrested then
 		if isPlayerJumpEnabled then
 			perform_forceJump()
 		end
 	end
-end)
+end
 
-network:create("doSprint", "BindableFunction", "OnInvoke", function(val)
+function module.doSprint(val)
 	set_sprinting(val)
-end)
+end
 
-
-network:create("signalBasicAttacking", "BindableEvent", "Event", function(val)
+local function signalBasicAttacking(val)
 	basicAttacking = val
-end)
+end
+
 
 local function onInputEnded(inputObject)
 	--if inputObject.UserInputType == Enum.UserInputType.Keyboard then
@@ -1581,14 +1263,62 @@ local function onPropogationRequestToSelf(nameTag, value)
 	end
 end
 
-local function main()
-	if player.Character then
-		onCharacterAdded(player.Character)
+local function setStamina(value, cureExhaustion)
+	local char = player.Character
+	if not char then return end
+
+	local manifest = char.PrimaryPart
+	if not manifest then return end
+
+	local stamina = manifest:FindFirstChild("stamina")
+	if not stamina then return end
+
+	local maxStamina = manifest:FindFirstChild("maxStamina")
+	if not maxStamina then return end
+
+	if value == "max" then
+		value = maxStamina.Value
 	end
 
+	stamina.Value = value
+
+	if cureExhaustion then
+		setCharacterMovementState("isExhausted", false)
+	end
+end
+
+function module.init(Modules)
+
+	placeSetup = Modules.placeSetup
+	network = Modules.network
+	client_utilities = Modules.client_utilities
+	tween = Modules.tween
+	utilities = Modules.utilities
+	terrainUtil = Modules.terrainUtil
+	damage = Modules.damage
+	animationInterface = Modules.animationInterface
+
+	IGNORE_LIST = {placeSetup.getPlaceFoldersFolder()}
+	entityRenderCollectionFolder = placeSetup.awaitPlaceFolder("entityRenderCollection")
+	entityManifestCollectionFolder = placeSetup.awaitPlaceFolder("entityManifestCollection")
+
+	totalStats = network:invoke("getCacheValueByNameTag", "nonSerializeData").statistics_final
+
+	if player.Character then
+		spawn(function()
+			onCharacterAdded(player.Character)
+		end)
+	end
+	network:create("doesPlayerHaveStatusEffect", "BindableFunction", "OnInvoke", doesCharacterHaveStatusEffect)
+	network:create("isCharacterStunned", "BindableFunction", "OnInvoke", isCharacterStunned)
+	network:create("mobileMovementDirectionChanged", "BindableEvent", "Event", mobileMovementDirectionChanged)
+	network:create("playerRequest_performEmote", "BindableFunction", "OnInvoke", performEmote)
+	network:create("setCharacterArrested", "BindableFunction", "OnInvoke", setCharacterArrested)
+	network:create("signal_menuFocusChanged", "BindableEvent", "Event", signal_menuFocusChanged)
 	network:connect("myClientCharacterContainerChanged", "Event", function() onCharacterAdded(player.Character) end)
 	network:connect("toggleCameraLockChanged", "Event", function(newValue) IS_PLAYER_CAMERA_LOCKED = newValue end)
-
+	network:create("signalBasicAttacking", "BindableEvent", "Event", signalBasicAttacking)
+	network:connect("playerStatisticsChanged", "OnClientEvent", playerStatisticsChanged)
 	userInputService.InputBegan:connect(onInputBegan)
 	userInputService.InputChanged:connect(onInputChanged)
 	userInputService.InputEnded:connect(onInputEnded)
@@ -1614,31 +1344,317 @@ local function main()
 	network:connect("playerStatisticsChanged", "OnClientEvent", onPlayerStatisticsChanged)
 	network:connect("propogationRequestToSelf", "Event", onPropogationRequestToSelf)
 
-	network:connect("setStamina", "OnClientEvent", function(value, cureExhaustion)
-		local char = player.Character
-		if not char then return end
-
-		local manifest = char.PrimaryPart
-		if not manifest then return end
-
-		local stamina = manifest:FindFirstChild("stamina")
-		if not stamina then return end
-
-		local maxStamina = manifest:FindFirstChild("maxStamina")
-		if not maxStamina then return end
-
-		if value == "max" then
-			value = maxStamina.Value
-		end
-
-		stamina.Value = value
-
-		if cureExhaustion then
-			setCharacterMovementState("isExhausted", false)
-		end
-	end)
+	network:connect("setStamina", "OnClientEvent", setStamina)
 
 	total_statistics = network:invoke("getCacheValueByNameTag", "nonSerializeData").statistics_final
+
+	velocityHandler = {} do
+		local airResistance = 20
+
+
+		function velocityHandler:applyJoltVelocity(vel)
+			if isPlayerUnderwater then
+				vel = vel * 0.5
+			end
+
+			externalVelocity = externalVelocity + vel
+		end
+
+		-- this is what i think of your oop damien
+		local function jolt(vel)
+			velocityHandler:applyJoltVelocity(vel)
+		end
+
+		network:create("applyJoltVelocityToCharacter","BindableEvent","Event",jolt)
+		network:connect("deathTrapKnockback", "OnClientEvent", jolt)
+
+		local cameraUnderwater
+
+		local underwaterBlur = Instance.new("BlurEffect")
+		underwaterBlur.Size = 4
+		underwaterBlur.Enabled = false
+		underwaterBlur.Parent = game.Lighting
+
+		local underwaterCorrect = Instance.new("ColorCorrectionEffect")
+		underwaterCorrect.Saturation = 0.35
+		underwaterCorrect.Contrast = 0.05
+		underwaterCorrect.Enabled = false
+		underwaterCorrect.Parent = game.Lighting
+
+		local underwaterBloom = Instance.new("BloomEffect")
+		underwaterBloom.Enabled = false
+		underwaterBloom.Parent = game.Lighting
+
+		local defaultReverb = game.SoundService.AmbientReverb
+
+
+
+		function velocityHandler:stepCurrentVelocity(step)
+			local characterHitbox 	= player.Character and player.Character.PrimaryPart
+			local frictionApplied 	= false
+			local observedVelocity 	= characterHitbox.Velocity
+			local heatExhausted = doesCharacterHaveStatusEffect("heat exhausted")
+
+			if states.isSprinting and characterHitbox.Velocity.Magnitude > 0.2 then
+				characterHitbox.stamina.Value = math.max(characterHitbox.stamina.Value - step, 0)
+			elseif not states.isExhausted and not states.isJumping and not states.isDoubleJumping then --and not states.isFalling then
+				local recovery = totalStats.staminaRecovery
+				if (tick() - lastJump) > 1 / (recovery) then
+					local scalar = recovery
+					if heatExhausted then
+						scalar = scalar - 1
+					end
+
+					characterHitbox.stamina.Value = math.min(characterHitbox.stamina.Value + (characterHitbox.maxStamina.Value * step/3 * scalar), characterHitbox.maxStamina.Value)
+				end
+			end
+
+			if heatExhausted then
+				characterHitbox.stamina.Value = math.max(characterHitbox.stamina.Value - step / 16, 0)
+			end
+
+			if characterHitbox.health.Value <= 0 or characterHitbox.state.Value == "dead" then
+				if states.isExhausted then
+					setCharacterMovementState("isExhausted", false)
+				end
+			elseif characterHitbox.stamina.Value <= 0 and not states.isExhausted then
+				setCharacterMovementState("isSprinting", false)
+				setCharacterMovementState("isExhausted", true)
+				spawn(function()
+					wait(2)
+					characterHitbox.stamina.Value = 0
+					setCharacterMovementState("isExhausted", false)
+				end)
+				network:fireServer("playerWasExhausted")
+			end
+
+			local desiredFOV = 70 + sprintFOV.Value + math.clamp(utilities.magnitude(observedVelocity) / 5 - 10, 0, 40)
+			local currentFOV = workspace.CurrentCamera.FieldOfView
+
+			if desiredFOV ~= currentFOV then
+				local difference = desiredFOV - currentFOV
+				local change = math.abs(difference) * step * 3 + 0.1
+				if desiredFOV > currentFOV then
+					if desiredFOV > currentFOV + change then
+						currentFOV = currentFOV + change
+					else
+						currentFOV = desiredFOV
+					end
+				else
+					if desiredFOV < currentFOV - change then
+						currentFOV = currentFOV - change
+					else
+						currentFOV = desiredFOV
+					end
+				end
+				if not workspace.CurrentCamera:FindFirstChild("overridden") then
+					workspace.CurrentCamera.FieldOfView = currentFOV
+				end
+			end
+
+			local char = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character.PrimaryPart
+
+			if char then
+				if (not isPlayerUnderwater) and terrainUtil.isPointUnderwater(char.Position) then
+
+					externalVelocity = externalVelocity / 5
+					isPlayerUnderwater = true
+
+					-- bubbles should be tied to your head being underwater, not your torso
+					--[[
+					if myClientCharacterContainer and myClientCharacterContainer:FindFirstChild("entity") and myClientCharacterContainer.entity:FindFirstChild("Head") and myClientCharacterContainer.entity.Head:FindFirstChild("MouthAttachment") then
+						myClientCharacterContainer.entity.Head.MouthAttachment.bubbleParticles.Enabled = true
+					end
+					]]
+
+					local soundMirror = game.ReplicatedStorage.assets.sounds:FindFirstChild("water_in")
+					if soundMirror then
+						local sound = Instance.new("Sound")
+						for property, value in pairs(game.HttpService:JSONDecode(soundMirror.Value)) do
+							sound[property] = value
+						end
+						sound.Parent = game.Players.LocalPlayer.Character.PrimaryPart
+						sound.PlaybackSpeed = math.random(105,120)/100
+						sound:Play()
+						game.Debris:AddItem(sound,5)
+					end
+
+					local splashPart = game.ReplicatedStorage:FindFirstChild("fishingBob")
+					if splashPart then
+						splashPart = splashPart:Clone()
+						splashPart.Transparency = 1
+						splashPart.CanCollide = false
+						splashPart.CFrame = CFrame.new() + char.Position
+						splashPart.splash.Color = ColorSequence.new(workspace.Terrain.WaterColor)
+						splashPart.splash:Emit(20)
+						splashPart.Parent = workspace.CurrentCamera
+						game.Debris:AddItem(splashPart,5)
+					end
+
+					network:fireServer("onPlayerEnteredWater", char.Position)
+
+				elseif isPlayerUnderwater and not terrainUtil.isPointUnderwater(char.Position - Vector3.new(0, 0.5, 0)) then
+
+					--[[
+					if myClientCharacterContainer and myClientCharacterContainer:FindFirstChild("entity") and myClientCharacterContainer.entity:FindFirstChild("Head") and myClientCharacterContainer.entity.Head:FindFirstChild("MouthAttachment") then
+						myClientCharacterContainer.entity.Head.MouthAttachment.bubbleParticles.Enabled = false
+					end
+					]]
+
+
+					isPlayerUnderwater = false
+
+					if states.isSwimming then
+						setCharacterMovementState("isSwimming", false)
+						setCharacterMovementState("isJumping", false)
+						setCharacterMovementState("isDoubleJumping", false)
+
+						perform_forceJump()
+					end
+
+					local soundMirror = game.ReplicatedStorage.assets.sounds:FindFirstChild("water_out")
+					if soundMirror then
+						local sound = Instance.new("Sound")
+						for property, value in pairs(game.HttpService:JSONDecode(soundMirror.Value)) do
+							sound[property] = value
+						end
+						sound.Parent = game.Players.LocalPlayer.Character.PrimaryPart
+						sound.PlaybackSpeed = math.random(105,120)/100
+						sound:Play()
+						game.Debris:AddItem(sound,5)
+					end
+				end
+			end
+
+			if terrainUtil.isPointUnderwater(workspace.CurrentCamera.CFrame.Position) then
+				if not cameraUnderwater then
+					cameraUnderwater = true
+					game.SoundService.AmbientReverb = "UnderWater"
+					underwaterBlur.Enabled = true
+					underwaterCorrect.Enabled = true
+					underwaterBloom.Enabled = true
+				end
+			elseif cameraUnderwater and not terrainUtil.isPointUnderwater(workspace.CurrentCamera.CFrame.Position + Vector3.new(0, 0.25, 0)) then
+				cameraUnderwater = false
+				game.SoundService.AmbientReverb = defaultReverb
+				underwaterBlur.Enabled = false
+				underwaterCorrect.Enabled = false
+				underwaterBloom.Enabled = false
+			end
+
+			if not states.isSwimming and (utilities.magnitude(externalVelocity) > 0 or states.isInAir) then
+
+				-- Collision velocity decrement
+				local expectedVelocity = externalVelocity + movementVelocity
+				local observedVelocity = characterHitbox.Velocity
+
+				local collideDecrementX = math.abs(expectedVelocity.X - observedVelocity.X) * step * 3
+				local collideDecrementZ = math.abs(expectedVelocity.Z - observedVelocity.Z)	* step * 3
+
+				local externalXZ = Vector3.new(externalVelocity.X, 0, externalVelocity.Z)
+
+				local gravityDecrement = Vector3.new(0, workspace.Gravity * step, 0)
+
+				if isPlayerUnderwater then
+					gravityDecrement = gravityDecrement / 5
+				end
+
+				-- Normal velocity decrement (Friction/Air resist)
+				if states.isInAir then
+					local volumeGoal = math.clamp((observedVelocity.magnitude - 100) / 500, windBaseVolume, 2)
+					local delta = math.abs(volumeGoal - wind.Volume)
+					if wind.Volume < volumeGoal then
+						wind.Volume = wind.Volume + math.clamp(delta, 0.01, 0.1)
+					else
+						wind.Volume = wind.Volume - math.clamp(delta, 0.01, 0.1)
+					end
+
+					--local airDecrement = airResistance * step
+
+					local airDecrementX = airResistance * step * (math.abs(externalVelocity.X) / utilities.magnitude(externalXZ)) + collideDecrementX
+					local airDecrementZ = airResistance * step * (math.abs(externalVelocity.Z) / utilities.magnitude(externalXZ)) + collideDecrementZ
+
+					if math.abs(externalVelocity.X) > airDecrementX then
+						externalVelocity = Vector3.new(externalVelocity.X - airDecrementX * math.sign(externalVelocity.X), externalVelocity.Y, externalVelocity.Z)
+					else
+						externalVelocity = Vector3.new(0, externalVelocity.Y, externalVelocity.Z)
+					end
+
+					if math.abs(externalVelocity.Z) > airDecrementZ then
+						externalVelocity = Vector3.new(externalVelocity.X, externalVelocity.Y, externalVelocity.Z - airDecrementZ * math.sign(externalVelocity.Z))
+					else
+						externalVelocity = Vector3.new(externalVelocity.X, externalVelocity.Y, 0)
+					end
+
+					externalVelocity = externalVelocity - gravityDecrement
+				else
+					if wind.Volume > windBaseVolume then
+						wind.Volume = wind.Volume - 0.02
+					end
+
+					local frictionDecrementX = friction * step * (math.abs(externalVelocity.X) / utilities.magnitude(externalXZ)) + collideDecrementX
+					local frictionDecrementZ = friction * step * (math.abs(externalVelocity.Z) / utilities.magnitude(externalXZ)) + collideDecrementZ
+
+					if frictionDecrementX > 0 then
+						if math.abs(externalVelocity.X) > frictionDecrementX then
+							externalVelocity = Vector3.new(externalVelocity.X - frictionDecrementX * math.sign(externalVelocity.X), externalVelocity.Y, externalVelocity.Z)
+							frictionApplied = true
+						else
+							externalVelocity = Vector3.new(0, externalVelocity.Y, externalVelocity.Z)
+						end
+					end
+
+					if frictionDecrementZ > 0 then
+						if math.abs(externalVelocity.Z) > frictionDecrementZ then
+							externalVelocity = Vector3.new(externalVelocity.X, externalVelocity.Y, externalVelocity.Z - frictionDecrementZ * math.sign(externalVelocity.Z))
+							frictionApplied = true
+						else
+							externalVelocity = Vector3.new(externalVelocity.X, externalVelocity.Y, 0)
+						end
+					end
+
+					if externalVelocity.Y >= gravityDecrement.Y then
+						externalVelocity = externalVelocity - gravityDecrement
+					else
+						externalVelocity = Vector3.new(externalVelocity.X, 0, externalVelocity.Z)
+					end
+				end
+			else
+				if wind.Volume > windBaseVolume then
+					wind.Volume = wind.Volume - 0.02
+				end
+			end
+
+			if myClientCharacterContainer and myClientCharacterContainer:FindFirstChild("entity") then
+				if frictionApplied then
+					local speed = math.clamp(utilities.magnitude(externalVelocity) / 3, 5, 60)
+
+					myClientCharacterContainer.entity.RightFoot.smoke.Rate 	= speed
+					myClientCharacterContainer.entity.LeftFoot.smoke.Rate 	= speed
+				end
+
+				myClientCharacterContainer.entity.RightFoot.smoke.Enabled = frictionApplied
+				myClientCharacterContainer.entity.LeftFoot.smoke.Enabled = frictionApplied
+			end
+
+			local velocityMulti = 1
+			if isPlayerUnderwater then
+				velocityMulti = 0.7
+			end
+
+			if player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart.state.Value == "dead" then
+				movementVelocity = Vector3.new()
+			end
+
+			if isPlayerUnderwater and states.isSwimming then
+				externalVelocity = Vector3.new()
+
+				return movementVelocity * velocityMulti + Vector3.new(0, 16, 0)
+			else
+				return (movementVelocity + externalVelocity) * velocityMulti
+			end
+		end
+	end
 
 	-- todo: make it so you can't exploit this, coming soon.
 
@@ -1670,4 +1686,4 @@ local function main()
 	setupRenderSteppedConnection()
 end
 
-main()
+return module
