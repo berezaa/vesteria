@@ -1,6 +1,8 @@
 -- local trading ui
 -- written by berezaa & polymorphic
 
+-- jesus christ if there is a competition for most cursed script it may very well be this one
+
 local module = {}
 
 local replicatedStorage = game:GetService("ReplicatedStorage")
@@ -16,39 +18,6 @@ local tradeFrame = script.Parent.gameUI.menu_trade
 
 local inventorySlotPairing = {}
 
-function module.postInit(Modules)
-
-	local network = Modules.network
-
-
-	local function onInventoryItemMouseEnter(inventoryItem)
-		lastSelected = inventoryItem
-		local inventorySlotData = inventorySlotPairing[inventoryItem]
-		if inventorySlotData then
-			local itemBaseData = itemLookup[inventorySlotData.id]
-			if itemBaseData then
-				network:invoke("populateItemHoverFrame", itemBaseData, "inventory", inventorySlotData)
-			end
-		end
-	end
-
-	local function onInventoryItemMouseLeave(inventoryItem)
-		if lastSelected == inventoryItem then
-			-- clears last selected
-			network:invoke("populateItemHoverFrame")
-		end
-	end
-
-	for i,guiObject in pairs(tradeFrame:GetDescendants()) do
-		if guiObject:IsA("GuiObject") and guiObject:FindFirstChild("draggableFrame") then
-			guiObject.MouseEnter:connect(function() onInventoryItemMouseEnter(guiObject) end)
-			guiObject.MouseLeave:connect(function() onInventoryItemMouseLeave(guiObject) end)
-			guiObject.SelectionGained:connect(function() onInventoryItemMouseEnter(guiObject) end)
-			guiObject.SelectionLost:connect(function() onInventoryItemMouseLeave(guiObject) end)
-		end
-	end
-end
-
 -- Called after all modules are required
 function module.init(Modules)
 
@@ -57,9 +26,6 @@ function module.init(Modules)
 	local lastTradeSessionData 	= nil
 
 	local lastSelected
-
-
-
 
 	local myInventoryTransferDataCollection = nil
 
@@ -400,6 +366,39 @@ function module.init(Modules)
 
 	network:connect("signal_playerTradeRequest", "OnClientEvent", onPlayerRequest_requestOpenTradeWithPlayerReceived)
 	network:connect("signal_tradeSessionChanged", "OnClientEvent", onTradeSessionChanged)
+
+	--postInit
+	spawn(function()
+		local network = Modules.network
+
+
+		local function onInventoryItemMouseEnter(inventoryItem)
+			lastSelected = inventoryItem
+			local inventorySlotData = inventorySlotPairing[inventoryItem]
+			if inventorySlotData then
+				local itemBaseData = itemLookup[inventorySlotData.id]
+				if itemBaseData then
+					network:invoke("populateItemHoverFrame", itemBaseData, "inventory", inventorySlotData)
+				end
+			end
+		end
+
+		local function onInventoryItemMouseLeave(inventoryItem)
+			if lastSelected == inventoryItem then
+				-- clears last selected
+				network:invoke("populateItemHoverFrame")
+			end
+		end
+
+		for i,guiObject in pairs(tradeFrame:GetDescendants()) do
+			if guiObject:IsA("GuiObject") and guiObject:FindFirstChild("draggableFrame") then
+				guiObject.MouseEnter:connect(function() onInventoryItemMouseEnter(guiObject) end)
+				guiObject.MouseLeave:connect(function() onInventoryItemMouseLeave(guiObject) end)
+				guiObject.SelectionGained:connect(function() onInventoryItemMouseEnter(guiObject) end)
+				guiObject.SelectionLost:connect(function() onInventoryItemMouseLeave(guiObject) end)
+			end
+		end
+	end)
 end
 
 return module

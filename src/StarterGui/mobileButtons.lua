@@ -1,20 +1,19 @@
 
-
-
 local module = {}
 
 local player = game:GetService("Players").LocalPlayer
 local gui = player.PlayerGui.gameUI.mobileButtons
 
 function module.init(Modules)
-	local network = Modules.network
-	
+	local control = Modules.control
+	local itemAcquistion = Modules.itemAcquistion
+
 	gui.jump.Activated:Connect(function()
-		network:invoke("doJump")
+		control.doJump()
 	end)
-	
+
 	gui.pickup.InputBegan:Connect(function(Input)
-		Modules.itemAcquistion.pickupInputGained(Input)
+		itemAcquistion.pickupInputGained(Input)
 	end)
 end
 
