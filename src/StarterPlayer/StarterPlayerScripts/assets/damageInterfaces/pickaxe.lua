@@ -14,7 +14,7 @@ local network 		= modules.load("network")
 
 local currentDamageGUID = httpService:GenerateGUID(false)
 
-local animationInterface = require(script.Parent.Parent.Parent:WaitForChild("repo"):WaitForChild("animationInterface"))--network:invoke("getPlayerCoreService", "animationInterface")
+local animationInterface = require(script.Parent.Parent.Parent:WaitForChild("contents"):WaitForChild("animationInterface"))--network:invoke("getPlayerCoreService", "animationInterface")
 
 -- internal stuff specific to the sword
 local animationsForAnimationController
