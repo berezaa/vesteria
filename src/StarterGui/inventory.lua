@@ -45,9 +45,10 @@ end
 menuUI.close.Activated:connect(module.hide)
 
 
-function module.init(Modules)
+-- todo: fix
+local animationInterface = require(game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("repo"):WaitForChild("animationInterface"))
 
-	local animationInterface = Modules.animationInterface
+function module.init(Modules)
 
 	local tradeFrame = ui.menu_trade
 	local enchantFrame = ui.menu_enchant
@@ -214,7 +215,7 @@ function module.init(Modules)
 			else
 				local itemBaseData = itemData[inventorySlotData.id]
 				print("doubleclick", itemBaseData and itemBaseData.name, itemBaseData and itemBaseData.category, itemBaseData and itemBaseData.equipmentPosition)
-
+				
 				print(itemBaseData)
 
 				if itemBaseData then
@@ -819,7 +820,7 @@ function module.init(Modules)
 
 					success, errorMessage = network:invokeServer("activateItemRequest", itemBaseData.category, inventorySlotData.position, nil, playerInput)
 				end
-
+				
 				animationInterface:replicateClientAnimationSequence("axeAnimations", "strike1")
 
 				delay(itemConsumeTime + 1.5, function()

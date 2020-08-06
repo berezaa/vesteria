@@ -15,7 +15,7 @@ local abilityAnimations = game:GetService("ReplicatedStorage"):WaitForChild("ass
 
 local currentDamageGUID = httpService:GenerateGUID(false)
 
-local animationInterface = require(script.Parent.Parent.Parent:WaitForChild("contents"):WaitForChild("animationInterface"))--network:invoke("getPlayerCoreService", "animationInterface")
+local animationInterface = require(script.Parent.Parent.Parent:WaitForChild("repo"):WaitForChild("animationInterface"))--network:invoke("getPlayerCoreService", "animationInterface")
 
 -- internal stuff specific to the dual
 local animationControllerLoaded

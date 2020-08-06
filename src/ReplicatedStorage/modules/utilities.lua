@@ -2,7 +2,7 @@
 local module = {}
 
 local modules = require(game:GetService("ReplicatedStorage"):WaitForChild("modules"))
-local sounds = require(game:GetService("ReplicatedStorage"):WaitForChild("sounds"))
+local assets = require(game:GetService("ReplicatedStorage"):WaitForChild("assets_new"))
 local network = modules.load("network")
 local configuration = modules.load("configuration")
 
@@ -120,7 +120,7 @@ function module.playSound(soundName, location, duration, additionalInfo)
 
 	local sound
 	if typeof(soundName) == "string" then
-		local soundData = sounds[soundName]
+		local soundData = assets.sounds[soundName]
 		assert(soundData, "Sound " .. soundName .. " missing from assets.")
 		sound = Instance.new("Sound")
 		for property, value in pairs(soundData) do
@@ -482,7 +482,7 @@ end
 
 module.placeIdMapping = {
 	["2376885433"] = 2015602902;
-	["2064647391"] = 2015602902;--4041449372;
+	["2064647391"] = 4041449372;
 	["2035250551"] = 4041616995;
 	["2060360203"] = 4041642879;
 	["2060556572"] = 4784798551;
