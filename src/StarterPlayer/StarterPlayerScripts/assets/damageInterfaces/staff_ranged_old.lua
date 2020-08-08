@@ -13,8 +13,8 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 		local configuration = modules.load("configuration")
 
 local currentDamageGUID = httpService:GenerateGUID(false)
-
-local animationInterface = require(script.Parent.Parent.Parent:WaitForChild("contents"):WaitForChild("animationInterface"))--network:invoke("getPlayerCoreService", "animationInterface")
+		
+local animationInterface = require(script.Parent.Parent.Parent:WaitForChild("repo"):WaitForChild("animationInterface"))--network:invoke("getPlayerCoreService", "animationInterface")
 
 -- internal stuff specific to the staff
 local animationControllerLoaded
@@ -50,10 +50,10 @@ local function doesPlayerHaveAbilityUnlocked(abilityId)
 			end
 		end
 	end
-
+	
 	return false
 end
-
+	
 local isDamageSequenceEnabled = false
 local function startDamageSequencePolling()
 	if isDamageSequenceEnabled then return end
@@ -66,7 +66,7 @@ local function startDamageSequencePolling()
 				-- todo: consider just using serverHitbox in `monsterManifestCollectionFolder` ?
 				network:invoke("performClientDamageCycle", "equipment", nil, currentDamageGUID)
 			end
-
+			
 			wait(1 / 20)
 		else
 			break
@@ -78,17 +78,17 @@ end
 
 local function onSlashAnimationTrackStopped()
 	currentDamageGUID = httpService:GenerateGUID(false)
-
+	
 	if slashAnimationConnection then
 		slashAnimationConnection:disconnect()
 		slashAnimationConnection = nil
 	end
-
+	
 	if slashAnimationKeyframeConnection then
 		slashAnimationKeyframeConnection:disconnect()
 		slashAnimationKeyframeConnection = nil
 	end
-
+	
 	if currentWeaponManifest and currentWeaponManifest:FindFirstChild("Trail") then
 --		currentWeaponManifest.Trail.Enabled = false
 	end
@@ -98,7 +98,7 @@ end
 -- slash2PeriodStart
 -- startDamageSequence
 -- stopDamageSequence
-local function onSlashAnimationKeyframeReached(keyframeName)
+local function onSlashAnimationKeyframeReached(keyframeName)		
 	if keyframeName == "slash1PeriodStart" then
 		isWithinSlash1Window = true
 		delay(3 / 10, function()
@@ -111,7 +111,7 @@ local function onSlashAnimationKeyframeReached(keyframeName)
 		end)
 	elseif keyframeName == "startDamageSequence" then
 
-		local swingSound = currentWeaponManifest:FindFirstChild("Swing")
+		local swingSound = currentWeaponManifest:FindFirstChild("Swing")	
 		if swingSound == nil then
 			swingSound = Instance.new("Sound")
 			swingSound.Volume = 1
@@ -119,26 +119,26 @@ local function onSlashAnimationKeyframeReached(keyframeName)
 			swingSound.SoundId = "rbxassetid://2069260907"
 			swingSound.Name = "Swing"
 			swingSound.Parent = currentWeaponManifest
-		end
-
+		end		
+		
 --		swingSound:Play()
 		isWithinDamageSequence = true
-
+		
 		if currentWeaponManifest and currentWeaponManifest:FindFirstChild("Trail") then
 --			currentWeaponManifest.Trail.Enabled = true
 		end
 	elseif keyframeName == "stopDamageSequence" then
 		isWithinDamageSequence = false
-
+		
 		if currentWeaponManifest and currentWeaponManifest:FindFirstChild("Trail") then
 --			currentWeaponManifest.Trail.Enabled = false
 		end
 	end
 end
 
-function staff:attack()
+function staff:attack()			
 	-- make sure we can't slash if these conditions are true
-
+	
 	if not animationsForAnimationController or not animationsForAnimationController.staffAnimations then
 		return
 	elseif isPlayerSprinting then
@@ -152,7 +152,7 @@ function staff:attack()
 	elseif animationsForAnimationController.staffAnimations.strike2.IsPlaying and not isWithinSlash1Window then
 		return
 	end
-
+	
 	-- have to do it this way for now, no reference to ability animations  in animationsForAnimationController
 	local animController = myClientCharacterContainer.entity.AnimationController
 	for i, track in pairs(animController:GetPlayingAnimationTracks()) do
@@ -160,53 +160,53 @@ function staff:attack()
 			return
 		end
 	end
-
+	
 	local abilityExecutionData = network:invoke("getAbilityExecutionData")
-
+	
 	local manaBasicAttackCost = configuration.getConfigurationValue("mageManaDrainFromBasicAttack")
 	if player.Character.PrimaryPart.mana.Value < manaBasicAttackCost then
 		abilityExecutionData.noRangeManaAttack = true
 	end
-
-	if animationsForAnimationController.staffAnimations.strike1.IsPlaying and isWithinSlash2Window then
+		
+	if animationsForAnimationController.staffAnimations.strike1.IsPlaying and isWithinSlash2Window then			
 		if slashAnimationConnection then
 			slashAnimationConnection:disconnect()
 			slashAnimationConnection = nil
 		end
-
+		
 		if slashAnimationKeyframeConnection then
 			slashAnimationKeyframeConnection:disconnect()
 			slashAnimationKeyframeConnection = nil
 		end
-
+		
 		animationsForAnimationController.staffAnimations.strike1:Stop()
-
+		
 		slashAnimationConnection 			= animationsForAnimationController.staffAnimations.strike2.Stopped:connect(onSlashAnimationTrackStopped)
 		slashAnimationKeyframeConnection 	= animationsForAnimationController.staffAnimations.strike2.KeyframeReached:connect(onSlashAnimationKeyframeReached)
-
+		
 		animationInterface:replicatePlayerAnimationSequence("staffAnimations", "strike2", nil, abilityExecutionData)
-
+		
 		-- start damage sequence
 		currentDamageGUID = httpService:GenerateGUID(false)
 		spawn(startDamageSequencePolling)
-	elseif not animationsForAnimationController.staffAnimations.strike1.IsPlaying and (not animationsForAnimationController.staffAnimations.strike2.IsPlaying or isWithinSlash1Window) then
+	elseif not animationsForAnimationController.staffAnimations.strike1.IsPlaying and (not animationsForAnimationController.staffAnimations.strike2.IsPlaying or isWithinSlash1Window) then		
 		if slashAnimationConnection then
 			slashAnimationConnection:disconnect()
 			slashAnimationConnection = nil
 		end
-
+		
 		if slashAnimationKeyframeConnection then
 			slashAnimationKeyframeConnection:disconnect()
 			slashAnimationKeyframeConnection = nil
 		end
-
+		
 		animationsForAnimationController.staffAnimations.strike2:Stop()
-
+		
 		slashAnimationConnection 			= animationsForAnimationController.staffAnimations.strike1.Stopped:connect(onSlashAnimationTrackStopped)
 		slashAnimationKeyframeConnection 	= animationsForAnimationController.staffAnimations.strike1.KeyframeReached:connect(onSlashAnimationKeyframeReached)
-
+		
 		animationInterface:replicatePlayerAnimationSequence("staffAnimations", "strike1", nil, abilityExecutionData)
-
+			
 		-- start damage sequence
 		currentDamageGUID = httpService:GenerateGUID(false)
 		spawn(startDamageSequencePolling)
@@ -218,13 +218,13 @@ function staff:equip()
 	isWithinSlash2Window 	= false
 	isWithinDamageSequence 	= false
 	isDamageSequenceEnabled = false
-
+	
 	myClientCharacterContainer = network:invoke("getMyClientCharacterContainer")
-
+	
 	if myClientCharacterContainer then
 		currentWeaponManifest 				= network:invoke("getCurrentWeaponManifest")
 		animationsForAnimationController 	= animationInterface:getAnimationsForAnimationController(myClientCharacterContainer.entity.AnimationController)
-
+		
 	--	local grip = myClientCharacterContainer.entity:FindFirstChild("Grip", true)
 	--	if grip then
 	--		-- force an update
@@ -234,13 +234,13 @@ function staff:equip()
 end
 
 function staff:unequip()
-
+	
 end
 
 local function onPropogationRequestToSelf(propogationNameTag, propogationValue)
 	if propogationNameTag == "abilities" then
 		playerAbilitiesSlotDataCollection = propogationValue
-
+		
 		if doesPlayerHaveAbilityUnlocked(3) then
 			canPlayerDoubleSlash = true
 		else
@@ -251,7 +251,7 @@ end
 
 local function main()
 	onPropogationRequestToSelf("abilities", network:invoke("getCacheValueByNameTag", "abilities"))
-
+	
 	network:connect("propogationRequestToSelf", "Event", onPropogationRequestToSelf)
 	network:connect("characterStateChanged", "Event", onCharacterStateChanged)
 end

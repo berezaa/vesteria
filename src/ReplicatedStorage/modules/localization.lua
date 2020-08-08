@@ -7,13 +7,8 @@ local lookup = {}
 	lookup.font = {
 		sourceSansBold = Enum.Font.SourceSansBold;
 	}
-
+	
 local localizationService = game:GetService("LocalizationService")
-
--- this module is client-only, shouldnt even be in replicated storage, but I cant move it right now
-if game:GetService("RunService"):IsServer() then
-	return module
-end
 
 -- this is a temp. translator with no yield, does not include web translations
 local translator = localizationService:GetTranslatorForPlayer(game.Players.LocalPlayer)
@@ -22,7 +17,7 @@ local translator = localizationService:GetTranslatorForPlayer(game.Players.Local
 spawn(function()
 	local success, err
 	local n = 0
-	repeat
+	repeat 
 		if err then
 			warn("Failed to access cloud translations:", err)
 			wait(n * 3)
@@ -37,7 +32,7 @@ end)
 function module.translate(str, context)
 	context = context or game
 	return translator:Translate(context, str) or str
-end
+end	
 
 function module.convertToVesteriaDialogueTable(str)
 	local dialogueTable = {}
@@ -55,7 +50,7 @@ function module.convertToVesteriaDialogueTable(str)
 	for stylingData, text in string.gmatch(str, "([%w%;%:%=]-)%](.-)%[") do
 		local block = {}
 			block.text = text
-
+	
 		for styleType, style in string.gmatch(stylingData, "(%w+)%=(%w+)") do
 			if (styleType == "font" or styleType == "f") then
 				block.font = lookup.font[style] or Enum.Font.SourceSans

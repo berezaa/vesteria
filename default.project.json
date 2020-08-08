@@ -14,7 +14,7 @@
     },
     "ServerScriptService": {
       "$className": "ServerScriptService",
-      "$ignoreUnknownInstances": false,
+      "$ignoreUnknownInstances": true,
       "$path": "src/ServerScriptService"
     },
     "StarterGui": {
@@ -31,7 +31,7 @@
       },
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
-        "$ignoreUnknownInstances": false,
+        "$ignoreUnknownInstances": true,
         "$path": "src/StarterPlayer/StarterPlayerScripts"
       },
       "$ignoreUnknownInstances": true

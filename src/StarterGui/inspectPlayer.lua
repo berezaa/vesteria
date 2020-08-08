@@ -560,6 +560,7 @@ function module.init(Modules)
 	function module.duelRequest()
 		if activePlayer and ui.Visible and ui.content.buttons["request duel"].icon.Visible then
 
+
 			local button = ui.content.buttons["request duel"]
 			button.icon.Visible = false
 
@@ -581,7 +582,6 @@ function module.init(Modules)
 			end)
 		end
 	end
-
 	ui.content.buttons["request duel"].Activated:Connect(module.duelRequest)
 	network:invoke("addInputAction", "request duel", module.duelRequest, "U", 6)
 end

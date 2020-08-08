@@ -16,7 +16,7 @@ local replicatedStorage = game:GetService("ReplicatedStorage")
 		local damage 			= modules.load("damage")
 		local tween 			= modules.load("tween")
 
-local animationInterface = require(script.Parent.Parent.Parent:WaitForChild("contents"):WaitForChild("animationInterface"))--network:invoke("getPlayerCoreService", "animationInterface")
+local animationInterface = require(script.Parent.Parent.Parent:WaitForChild("repo"):WaitForChild("animationInterface"))--network:invoke("getPlayerCoreService", "animationInterface")
 
 local entityRenderCollectionFolder 		= placeSetup.awaitPlaceFolder("entityRenderCollection")
 local entityManifestCollectionFolder 	= placeSetup.awaitPlaceFolder("entityManifestCollection")

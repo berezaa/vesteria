@@ -185,8 +185,6 @@ local buttonsFrame = gameUi.right.buttons
 
 function module.init(Modules)
 	local tween = Modules.tween
-	local control = Modules.control
-	local network = Modules.network
 	local currentlySelectedButtonTooltip
 
 	local function processGuiObject(guiObject)
@@ -399,329 +397,335 @@ function module.init(Modules)
 	end
 	mode.Changed:connect(updateModeDisplay)
 	updateModeDisplay()
-	-- old postInit
-	spawn(function()
-		local remapping = false
-
-		game.GuiService.AutoSelectGuiEnabled = false
-		game.GuiService.CoreGuiNavigationEnabled = false
-
-		local function changeKeybindAction(keybind, actionName)
-			-- Make sure the action is valid
 
 
-			local action = actions[actionName]
-			if action == nil then
-				return warn("Action",actionName,"not found")
-			end
+end
 
-			if not setupComplete then
-				return warn("Input module not set up yet")
-			end
+function module.postInit(Modules)
+	network = Modules.network
+	settings = Modules.settings
 
-			if remapping then
-				return false
-			end
-			remapping = true
+	local remapping = false
 
-			-- Ask before overriding an existing action
-			local existingBindActionName = keybinds[keybind]
-			local existingAction
-			if existingBindActionName then
-				existingAction = actions[existingBindActionName]
-				if existingAction then
-					if not Modules.prompting_Fullscreen.prompt("This will override an existing action ("..existingBindActionName.."). Are you sure?") then
-						remapping = false
-						return false
-					end
+	game.GuiService.AutoSelectGuiEnabled = false
+	game.GuiService.CoreGuiNavigationEnabled = false
+
+	local function changeKeybindAction(keybind, actionName)
+		-- Make sure the action is valid
+
+
+		local action = actions[actionName]
+		if action == nil then
+			return warn("Action",actionName,"not found")
+		end
+
+		if not setupComplete then
+			return warn("Input module not set up yet")
+		end
+
+		if remapping then
+			return false
+		end
+		remapping = true
+
+		-- Ask before overriding an existing action
+		local existingBindActionName = keybinds[keybind]
+		local existingAction
+		if existingBindActionName then
+			existingAction = actions[existingBindActionName]
+			if existingAction then
+				if not Modules.prompting_Fullscreen.prompt("This will override an existing action ("..existingBindActionName.."). Are you sure?") then
+					remapping = false
+					return false
 				end
-			end
-
-			-- Execute order 66
-			local success = network:invokeServer("playerRequestSetKeyAction",keybind,actionName)
-			if success then
-
-				local oldkeybind = action.bindedTo
-				if oldkeybind then
-					keybinds[oldkeybind] = nil
-				end
-
-				keybinds[keybind] = actionName
-				action.bindedTo = keybind
-
-				if existingAction then
-					existingAction.bindedTo = nil
-				end
-
-				preferencesUpdated()
-				remapping = false
-				return true
-			else
-				remapping = false
-				warn("Server rejected keybind change")
 			end
 		end
 
-		local function setup()
+		-- Execute order 66
+		local success = network:invokeServer("playerRequestSetKeyAction",keybind,actionName)
+		if success then
 
-			local userSettings = network:invoke("getCacheValueByNameTag", "userSettings")
-			keybinds = {}
-			if userSettings and userSettings.keybinds then
-				keybinds = userSettings.keybinds
+			local oldkeybind = action.bindedTo
+			if oldkeybind then
+				keybinds[oldkeybind] = nil
 			end
 
-			for key,actionName in pairs(keybinds) do
-				local action = actions[actionName]
-				if action then
-					action.bindedTo = key
-				end
+			keybinds[keybind] = actionName
+			action.bindedTo = keybind
+
+			if existingAction then
+				existingAction.bindedTo = nil
 			end
 
-			-- apply default keys (but don't override!)
-			for actionName,action in pairs(actions) do
-				local default = action.default
-				if default and action["bindedTo"] == nil and keybinds[default] == nil then
-					-- apply keybind (no need to ping the server)
-					keybinds[default] = actionName
-					action["bindedTo"] = default
-				end
-			end
-			setupComplete = true
 			preferencesUpdated()
-			updateModeDisplay()
+			remapping = false
+			return true
+		else
+			remapping = false
+			warn("Server rejected keybind change")
+		end
+	end
+
+	local function setup()
+
+		local userSettings = network:invoke("getCacheValueByNameTag", "userSettings")
+		keybinds = {}
+		if userSettings and userSettings.keybinds then
+			keybinds = userSettings.keybinds
 		end
 
-		--local hotbarBinds = {"1", "2", "Q", "E", "R", "G", "V", "3", "4", "5"}
-
-		-- add hard-coded actions
-
-
-		add("openEquipment",Modules.equipment.show,"Q",3)
-		add("openInventory",Modules.inventory.show,"E",3)
-		add("openAbilities",Modules.abilities.show,"R",3)
-		add("openSettings",Modules.settings.show,"G",3)
-
-	--	add("openQuestLog",Modules.questLog.open,"L",3)
-	--	add("openMonsterBook",Modules.monsterBook.open,"B",3)
-	--	add("openGuild",Modules.guild.open,"P",3)
-		add("interact",Modules.interaction.interact,"C",4)
-	--	add("cameraLock",function() network:invoke("toggleCameraLock") end, "Tab", 4)
-		add("emote1",function() network:invoke("playerRequest_performEmote", "dance") end, "N", 7)
-		add("emote2",function() network:invoke("playerRequest_performEmote", "sit") end, "M", 7)
-
-		add("swapWeapons", function()
-			if not network:invoke("getIsPlayerCastingAbility") then
-				network:fireServer("playerRequest_swapWeapons")
+		for key,actionName in pairs(keybinds) do
+			local action = actions[actionName]
+			if action then
+				action.bindedTo = key
 			end
-		end, "`", 8)
-		--add("defaultPoint",function() network:invoke("playerRequest_performEmote", "point") end, "P", 7)
+		end
 
-
-
-		USI.InputChanged:connect(function(input, absorbed)
-
-			if input.UserInputType == Enum.UserInputType.Keyboard or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
-				mode.Value = "pc"
-			elseif input.UserInputType == Enum.UserInputType.Gamepad1 then
-				mode.Value = "xbox"
-			elseif input.UserInputType == Enum.UserInputType.Touch then
-				mode.Value = "mobile"
+		-- apply default keys (but don't override!)
+		for actionName,action in pairs(actions) do
+			local default = action.default
+			if default and action["bindedTo"] == nil and keybinds[default] == nil then
+				-- apply keybind (no need to ping the server)
+				keybinds[default] = actionName
+				action["bindedTo"] = default
 			end
+		end
+		setupComplete = true
+		preferencesUpdated()
+		updateModeDisplay()
+	end
 
-			if mode.Value ~= "mobile" then
-	--			network:invoke("setMobileMovementDirection", nil)
-				network:fire("mobileMovementDirectionChanged", nil)
-				network:fire("mobileCameraRotationChanged", nil)
-			end
-		end)
+	--local hotbarBinds = {"1", "2", "Q", "E", "R", "G", "V", "3", "4", "5"}
 
-		--mobile stuff
-		local touchJoystick = gameUi:WaitForChild("touchJoystick")
+	-- add hard-coded actions
 
-		touchJoystick.Visible = false
 
-		local touchJoystickActive = false
-		local touchJoystickDirection
+	add("openEquipment",Modules.equipment.show,"Q",3)
+	add("openInventory",Modules.inventory.show,"E",3)
+	add("openAbilities",Modules.abilities.show,"R",3)
+	add("openSettings",Modules.settings.show,"G",3)
 
-		local cameraMovementActive = false
+--	add("openQuestLog",Modules.questLog.open,"L",3)
+--	add("openMonsterBook",Modules.monsterBook.open,"B",3)
+--	add("openGuild",Modules.guild.open,"P",3)
+	add("interact",Modules.interaction.interact,"C",4)
+--	add("cameraLock",function() network:invoke("toggleCameraLock") end, "Tab", 4)
+	add("emote1",function() network:invoke("playerRequest_performEmote", "dance") end, "N", 7)
+	add("emote2",function() network:invoke("playerRequest_performEmote", "sit") end, "M", 7)
 
-		USI.TouchStarted:connect(function(touch, processed)
-			if not processed then
-				local startPos = touch.Position
-				if startPos.x < 300 and startPos.y > workspace.CurrentCamera.ViewportSize.y * 0.6 then
-					if not touchJoystickActive then
-						touchJoystick.Position = UDim2.new(0, startPos.x, 0, startPos.y)
-						touchJoystickActive = true
-						touchJoystick.Visible = true
-						-- while the same finger is still down
-						while touch.UserInputState ~= Enum.UserInputState.End and touch.UserInputState ~= Enum.UserInputState.Cancel do
-							local pos = touch.Position
-							local difference = pos - startPos
+	add("swapWeapons", function()
+		if not network:invoke("getIsPlayerCastingAbility") then
+			network:fireServer("playerRequest_swapWeapons")
+		end
+	end, "`", 8)
+	--add("defaultPoint",function() network:invoke("playerRequest_performEmote", "point") end, "P", 7)
 
-							control.doSprint(difference.magnitude > 80)
 
-							if difference.magnitude > 35 then
-								difference = difference.unit * 35
-							end
-							touchJoystick.stick.Position = UDim2.new(0.5, difference.X, 0.5, difference.Y)
-	--						network:invoke("setMobileMovementDirection", difference.unit)
-							network:fire("mobileMovementDirectionChanged", difference.unit)
-							RunService.RenderStepped:wait()
+
+	USI.InputChanged:connect(function(input, absorbed)
+
+		if input.UserInputType == Enum.UserInputType.Keyboard or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
+			mode.Value = "pc"
+		elseif input.UserInputType == Enum.UserInputType.Gamepad1 then
+			mode.Value = "xbox"
+		elseif input.UserInputType == Enum.UserInputType.Touch then
+			mode.Value = "mobile"
+		end
+
+		if mode.Value ~= "mobile" then
+--			network:invoke("setMobileMovementDirection", nil)
+			network:fire("mobileMovementDirectionChanged", nil)
+			network:fire("mobileCameraRotationChanged", nil)
+		end
+	end)
+
+	--mobile stuff
+	local touchJoystick = gameUi:WaitForChild("touchJoystick")
+
+	touchJoystick.Visible = false
+
+	local touchJoystickActive = false
+	local touchJoystickDirection
+
+	local cameraMovementActive = false
+
+	USI.TouchStarted:connect(function(touch, processed)
+		if not processed then
+			local startPos = touch.Position
+			if startPos.x < 300 and startPos.y > workspace.CurrentCamera.ViewportSize.y * 0.6 then
+				if not touchJoystickActive then
+					touchJoystick.Position = UDim2.new(0, startPos.x, 0, startPos.y)
+					touchJoystickActive = true
+					touchJoystick.Visible = true
+					-- while the same finger is still down
+					while touch.UserInputState ~= Enum.UserInputState.End and touch.UserInputState ~= Enum.UserInputState.Cancel do
+						local pos = touch.Position
+						local difference = pos - startPos
+
+						network:invoke("doSprint",difference.magnitude > 80)
+
+						if difference.magnitude > 35 then
+							difference = difference.unit * 35
 						end
-	--					network:invoke("setMobileMovementDirection", Vector2.new())
-						network:fire("mobileMovementDirectionChanged", nil)
-						control.doSprint(false)
-						touchJoystickActive = false
-						touchJoystick.Visible = false
+						touchJoystick.stick.Position = UDim2.new(0.5, difference.X, 0.5, difference.Y)
+--						network:invoke("setMobileMovementDirection", difference.unit)
+						network:fire("mobileMovementDirectionChanged", difference.unit)
+						RunService.RenderStepped:wait()
 					end
-				else
-					if not cameraMovementActive then
-						cameraMovementActive = true
-						while touch.UserInputState ~= Enum.UserInputState.End and touch.UserInputState ~= Enum.UserInputState.Cancel do
-							local pos = touch.Position
-							local difference = pos - startPos
-							network:fire("mobileCameraRotationChanged", difference * 0.3)
-							startPos = pos
-							RunService.RenderStepped:wait()
-						end
-						cameraMovementActive = false
-						network:fire("mobileCameraRotationChanged", Vector2.new())
-					end
+--					network:invoke("setMobileMovementDirection", Vector2.new())
+					network:fire("mobileMovementDirectionChanged", nil)
+					network:invoke("doSprint",false)
+					touchJoystickActive = false
+					touchJoystick.Visible = false
 				end
-			end
-		end)
-
-
-
-		USI.InputEnded:connect(function(input, absorbed)
-			if input.KeyCode == Enum.KeyCode.ButtonL2 and Modules.hotbarHandler.focused then
-				Modules.hotbarHandler.releaseFocus(input)
-			end
-		end)
-
-
-		USI.InputBegan:connect(function(input, absorbed)
-
-			if input.UserInputType == Enum.UserInputType.Keyboard or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
-				mode.Value = "pc"
-			elseif input.UserInputType == Enum.UserInputType.Gamepad1 then
-				mode.Value = "xbox"
-			elseif input.UserInputType == Enum.UserInputType.Touch then
-				mode.Value = "mobile"
-			end
-
-			if not absorbed then
-				if mode.Value == "xbox" then
-
-					if Modules.hotbarHandler.focused then
-						Modules.hotbarHandler.releaseFocus(input)
-					else
-						if input.KeyCode == Enum.KeyCode.ButtonB then
-							if Modules.interaction.currentInteraction then
-								Modules.interaction.stopInteract()
-							else
-								Modules.focus.close()
-							end
-							game.GuiService.SelectedObject = nil
-							print("$ nil a")
-						elseif input.KeyCode == Enum.KeyCode.ButtonX then
-							if Modules.itemAcquistion.closestItem then
-								Modules.itemAcquistion.pickupInputGained(input)
-							else
-								Modules.interaction.interact()
-							end
-
-						elseif input.KeyCode == Enum.KeyCode.ButtonY then
-							if game.GuiService.SelectedObject and game.GuiService.SelectedObject:FindFirstChild("bindable") then
-							else
-	--							Modules.playerMenu.open()
-							end
-
-						elseif input.KeyCode == Enum.KeyCode.ButtonSelect then
-							Modules.settings.open()
-	--					elseif input.KeyCode == Enum.KeyCode.DPadRight then
-	--						Modules.skillBooks.open()
-						elseif input.KeyCode == Enum.KeyCode.ButtonL2 then
-							Modules.hotbarHandler.captureFocus()
-						end
+			else
+				if not cameraMovementActive then
+					cameraMovementActive = true
+					while touch.UserInputState ~= Enum.UserInputState.End and touch.UserInputState ~= Enum.UserInputState.Cancel do
+						local pos = touch.Position
+						local difference = pos - startPos
+						network:fire("mobileCameraRotationChanged", difference * 0.3)
+						startPos = pos
+						RunService.RenderStepped:wait()
 					end
-
-				elseif mode.Value == "pc" then
-					local key = shortcuts[input.KeyCode.Name] or input.KeyCode.Name
-
-					-- remapping active
-					local remapTarget = Modules.settings.remapTarget
-					if remapTarget then
-						local actionName = Modules.settings.remapTarget.Name
-						local action = actions[actionName]
-						if action then
-							local success = changeKeybindAction(key, actionName)
-							if success then
-							end
-							return false
-						end
-					end
-
-					local actionName = keybinds[key]
-					if actionName then
-						local action = actions[actionName]
-						if action and (not action.active) and type(action.target) == "function" then
-
-							action.active = true
-							-- cool visual effect
-							for i,inputObject in pairs(inputObjects) do
-								if inputObject.Name == actionName then
-									if inputObject and inputObject:IsA("ImageLabel") then
-										local color = Color3.fromRGB(0, 255, 255)
-										inputObject.ImageColor3 = color
-										if inputObject:FindFirstChild("keyCode") then
-											inputObject.keyCode.TextColor3 = color
-										end
-									end
-								end
-							end
-
-							action.target(input) -- pass the input object
-							wait()
-							action.active = false
-							wait(0.15)
-
-							-- reset visual effect
-							if not action.active then
-								for i,inputObject in pairs(inputObjects) do
-									if inputObject.Name == actionName then
-										if inputObject and inputObject:IsA("ImageLabel") then
-											local color = inputObject:FindFirstChild("originalColor") and inputObject.originalColor.Value or Color3.fromRGB(40, 40, 40)
-											inputObject.ImageColor3 = color
-											if inputObject:FindFirstChild("keyCode") then
-												inputObject.keyCode.TextColor3 = Color3.new(1,1,1)
-											end
-										end
-									end
-								end
-							end
-
-						end
-					end
-
+					cameraMovementActive = false
+					network:fire("mobileCameraRotationChanged", Vector2.new())
 				end
-			end
-		end)
-
-		for i,button in pairs(buttonsFrame:GetChildren()) do
-			if button:IsA("GuiButton") then
-				button.MouseButton1Click:connect(function()
-					local action = actions[button.Name]
-					if action and action.target then
-						action.target()
-					end
-				end)
 			end
 		end
 	end)
 
-end
 
+
+	USI.InputEnded:connect(function(input, absorbed)
+		if input.KeyCode == Enum.KeyCode.ButtonL2 and Modules.hotbarHandler.focused then
+			Modules.hotbarHandler.releaseFocus(input)
+		end
+	end)
+
+
+	USI.InputBegan:connect(function(input, absorbed)
+
+		if input.UserInputType == Enum.UserInputType.Keyboard or input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.MouseButton2 then
+			mode.Value = "pc"
+		elseif input.UserInputType == Enum.UserInputType.Gamepad1 then
+			mode.Value = "xbox"
+		elseif input.UserInputType == Enum.UserInputType.Touch then
+			mode.Value = "mobile"
+		end
+
+		if not absorbed then
+			if mode.Value == "xbox" then
+
+				if Modules.hotbarHandler.focused then
+					Modules.hotbarHandler.releaseFocus(input)
+				else
+					if input.KeyCode == Enum.KeyCode.ButtonB then
+						if Modules.interaction.currentInteraction then
+							Modules.interaction.stopInteract()
+						else
+							Modules.focus.close()
+						end
+						game.GuiService.SelectedObject = nil
+						print("$ nil a")
+					elseif input.KeyCode == Enum.KeyCode.ButtonX then
+						if Modules.itemAcquistion.closestItem then
+							Modules.itemAcquistion.pickupInputGained(input)
+						else
+							Modules.interaction.interact()
+						end
+
+					elseif input.KeyCode == Enum.KeyCode.ButtonY then
+						if game.GuiService.SelectedObject and game.GuiService.SelectedObject:FindFirstChild("bindable") then
+						else
+--							Modules.playerMenu.open()
+						end
+
+					elseif input.KeyCode == Enum.KeyCode.ButtonSelect then
+						Modules.settings.open()
+--					elseif input.KeyCode == Enum.KeyCode.DPadRight then
+--						Modules.skillBooks.open()
+					elseif input.KeyCode == Enum.KeyCode.ButtonL2 then
+						Modules.hotbarHandler.captureFocus()
+					end
+				end
+
+			elseif mode.Value == "pc" then
+				local key = shortcuts[input.KeyCode.Name] or input.KeyCode.Name
+
+				-- remapping active
+				local remapTarget = Modules.settings.remapTarget
+				if remapTarget then
+					local actionName = Modules.settings.remapTarget.Name
+					local action = actions[actionName]
+					if action then
+						local success = changeKeybindAction(key, actionName)
+						if success then
+						end
+						return false
+					end
+				end
+
+				local actionName = keybinds[key]
+				if actionName then
+					local action = actions[actionName]
+					if action and (not action.active) and type(action.target) == "function" then
+
+						action.active = true
+						-- cool visual effect
+						for i,inputObject in pairs(inputObjects) do
+							if inputObject.Name == actionName then
+								if inputObject and inputObject:IsA("ImageLabel") then
+									local color = Color3.fromRGB(0, 255, 255)
+									inputObject.ImageColor3 = color
+									if inputObject:FindFirstChild("keyCode") then
+										inputObject.keyCode.TextColor3 = color
+									end
+								end
+							end
+						end
+
+						action.target(input) -- pass the input object
+						wait()
+						action.active = false
+						wait(0.15)
+
+						-- reset visual effect
+						if not action.active then
+							for i,inputObject in pairs(inputObjects) do
+								if inputObject.Name == actionName then
+									if inputObject and inputObject:IsA("ImageLabel") then
+										local color = inputObject:FindFirstChild("originalColor") and inputObject.originalColor.Value or Color3.fromRGB(40, 40, 40)
+										inputObject.ImageColor3 = color
+										if inputObject:FindFirstChild("keyCode") then
+											inputObject.keyCode.TextColor3 = Color3.new(1,1,1)
+										end
+									end
+								end
+							end
+						end
+
+					end
+				end
+
+			end
+		end
+	end)
+
+	for i,button in pairs(buttonsFrame:GetChildren()) do
+		if button:IsA("GuiButton") then
+			button.MouseButton1Click:connect(function()
+				local action = actions[button.Name]
+				if action and action.target then
+					action.target()
+				end
+			end)
+		end
+	end
+
+	spawn(setup)
+
+end
 
 
 
