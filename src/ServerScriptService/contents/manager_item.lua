@@ -806,6 +806,47 @@ local function playerRequest_dropItem(player, inventorySlotData)
 	return false, "invalid player data"
 end
 
+local function getTrueInventorySlotDataByInventorySlotDataFromPlayer(player, inventorySlotDataFromPlayer)
+	local playerData = network:invoke("getPlayerData", player)
+	if playerData then
+		for trueInventorySlot, inventorySlotData in pairs(playerData.inventory) do
+			if inventorySlotData.position == inventorySlotDataFromPlayer.position and inventorySlotData.id == inventorySlotDataFromPlayer.id then
+				return trueInventorySlot, inventorySlotData
+			end
+		end
+	end
+
+	return nil, nil
+end
+
+local function getTrueEquipmentSlotDataByEquipmentSlotDataFromPlayer(player, equipmentSlotDataFromPlayer)
+	local playerData = network:invoke("getPlayerData", player)
+	if playerData then
+		local itemBaseDataFromPlayer = itemLookup[equipmentSlotDataFromPlayer.id]
+		for trueEquipmentSlot, equipmentSlotData in pairs(playerData.equipment) do
+			local itemBaseData = itemLookup[equipmentSlotData.id]
+			if equipmentSlotData.position == equipmentSlotDataFromPlayer.position and itemBaseData.category == itemBaseDataFromPlayer.category then
+				return trueEquipmentSlot, equipmentSlotData
+			end
+		end
+	end
+
+	return nil, nil
+end
+
+-- Used to match provided player data to its location in real player data
+function module.getTrueItemSlotData(player, unsafeSlotData, itemLocationView)
+	local itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment do
+		if (itemLocationView == "inventory") then
+			itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment = getTrueInventorySlotDataByInventorySlotDataFromPlayer(player, unsafeSlotData)
+		elseif (itemLocationView == "equipment") then
+			itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment = getTrueEquipmentSlotDataByEquipmentSlotDataFromPlayer(player, unsafeSlotData)
+		end
+	end
+	return itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment
+end
+
+
 function module.init(Modules)
 
 	network = Modules.network

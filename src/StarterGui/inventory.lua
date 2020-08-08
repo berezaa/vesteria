@@ -408,7 +408,7 @@ function module.init(Modules)
 
 									if num ~= 1 and num ~= 2 then -- 1 and 2 reserved for consumables
 										if num == 10 then num = 0 end
-										local bindsuccess = network:invokeServer("registerHotbarSlotData", mapping.dataType.ability, ability.id, tonumber(num))
+										local bindsuccess = network:invokeServer("playerRequest_getHotbarSlotData", mapping.dataType.ability, ability.id, tonumber(num))
 										if bindsuccess then
 											for i=1,4 do
 												local flare = hotbarButton.flare:Clone()

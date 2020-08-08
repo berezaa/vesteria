@@ -1437,67 +1437,8 @@ function module.init(Modules)
 					utilities.playSound(realItem.useSound)
 				end
 			else
-
 				uiCreator.showItemPickup(realItem, value, metadata)
-				-- auto-bind first 2 consumables
-
-				-- edit: dont
-				--[[
-				if realItem.category == "consumable" and realItem.activationEffect then
-					local hotbarSlotPairing = network:invoke("getHotbarSlotPairing")
-					local itemAlreadyExists
-					for i, hotbarSlot in pairs(hotbarSlotPairing) do
-						local hotbarButton = hotbarSlot.button
-						local hotbarData = hotbarSlot.data
-						if hotbarData and hotbarData.id and hotbarData.id == realItem.id then
-							itemAlreadyExists = true
-						end
-					end
-					if not itemAlreadyExists then
-						for i, hotbarSlot in pairs(hotbarSlotPairing) do
-							local hotbarButton = hotbarSlot.button
-							local hotbarData = hotbarSlot.data
-							if hotbarData == nil or hotbarData.id == nil or hotbarData.id <= 0 then
-
-								local num = string.gsub(hotbarButton.Name,"[^.0-9]+","")
-								num = tonumber(num)
-
-								if num == 1 or num == 2 then -- 1 and 2 reserved for consumables
-
-									local bindsuccess = network:invokeServer("registerHotbarSlotData", mapping.dataType.item, realItem.id, tonumber(num))
-									if bindsuccess then
-										if game.ReplicatedStorage.sounds:FindFirstChild("idolPickup") then
-											utilities.playSound("idolPickup")
-											--game.ReplicatedStorage.sounds.idolPickup:Play()
-										end
-										for i=1,4 do
-											local flare = hotbarButton.flare:Clone()
-											flare.Name = "flareCopy"
-											flare.Parent = hotbarButton
-											flare.Visible = true
-											flare.Size = UDim2.new(1,4,1,4)
-											flare.Position = UDim2.new(0.5,0,1,2)
-											flare.AnchorPoint = Vector2.new(0.5,1)
-											local y = (180 - 40*i)
-											local x = (14 - 2*i)
-											local EndPosition = UDim2.new(0.5,0,1,2)
-											local EndSize = UDim2.new(1,x,1,y)
-											tween(flare,{"Position","Size","ImageTransparency"},{EndPosition, EndSize, 1},0.5*i)
-
-										end
-										break
-									end
-								end
-							end
-						end
-					end
-				end
-				]]
-
 			end
-
-
-
 
 			local Character = game.Players.LocalPlayer.Character
 			if itemBackup and Character and Character.PrimaryPart and not representationOverride then

@@ -1,6 +1,12 @@
 local module = {}
 
 local network
+local manager_item
+local enchantment
+local utilities
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local itemLookup = require(ReplicatedStorage.itemData)
 
 local numberGenerator_enchantment = Random.new()
 -- item location view is either "inventory" or "equipment"
@@ -9,13 +15,7 @@ local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlo
 
 	local playerData = network:invoke("getPlayerData", player)
 	if playerData and equipmentInventorySlotDataFromPlayer.id and (itemLocationView == "inventory" or itemLocationView == "equipment") then
-		local itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment do
-			if (itemLocationView == "inventory") then
-				itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment = getTrueInventorySlotDataByInventorySlotDataFromPlayer(player, equipmentInventorySlotDataFromPlayer)
-			elseif (itemLocationView == "equipment") then
-				itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment = getTrueEquipmentSlotDataByEquipmentSlotDataFromPlayer(player, equipmentInventorySlotDataFromPlayer)
-			end
-		end
+		local itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment = manager_item.getTrueItemSlotData(player, equipmentInventorySlotDataFromPlayer, itemLocationView)
 
 		if not itemLocationViewSlotData_equipment then
 			return false, "could not find equipment to encahnt"
@@ -75,7 +75,7 @@ local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlo
 			end
 
 			if itemBaseData_enchantment and itemBaseData_enchantment.enchantsEquipment and itemBaseData_enchantment.applyScroll and itemBaseData_equipment then
-				local trueInventorySlot_enchantment, inventorySlotData_enchantment = getTrueInventorySlotDataByInventorySlotDataFromPlayer(player, enchantmentInventorySlotDataFromPlayer)
+				local trueInventorySlot_enchantment, inventorySlotData_enchantment = manager_item.getTrueItemSlotData(player, enchantmentInventorySlotDataFromPlayer, "inventory")
 
 				if inventorySlotData_enchantment and itemLocationViewSlotData_equipment then
 					local upgradeCost = itemBaseData_enchantment.upgradeCost or 1
@@ -225,6 +225,9 @@ end
 
 function module.init(Modules)
 	network = Modules.network
+	manager_item = Modules.manager_item
+	enchantment = Modules.enchantment
+	utilities = Modules.utilities
 	network:create("playerRequest_enchantEquipment", "RemoteFunction", "OnServerInvoke", onEnchantEquipmentRequestReceived)
 end
 

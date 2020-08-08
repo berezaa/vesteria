@@ -875,7 +875,7 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 						if inventoryItemBaseData and inventoryItemBaseData.category == "consumable" and inventoryItemBaseData.canBeBound then
 							local num = string.gsub(buttonTo.Name,"[^.0-9]+","")
 							if tonumber(num) == 10 then num = 0 end
-							network:invokeServer("registerHotbarSlotData", mapping.dataType.item, inventorySlotData.id, tonumber(num))
+							network:invokeServer("playerRequest_getHotbarSlotData", mapping.dataType.item, inventorySlotData.id, tonumber(num))
 						end
 					end
 				end
@@ -1026,16 +1026,16 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 				local toNum = string.gsub(buttonTo.Name,"[^.0-9]+","")
 				if tonumber(toNum) == 10 then toNum = 0 end
 
-				network:invokeServer("registerHotbarSlotData", fromData.dataType, fromData.id, tonumber(toNum))
+				network:invokeServer("playerRequest_getHotbarSlotData", fromData.dataType, fromData.id, tonumber(toNum))
 
 				local fromNum = string.gsub(buttonFrom.Name,"[^.0-9]+","")
 				if tonumber(fromNum) == 10 then fromNum = 0 end
 
 				if buttonTo ~= buttonFrom then
 					if toData then
-						network:invokeServer("registerHotbarSlotData", toData.dataType, toData.id, tonumber(fromNum))
+						network:invokeServer("playerRequest_getHotbarSlotData", toData.dataType, toData.id, tonumber(fromNum))
 					else
-						network:invokeServer("registerHotbarSlotData", nil, nil, tonumber(fromNum))
+						network:invokeServer("playerRequest_getHotbarSlotData", nil, nil, tonumber(fromNum))
 					end
 				end
 
@@ -1044,7 +1044,7 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 			local hotbarSlotData = network:invoke("getHotbarSlotDataByHotbarSlotUI", buttonFrom)
 			if hotbarSlotData then
 				-- dragged into overworld
-				network:invokeServer("registerHotbarSlotData", nil, nil, hotbarSlotData.position)
+				network:invokeServer("playerRequest_getHotbarSlotData", nil, nil, hotbarSlotData.position)
 			end
 		end
 	elseif buttonFrom:IsDescendantOf(menu_equipment) then
@@ -1093,7 +1093,7 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 			if abilityData.id then
 				local num = string.gsub(buttonTo.Name,"[^.0-9]+","")
 				if tonumber(num) == 10 then num = 0 end
-				network:invokeServer("registerHotbarSlotData", mapping.dataType.ability, abilityData.id, tonumber(num))
+				network:invokeServer("playerRequest_getHotbarSlotData", mapping.dataType.ability, abilityData.id, tonumber(num))
 			end
 		end
 	end

@@ -2154,18 +2154,6 @@ local function VALIDATE_SECTION_FOR_CHEAT_WEAPONS(section, holding)
 	end
 end
 
-local function completelyNukeSaveFile(player, playerData)
-	playerData.level 		= 1
-	playerData.exp 			= 0
-	playerData.equipment 	= {}
-	playerData.inventory 	= {}
-	playerData.abilities 	= {}
-	playerData.abilityBooks = {}
-	playerData.statistics 	= {}
-	playerData.gold 		= 0
-	playerData.class 		= "Adventurer"
-end
-
 local function onLogPerkActivation_server(player, equipmentId)
 	local playerData = playerDataContainer[player]
 
@@ -2173,150 +2161,6 @@ local function onLogPerkActivation_server(player, equipmentId)
 		playerData.nonSerializeData.perksActivated[tostring(equipmentId)] = tick()
 	end
 end
-
-
-local function flagCheck(player, playerData)
-
-	if not playerData.flags.arrowChangeXD then
-		playerData.flags.arrowChangeXD = true
-
-		local trueEquip do
-			for i, equip in pairs(playerData.equipment) do
-				if equip.position == mapping.equipmentPosition.arrow then
-					trueEquip = equip
-				end
-			end
-		end
-
-		if trueEquip and trueEquip.id == nil then
-			trueEquip.id = 87
-		elseif not trueEquip then
-			table.insert(playerData.equipment, {
-				id 			= 87;
-				position 	= mapping.equipmentPosition.arrow;
-				stacks 		= 0;
-			})
-		end
-	end
-
-
-	if not playerData.flags.abilityReset then
-		playerData.flags.abilityReset = true
-		if game.PlaceId ~= 2103419922 then
-			playerData.abilities = {}
-
-			for abilityBookName, abilityBookPlayerData in pairs(playerData.abilityBooks) do
-				abilityBookPlayerData.pointsAssigned = 0
-			end
-
-			while true do
-				local madeChange = false
-
-				for i, hotbarAbilityData in pairs(playerData.hotbar) do
-					if hotbarAbilityData.dataType == mapping.dataType.ability then
-						madeChange = true
-
-						table.remove(playerData.hotbar, i)
-
-						break
-					end
-				end
-
-				if not madeChange then
-					break
-				end
-			end
-
-			playerData.statistics.dex = 0
-			playerData.statistics.int = 0
-			playerData.statistics.str = 0
-			playerData.statistics.vit = 0
-		end
-
-	end
-
-	if not playerData.flags.fixNightmareChickensEXPandInfinitePetPickup then
-		playerData.flags.fixNightmareChickensEXPandInfinitePetPickup = true
-
-		if playerData.gold > 25000000 and not runService:IsStudio() then
-			playerData.gold = 0
-		end
-
-		if playerData.level == 30 or playerData.exp > levels.getEXPToNextLevel(playerData.level) then
-			playerData.exp = 0
-		end
-	end
-
-	if not playerData.flags.statCheck then
-		local needsReset = false
-		local statSum = 0
-
-		-- check individual stats
-		for i, statName in pairs(playerStatTypes) do
-			local stat = playerData.statistics[statName] or 0
-			statSum = statSum + math.abs(stat)
-		end
-
-		if statSum > levels.getStatPointsForLevel(playerData.level or 1) then
-			needsReset = true
-		end
-
-		playerData.flags.statCheck = true
-
-		-- wipe stats if bad
-		if needsReset then
-			for i, statName in pairs(playerStatTypes) do
-				playerData.statistics[statName] = 0
-			end
-		end
-	end
-
-	if not playerData.flags.resetQuests then
-		playerData.flags.resetQuests = true
-
-		playerData.quests = {}
-			playerData.quests.completed = {} --playerSaveFileData.quests.completed or {}
-			playerData.quests.active 	= {} --playerSaveFileData.quests.active or {}
-	end
-
-	if configuration.getConfigurationValue("doStartRevokingCheatWeapons") then
-		if not playerData.flags.revokeCheatWeapons then
-			playerData.flags.revokeCheatWeapons = true
-			playerData.holding 					= {}
-
-			VALIDATE_SECTION_FOR_CHEAT_WEAPONS(playerData.inventory, playerData.holding)
-			VALIDATE_SECTION_FOR_CHEAT_WEAPONS(playerData.equipment, playerData.holding)
-		end
-	end
-
-
-
-	if not playerData.flags.resetStatPointsForV23 then
-		playerData.flags.resetStatPointsForV23 = true
-
-		playerData.statistics.dex = 0
-		playerData.statistics.int = 0
-		playerData.statistics.str = 0
-		playerData.statistics.vit = 0
-	end
-
-	if not playerData.flags.removeSpiderQueenCrown then
-		playerData.flags.removeSpiderQueenCrown = true
-
-		for i, inventorySlotData in pairs(playerData.inventory) do
-			if inventorySlotData.id == 68 then
-				table.remove(playerData.inventory, i)
-			end
-		end
-
-		for i, equipmentSlotData in pairs(playerData.equipment) do
-			if equipmentSlotData.id == 68 then
-				table.remove(playerData.equipment, i)
-			end
-		end
-	end
-end
-
 
 local function onGetPlayerEquipmentDataByEquipmentPosition(player, equipmentPosition)
 	if playerDataContainer[player] then
@@ -2597,74 +2441,6 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	respawnPointTag.Name = "respawnPoint"
 	respawnPointTag.Value = nil
 	respawnPointTag.Parent = player
-
-	if not playerData.flags.ancientsRevert then
-		playerData.flags.ancientsRevert = true
-
-		for _, v in pairs(playerData.inventory) do
-			if v.id == 63 or v.id == 62 or v.id == 64 or v.id == 17 then -- 63, 62, 17, 64 -> 200
-				v.id = 200
-			end
-		end
-
-		if playerData.globalData and playerData.globalData.itemStorage then
-			if not playerData.globalData.ancientsRevertStore then
-				playerData.globalData.ancientsRevertStore = true
-				for _, v in pairs(playerData.globalData.itemStorage) do
-					if v.id == 63 or v.id == 62 or v.id == 64 or v.id == 17 then -- 63, 62, 17, 64 -> 200
-						v.id = 200
-					end
-				end
-			end
-		end
-	end
-
-	if not playerData.flags.enchantWipe3 then
-		playerData.flags.enchantWipe3 = true
-
-		if playerData.gold > 50000 then
-			playerData.gold = 50000
-		end
-
-		local function process(v)
-			if v.modifierData then
-				v.modifierData = {}
-			end
-			if v.upgrades then
-				v.upgrades = 0
-			end
-			if v.successfulUpgrades then
-				v.successfulUpgrades = 0
-			end
-			if v.blessed then
-				v.blessed = nil
-			end
-			if v.enchantments then
-				v.enchantments = nil
-			end
-		end
-
-		for _, v in pairs(playerData.equipment) do
-			process(v)
-		end
-
-		for _, v in pairs(playerData.inventory) do
-			process(v)
-		end
-
-		-- for damien: this isnt how storage works pls fix it thnx
-		--playerData.globalData.itemStorage
-		if playerData.globalData and playerData.globalData.itemStorage then
-			if not playerData.globalData.enchantWipe3 then
-				playerData.globalData.enchantWipe3 = true
-				for _, v in pairs(playerData.globalData.itemStorage) do
-					process(v)
-				end
-			end
-		end
-
-		playerData.treasureChests = nil
-	end
 
 	-- boom boom
 	if not playerData.hasCustomizedCharacter then
@@ -2979,8 +2755,6 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 	-- register playerData internally
 	playerDataContainer[player] = playerData
 
-	flagCheck(player, playerData)
-
 	-- assign inventory slots that aren't assigned positions
 	updateInventorySlots(player)
 
@@ -3155,105 +2929,7 @@ local function onPlayerAdded(player, desiredSlot, desiredTimeStamp, accessories)
 		end
 	end
 
-	-- data recovery flags processed here, we don't need to care if this is studio
-	spawn(function()
-		-- data recovery disabled by this return
-		-- guess we're not using it for a while
-		if game.PlaceId ~= 4409709778 then return end
-
-
-
-		local lastSaveTimestamp = 0
-		if playerData.globalData then
-			lastSaveTimestamp = playerData.globalData.lastSaveTimestamp or 0
-		end
-
-		if not playerData.flags.dataRecovery11_14 then
-			if lastSaveTimestamp < 1573760698 then
-				playerData.flags.dataRecovery11_14 = true
-			else
-				performDataRecovery(player, desiredSlot, "dataRecovery11_14")
-			end
-		end
-	end)
-
 	return true, playerData, errorMsg
-end
-
-function performDataRecovery(player, desiredSlot, flagName)
-	local playerData = playerDataContainer[player]
-
-	if game.PlaceId == 4409709778 then
-		while true do
-			wait(1)
-			network:fireClient("dataRecoveryRequested", player, playerData, desiredSlot, flagName)
-		end
-	else
-		playerData.dataRecoveryReturnPlaceId = game.PlaceId
-		repeat
-			wait(1)
-		until network:invoke("teleportPlayer", player, 4409709778)
-	end
-end
-
-local DATA_RECOVERY_FLAG_NAMES = {
-	"dataRecovery11_14",
-}
-
-function onDataRecoveryRejected(player, flagName)
-	-- is this a legal flag?
-	local legalFlag = false
-	for _, acceptedFlagName in pairs(DATA_RECOVERY_FLAG_NAMES) do
-		if acceptedFlagName == flagName then
-			legalFlag = true
-		end
-	end
-	if not legalFlag then return end
-
-	local playerData = playerDataContainer[player]
-	if not playerData then return end
-	if playerData.flags[flagName] then return end
-
-	playerData.flags[flagName] = true
-
-	repeat
-		wait(1)
-	until network:invoke("teleportPlayer", player, playerData.dataRecoveryReturnPlaceId)
-end
-
-function onDataRecoveryRequested(player, slot, version, flagName)
-	-- only in data recovery place!
-	if game.PlaceId ~= 4409709778 then return end
-
-	-- is this a legal flag?
-	local legalFlag = false
-	for _, acceptedFlagName in pairs(DATA_RECOVERY_FLAG_NAMES) do
-		if acceptedFlagName == flagName then
-			legalFlag = true
-		end
-	end
-	if not legalFlag then return end
-
-	-- do we have this flag already?
-	local playerData = playerDataContainer[player]
-	if playerData.flags[flagName] then return end
-
-	local latestVersion = datastoreInterface:getLatestSaveVersion(player)
-	local success, rollbackData, message = datastoreInterface:getPlayerSaveFileData(player, slot, version)
-
-	if not success then return end
-
-	rollbackData.timestamp = playerData.timestamp
-	rollbackData.globalData.version = playerData.globalData.version
-
-	rollbackData.flags[flagName] = true
-	playerDataContainer[player] = rollbackData
-
-	datastoreInterface:updatePlayerSaveFileData(player.UserId, rollbackData)
-
-	repeat
-		wait(1)
-	until network:invoke("teleportPlayer", player, playerData.dataRecoveryReturnPlaceId)
 end
 
 game:BindToClose(function()
@@ -4062,34 +3738,6 @@ local function onDamagePlayer(player, damage)
 	player.Character.PrimaryPart.health.Value = player.Character.PrimaryPart.health.Value - damage
 end
 
-local function getTrueInventorySlotDataByInventorySlotDataFromPlayer(player, inventorySlotDataFromPlayer)
-	local playerData = playerDataContainer[player]
-	if playerData then
-		for trueInventorySlot, inventorySlotData in pairs(playerData.inventory) do
-			if inventorySlotData.position == inventorySlotDataFromPlayer.position and inventorySlotData.id == inventorySlotDataFromPlayer.id then
-				return trueInventorySlot, inventorySlotData
-			end
-		end
-	end
-
-	return nil, nil
-end
-
-local function getTrueEquipmentSlotDataByEquipmentSlotDataFromPlayer(player, equipmentSlotDataFromPlayer)
-	local playerData = playerDataContainer[player]
-	if playerData then
-		local itemBaseDataFromPlayer = itemLookup[equipmentSlotDataFromPlayer.id]
-		for trueEquipmentSlot, equipmentSlotData in pairs(playerData.equipment) do
-			local itemBaseData = itemLookup[equipmentSlotData.id]
-			if equipmentSlotData.position == equipmentSlotDataFromPlayer.position and itemBaseData.category == itemBaseDataFromPlayer.category then
-				return trueEquipmentSlot, equipmentSlotData
-			end
-		end
-	end
-
-	return nil, nil
-end
-
 
 -- dont mind me just inserting this here
 
@@ -4182,43 +3830,7 @@ local function onRemovePlayerInventorySlotData(player, inventorySlotData, stacks
 	return false, 0
 end
 
--- let the player be authoritative in this regard, it's their personal data anyway.
-local function onRegisterHotbarSlotData(player, dataType, id, position)
-	if not playerDataContainer[player] then return end
 
-	if not id or not dataType then
-		if position then
-			local alteration = false
-			-- clear out the position for this one
-			for i, hotbarSlotData in pairs(playerDataContainer[player].hotbar) do
-				if hotbarSlotData.position == position then
-					table.remove(playerDataContainer[player].hotbar, i)
-
-					alteration = true
-				end
-			end
-
-			if alteration then
-				-- update the inventory
-				onClientRequestPropogateCacheData(player, "hotbar")
-				return true
-			end
-		end
-	elseif position then
-		-- clear out the position for this one
-		for i, hotbarSlotData in pairs(playerDataContainer[player].hotbar) do
-			if hotbarSlotData.position == position then
-				table.remove(playerDataContainer[player].hotbar, i)
-			end
-		end
-
-		table.insert(playerDataContainer[player].hotbar, {dataType = dataType; id = id; position = position})
-
-		-- update the inventory
-		onClientRequestPropogateCacheData(player, "hotbar")
-		return true
-	end
-end
 
 local seatsTaken = {}
 
@@ -4457,8 +4069,7 @@ function module.init(Modules)
 
 	network:create("requestSplitInventorySlotDataStack", "RemoteFunction", "OnServerInvoke", onRequestSplitInventorySlotDataStack)
 	network:create("playerRequest_splitInventorySlotDataStack", "RemoteFunction", "OnServerInvoke", onRequestSplitInventorySlotDataStack)
-	network:create("registerHotbarSlotData", "RemoteFunction", "OnServerInvoke", onRegisterHotbarSlotData)
-	network:create("playerRequest_getHotbarSlotData", "RemoteFunction", "OnServerInvoke", onRegisterHotbarSlotData)
+
 	network:create("replicateClientStateChanged", "RemoteEvent", "OnServerEvent", onReplicateClientStateChanged)
 	network:create("replicateClientWeaponStateChanged", "RemoteEvent", "OnServerEvent", onReplicateClientWeaponStateChanged)
 	network:create("playerRequest_equipTemporaryEquipment", "RemoteFunction", "OnServerInvoke", onPlayerRequest_equipTemporaryEquipment)
