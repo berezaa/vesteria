@@ -185,6 +185,7 @@ function module.getNeutrals(playerDoingDamage)
 		end
 	end
 	return neutrals
-end
+end;
 
 return module
+

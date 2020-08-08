@@ -8,7 +8,7 @@ function module.init(Modules)
 	local network = Modules.network
 
 	-- todo: fix
-	local animationInterface = require(game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("repo"):WaitForChild("animationInterface"))
+	local animationInterface = Modules.animationInterface
 
 	function module.show(player)
 

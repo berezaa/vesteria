@@ -19,8 +19,6 @@ local storageSlotPairing = {}
 
 local lastSelected
 
--- todo: fix
-local animationInterface = require(game.Players.LocalPlayer:WaitForChild("PlayerScripts"):WaitForChild("repo"):WaitForChild("animationInterface"))
 
 function module.init(Modules)
 	local uiCreator = Modules.uiCreator
