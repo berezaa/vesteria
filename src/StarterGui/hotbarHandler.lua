@@ -1,6 +1,7 @@
-local httpService = game:GetService("HttpService")
+local HttpService = game:GetService("HttpService")
 
 local module = {}
+module.priority = 12
 
 local hotbarFrame = script.Parent.gameUI.bottomRight.hotbarFrame
 
@@ -27,7 +28,7 @@ module.releaseFocus = function()
 	warn("hotbarHandler.releaseFocus not ready!")
 end
 
-function module.postInit(Modules)
+function module.init(Modules)
 
 	local network = Modules.network
 	local utilities = Modules.utilities
@@ -216,7 +217,7 @@ function module.postInit(Modules)
 
 		local customFunctionData, customFunctionGuid
 		if targetingData.onStarted then
-			customFunctionGuid = httpService:GenerateGUID()
+			customFunctionGuid = HttpService:GenerateGUID()
 			local abilityExecutionData = network:invoke("getAbilityExecutionData", abilityId)
 
 			customFunctionData = targetingData.onStarted(
@@ -383,7 +384,7 @@ function module.postInit(Modules)
 	local function onHotbarButtonDoubleClicked(hotbarButtonItem, ...)
 		print("hotbar double clicked")
 		print(hotbarButtonDebounce)
-		
+
 		if not hotbarButtonDebounce then return end
 		hotbarButtonDebounce = false
 		delay(0.05, function()

@@ -333,36 +333,37 @@ function module.init(Modules)
 		end
 	end
 	main()
-end
+	-- postInit
+	spawn(function()
+		module.update()
+		print(1)
+		network:connect("signal_isEnchantingEquipmentSet", "Event", function(value, inventorySlotData_enchantment)
+			for _, equipmentButton in pairs(menu.content:GetChildren()) do
+				if equipmentButton:FindFirstChild("equipItemButton") then
+					if value and inventorySlotData_enchantment then
+						local equipmentSlotData = equipmentSlotPairing[equipmentButton.equipItemButton]
+						if equipmentSlotData then
+							equipmentButton.blocked.Visible = false
+							local equipmentBaseData = itemData[equipmentSlotData.id]
 
-function module.postInit(Modules)
-	module.update()
-	print(1)
-	network:connect("signal_isEnchantingEquipmentSet", "Event", function(value, inventorySlotData_enchantment)
-		for _, equipmentButton in pairs(menu.content:GetChildren()) do
-			if equipmentButton:FindFirstChild("equipItemButton") then
-				if value and inventorySlotData_enchantment then
-					local equipmentSlotData = equipmentSlotPairing[equipmentButton.equipItemButton]
-					if equipmentSlotData then
+							local itemBaseData_enchantment = itemData[inventorySlotData_enchantment.id]
+							local cost = itemBaseData_enchantment.upgradeCost or 1
+							local max = equipmentBaseData.maxUpgrades
+
+							local canEnchant, indexToRemove = enchantment.enchantmentCanBeAppliedToItem(inventorySlotData_enchantment, equipmentSlotData)
+							local blocked = not canEnchant
+
+							equipmentButton.blocked.Visible = blocked
+						end
+					else
 						equipmentButton.blocked.Visible = false
-						local equipmentBaseData = itemData[equipmentSlotData.id]
-
-						local itemBaseData_enchantment = itemData[inventorySlotData_enchantment.id]
-						local cost = itemBaseData_enchantment.upgradeCost or 1
-						local max = equipmentBaseData.maxUpgrades
-
-						local canEnchant, indexToRemove = enchantment.enchantmentCanBeAppliedToItem(inventorySlotData_enchantment, equipmentSlotData)
-						local blocked = not canEnchant
-
-						equipmentButton.blocked.Visible = blocked
 					end
-				else
-					equipmentButton.blocked.Visible = false
 				end
 			end
-		end
+		end)
 	end)
 end
+
 
 
 return module
