@@ -24,6 +24,7 @@ local placeSetup
 local events
 local detection
 local projectile
+local tween
 
 local entityManifestCollectionFolder
 local temporaryEquipmentFolder
@@ -119,54 +120,6 @@ local function getPlayerDefaultHomePlaceId(player)
 	end
 end
 
-local function onDeathGuiAccepted(player)
-	local playerData = playerDataContainer[player]
-	if not playerData then return end
-
-	local tagName = "acceptedDeathConsequences"
-	local tag = player:FindFirstChild(tagName)
-	if tag then return end
-
-	local source = "game:death"
-
-	playerData.nonSerializeData.incrementPlayerData("gold", -(playerData.gold*0.1), source)
-	local expForNextLevel = levels.getEXPToNextLevel(playerData.level)
-	local newExp = math.clamp(playerData.exp - expForNextLevel * 0.2, 0, expForNextLevel)
-	playerData.nonSerializeData.setPlayerData("exp", newExp)
-	local nearestCity = game.ReplicatedStorage:FindFirstChild("nearestCityId")
-	nearestCity = nearestCity and nearestCity.Value
-	local returnDestination = nearestCity or playerData.homePlaceId or getPlayerDefaultHomePlaceId(player)
-	returnDestination = utilities.placeIdForGame(returnDestination)
-	playerData.lastLocationDeathOverride = returnDestination
-
-	tag = Instance.new("BoolValue")
-	tag.Name = tagName
-	tag.Value = true
-	tag.Parent = player
-
-	-- set health and mana to 1
-	local character = player.Character
-	if character then
-		local manifest = character.PrimaryPart
-		if manifest then
-			local health = manifest:FindFirstChild("health")
-			local mana = manifest:FindFirstChild("mana")
-			if health and mana then
-				health.Value = 1
-				mana.Value = 1
-			end
-		end
-	end
-
-	if game.PlaceId == 2103419922 then
-	--	game:GetService("TeleportService"):Teleport(2103419922, player)
-		player:Kick("You are dead.")
-		return
-	end
-
-	network:invoke("teleportPlayer", player, playerData.lastLocationDeathOverride, "default", nil, "death")
-end
-
 
 local function onPlayerRemoving(player)
 
@@ -213,12 +166,6 @@ local function onPlayerRemoving(player)
 			end
 		end
 
-		local deathTag = player:FindFirstChild("awaitingDeathGuiResponse")
-		if deathTag ~= nil then
-			deathTag:Destroy()
-			onDeathGuiAccepted(player)
-		end
-
 		if player:FindFirstChild("entityGUID") then
 			local statusEffects = network:invoke("playerRemovingPackageStatusEffects", player)
 
@@ -227,6 +174,7 @@ local function onPlayerRemoving(player)
 			end
 		end
 
+		-- save character state
 		local char = player.Character
 		if char then
 			local manifest = char.PrimaryPart
@@ -278,7 +226,7 @@ local function onPlayerRemoving(player)
 	-- can't believe i have to do this.
 	if player.Character then
 		player.Character.Parent = nil
-		player.Character 		= nil
+		player.Character = nil
 	end
 end
 
@@ -361,144 +309,100 @@ local function onGetPlayerEquipment(client, player)
 end
 
 
-local function performDeathToRenderCharacter(player)
-	local previousCharacter = player.Character
-	local serverHitbox = previousCharacter.PrimaryPart
+local function onPlayerDeath(player, manifest)
 
-	if serverHitbox.state.Value ~= "dead" then
-		player.isPlayerSpawning.Value = true
-		player.playerSpawnTime.Value = os.time()
+	local killer
+	if manifest:FindFirstChild("killingBlow") and manifest.killingBlow:FindFirstChild("source") then
+		killer = manifest.killingBlow.source.Value
+	end
 
-		serverHitbox.state.Value = "dead"
+	network:fire("playerCharacterDied", player, manifest, killer)
+	events:fireEventLocal("entityManifestDied", manifest)
 
-		local killer
-		if serverHitbox:FindFirstChild("killingBlow") and serverHitbox.killingBlow:FindFirstChild("source") then
-			killer = serverHitbox.killingBlow.source.Value
-		end
+	if manifest.health.Value <= manifest.maxHealth.Value * -3 then
+		utilities.playSound("DEATH", manifest)
+	else
+		utilities.playSound("kill", manifest)
+	end
 
-		network:fire("playerCharacterDied", player, previousCharacter, killer)
-		events:fireEventLocal("entityManifestDied", serverHitbox)
-
-		if serverHitbox.health.Value <= serverHitbox.maxHealth.Value * -3 then
-			utilities.playSound("DEATH", serverHitbox)
-		else
-			utilities.playSound("kill", serverHitbox)
-		end
-
-		local respawnTime = 7
-
-		if game.ReplicatedStorage:FindFirstChild("respawnTime") then
-			respawnTime = game.ReplicatedStorage.respawnTime.Value
-		end
-
-		local respawnType do
-			if ReplicatedStorage:FindFirstChild("safeZone") or (game.PlaceId == 2061558182) then
-				respawnType = "normal"
-			elseif ReplicatedStorage:FindFirstChild("overrideDeathBehavior") then
-				respawnType = "custom"
-			else
-				respawnType = "dangerous"
-			end
-		end
-
-		local tombstoneDuration = 300
-
-		if not ReplicatedStorage:FindFirstChild("safeZone") then
-			delay(3, function()
-				local tombstoneTag = player:FindFirstChild("tombstone")
-				if tombstoneTag == nil then
-					tombstoneTag = Instance.new("ObjectValue")
-					tombstoneTag.Name = "tombstone"
-					tombstoneTag.Parent = player
-				end
-				if tombstoneTag.Value then
-					tombstoneTag.Value:Destroy()
-				end
-
-				local tombstone = assetsFolder.entities.tombstone:Clone()
-				tombstone.CanCollide = false
-
-				local offset = Vector3.new(0, previousCharacter.PrimaryPart.Size.Y / 2, 0)
-				local targetPosition = (previousCharacter.PrimaryPart.CFrame - offset).Position
-
-				local rayDown = Ray.new(previousCharacter.PrimaryPart.Position, Vector3.new(0,-50,0))
-				local hitPart, hitPosition = workspace:FindPartOnRayWithIgnoreList(rayDown, {
-					workspace.placeFolders, workspace.CurrentCamera
-				}, false, true)
-				if hitPart and hitPosition then
-					targetPosition = hitPosition + Vector3.new(0, tombstone.Size.Y / 2.1, 0)
-				end
-
-				tombstone.CFrame = previousCharacter.PrimaryPart.CFrame - previousCharacter.PrimaryPart.Position + targetPosition
-				game.Debris:AddItem(tombstone, tombstoneDuration)
-			end)
-		end
-
-		if respawnType == "dangerous" then
-			network:fireClient("deathGuiRequested", player)
-
-			local tag = Instance.new("BoolValue")
-			tag.Name = "awaitingDeathGuiResponse"
-			tag.Value = true
-			tag.Parent = player
-
-			local playerStillDead = true
-			local timer = 70
-			while timer > 0 do
-				timer = timer - wait(1)
-
-				-- if player is alive, stop this killswitch
+	local respawnType do
+		if ReplicatedStorage:FindFirstChild("safeZone") or (game.PlaceId == 2061558182) then
+			respawnType = "normal"
+			if player then
 				local character = player.Character
 				if character then
-					local manifest = character.PrimaryPart
-					if manifest then
-						local state = manifest:FindFirstChild("state")
-						if state and state.Value ~= "dead" then
-							playerStillDead = false
-
-							break
-						end
-					end
+					character:Destroy()
 				end
+				player:LoadCharacter()
+			end
+		elseif ReplicatedStorage:FindFirstChild("overrideDeathBehavior") then
+			respawnType = "custom"
+		else
+			respawnType = "dangerous"
+			manifest.Anchored = true
+			manifest.CanCollide = false
+			local tombstoneTag = player:FindFirstChild("tombstone")
+			if tombstoneTag == nil then
+				tombstoneTag = Instance.new("ObjectValue")
+				tombstoneTag.Name = "tombstone"
+				tombstoneTag.Parent = player
+			end
+			if tombstoneTag.Value then
+				tombstoneTag.Value:Destroy()
 			end
 
-			if player and player.Parent then
-				tag:Destroy()
+			local tombstone = assetsFolder.entities.tombstone:Clone()
+			tombstone.CanCollide = false
+			tombstone.Parent = workspace
 
-				if playerStillDead then
-					onDeathGuiAccepted(player)
+			local offset = Vector3.new(0, manifest.Size.Y / 2, 0)
+			local targetPosition = (manifest.CFrame - offset).Position
+
+			local rayDown = Ray.new(manifest.Position, Vector3.new(0,-50,0))
+			local hitPart, hitPosition = workspace:FindPartOnRayWithIgnoreList(rayDown, {
+				workspace.placeFolders, workspace.CurrentCamera
+			}, false, true)
+			if hitPart and hitPosition then
+				targetPosition = hitPosition + Vector3.new(0, tombstone.Size.Y / 2.1, 0)
+			end
+			local goalCFrame = manifest.CFrame - manifest.Position + targetPosition
+			local startCFrame = goalCFrame + Vector3.new(0, 50, 0)
+			tombstone.CFrame = startCFrame
+			tween(tombstone, {"CFrame"}, {goalCFrame}, 3)
+			game.Debris:AddItem(tombstone, 600)
+			local playerData = playerDataContainer[player]
+			if playerData then
+				local inventory = playerData.inventory
+				local equipment = playerData.equipment
+				playerData.level = 1
+				playerData.exp = 0
+				playerData.equipment = {}
+				playerData.inventory = {}
+				playerData.abilities = {}
+				playerData.abilityBooks = {}
+				playerData.statistics = {}
+				playerData.gold = 0
+				playerData.class = "Adventurer"
+				for _, itemData in pairs(inventory) do
+					network:invoke("spawnItemOnGround",itemData, goalCFrame.Position)
+				end
+				for _, itemData in pairs(equipment) do
+					network:invoke("spawnItemOnGround",itemData, goalCFrame.Position)
 				end
 			end
-		end
-
-		if respawnType == "normal" then
-			delay(respawnTime, function()
-				if player then
-					local character = player.Character
-					if character then
-						-- skip out on respawning if they're not dead
-						local manifest = character.PrimaryPart
-						if manifest then
-							local state = manifest:FindFirstChild("state")
-							if state and state.Value ~= "dead" then
-								return
-							end
-						end
-
-						-- otherwise we should go on
-						player.Character:Destroy()
-					end
-
-					player:LoadCharacter()
-				end
-			end)
 		end
 	end
+	return respawnType
 end
 
-local function onCharacterHealthChanged(player, healthValue)
+local function onCharacterHealthChanged(player, manifest, healthValue)
 	if healthValue <= 0 then
-		performDeathToRenderCharacter(player)
+		if manifest.state.Value ~= "dead" then
+			player.isPlayerSpawning.Value = true
+			player.playerSpawnTime.Value = os.time()
+			manifest.state.Value = "dead"
+			onPlayerDeath(player, manifest)
+		end
 	end
 end
 
@@ -1038,13 +942,13 @@ local function onCharacterAdded(player, character)
 			playerData.condition = nil
 		end
 
-		onCharacterHealthChanged(player, player.Character.PrimaryPart.health.Value)
+		onCharacterHealthChanged(player, player.Character.PrimaryPart, player.Character.PrimaryPart.health.Value)
 
 		local alive = true
 
 		if character.PrimaryPart and player.Character.PrimaryPart.health.Value > 0 then
 			player.Character.PrimaryPart.health.Changed:connect(function(newHealth)
-				onCharacterHealthChanged(player, newHealth)
+				onCharacterHealthChanged(player, player.Character.PrimaryPart, newHealth)
 
 				if newHealth <= 0 then
 					alive = false
@@ -4029,6 +3933,7 @@ function module.init(Modules)
 	events = Modules.events
 	detection = Modules.detection
 	projectile = Modules.projectile
+	tween = Modules.tween
 
 	entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
 	temporaryEquipmentFolder = placeSetup.getPlaceFolder("temporaryEquipment")

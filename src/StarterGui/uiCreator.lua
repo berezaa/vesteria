@@ -4,21 +4,27 @@ local module = {}
 module.drag = {}
 
 -- service declarations
-local textService = game:GetService("TextService")
-local tweenService = game:GetService("TweenService")
-local userInputService = game:GetService("UserInputService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
+local TextService = game:GetService("TextService")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- module requirements
-local modules = require(replicatedStorage.modules)
-local network = modules.load("network")
-local utilities = modules.load("utilities")
-local mapping = modules.load("mapping")
-local tween	= modules.load("tween")
-local localization = modules.load("localization")
+local network
+local utilities
+local mapping
+local tween
+local localization
+local input
+local money
+local itemAcquistion
+local fx
+local trading
+local enchant
+local dyePreview
+local prompting_Fullscreen
 
-local itemData = require(replicatedStorage:WaitForChild("itemData"))
-local itemAttributes = require(replicatedStorage:WaitForChild("itemAttributes"))
+local itemData = require(ReplicatedStorage:WaitForChild("itemData"))
 
 local BASE_TWEEN_INFO = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out, 0, false, 0)
 
@@ -46,26 +52,40 @@ local effects = script.Parent.effects
 
 local dragDropMask = ui.dragDropMask
 
-network:create("setGameUIEnabled", "BindableEvent", "Event", function(enabled)
-	ui.Enabled = enabled
-end)
 
-local Modules
 
-function module.init(mods)
-	Modules = mods
+function module.init(Modules)
+
+	network = Modules.network
+	utilities = Modules.utilities
+	mapping = Modules.mapping
+	tween = Modules.tween
+	localization = Modules.localization
+	input = Modules.input
+	money = Modules.money
+	itemAcquistion = Modules.itemAcquistion
+	fx = Modules.fx
+	trading = Modules.trading
+	enchant = Modules.enchant
+	dyePreview = Modules.dyePreview
+	prompting_Fullscreen = Modules.prompting_Fullscreen
+
+	network:create("setGameUIEnabled", "BindableEvent", "Event", function(enabled)
+		ui.Enabled = enabled
+	end)
 
 	local function inputUpdate()
-		if Modules.input.mode.Value == "mobile" then
+		if input.mode.Value == "mobile" then
 			ui.interactionPrompts.Position = UDim2.new(1,-110,1,-200)
-			ui.interactionPrompts.UIScale.Scale = Modules.input.menuScale or 1
+			ui.interactionPrompts.UIScale.Scale = input.menuScale or 1
 		else
 			ui.interactionPrompts.Position = UDim2.new(1,-110,1,-130)
 			ui.interactionPrompts.UIScale.Scale = 1
 		end
 	end
 	inputUpdate()
-	Modules.input.mode.Changed:connect(inputUpdate)
+	input.mode.Changed:connect(inputUpdate)
+	network:create("createTextFragmentLabels", "BindableFunction", "OnInvoke", module.createTextFragmentLabels)
 end
 
 
@@ -74,10 +94,6 @@ local IS_PROCESSING_INVENTORY_SLOT_SWITCH = false
 local lastMoneyUpdateTime
 
 function module.showCurrency(amount)
-	if not Modules then
-		return false
-	end
-
 
 	utilities.playSound("coins")
 
@@ -157,7 +173,7 @@ function module.showCurrency(amount)
 
 	local totalAmount = template.amount.Value
 
-	Modules.money.setLabelAmount(template.backdrop.money, totalAmount)
+	money.setLabelAmount(template.backdrop.money, totalAmount)
 
 	local xSize = template.backdrop.money.amount.AbsoluteSize.X + 32 + 16
 	template.backdrop.money.Size = UDim2.new(0, xSize, template.backdrop.money.Size.Y.Scale, template.backdrop.money.Size.Y.Offset)
@@ -235,28 +251,12 @@ function module.showItemPickup(realItem, amount, metadata)
 	metadata = metadata or {}
 	metadata.id = metadata.id or realItem.id
 
-	local attributeColor
-	if metadata.attribute then
-		local attribute = itemAttributes[metadata.attribute]
-		if attribute then
-			attributeColor = attribute.color
-			if attribute.prefix then
-				itemname = attribute.prefix .. " " .. itemname
-			end
-		end
-	end
-
 	local template = effects.itemObtained:Clone()
 	template.Size = UDim2.new(0,0,0,60)
 
 	template.Name = itemname
 
 	template.backdrop.contents.item.attribute.Visible = false
-
-	if attributeColor then
-		template.backdrop.contents.item.attribute.ImageColor3 = attributeColor
-		template.backdrop.contents.item.attribute.Visible = true
-	end
 
 	template.backdrop.contents.title.Text = itemname
 --	template.backdrop.contents.thumbnail.Image = realItem.image
@@ -269,7 +269,7 @@ function module.showItemPickup(realItem, amount, metadata)
 
 	local titleColor, itemTier
 	if itemData then
-		titleColor, itemTier = Modules.itemAcquistion.getTitleColorForInventorySlotData(metadata)
+		titleColor, itemTier = itemAcquistion.getTitleColorForInventorySlotData(metadata)
 	end
 
 	template.backdrop.contents.item.shine.Visible = titleColor ~= nil and itemTier and itemTier > 1
@@ -289,7 +289,7 @@ function module.showItemPickup(realItem, amount, metadata)
 	template.Visible = true
 	template.Parent = interactionPromptsFrame
 
-	Modules.fx.setFlash(template.backdrop.contents.item.frame, template.backdrop.contents.item.shine.Visible)
+	fx.setFlash(template.backdrop.contents.item.frame, template.backdrop.contents.item.shine.Visible)
 
 	local extents = game.TextService:GetTextSize(template.backdrop.contents.title.Text,18,Enum.Font.SourceSansBold,Vector2.new(90,36))
 	local goalSize = UDim2.new(0,125+extents.X,0,60)
@@ -390,7 +390,7 @@ function module.createTextFragmentLabels(parent, textFragments)
 
 		local textSize = textFragmentData.textSize or 18
 
-		local textFragmentSize = textService:GetTextSize(textFragmentData.text, textSize, font, Vector2.new())
+		local textFragmentSize = TextService:GetTextSize(textFragmentData.text, textSize, font, Vector2.new())
 		-- standardize Y size so you can have big-text effects without offsetting the text /ber
 		local standardTextYSize
 		if originalTextFragmentSize then
@@ -412,7 +412,7 @@ function module.createTextFragmentLabels(parent, textFragments)
 			local currentFragmentQueue = {}
 			local currentFragmentQueueXSize = 0
 			for i, word in pairs(fragmentFragments) do
-				local wordSize = textService:GetTextSize(word, textSize, font, Vector2.new())
+				local wordSize = TextService:GetTextSize(word, textSize, font, Vector2.new())
 
 				if textOffsetX + currentFragmentQueueXSize + wordSize.X + 3 > parent.AbsoluteSize.X then
 					-- exceeded line!
@@ -523,7 +523,7 @@ function module.createTextFragmentLabels(parent, textFragments)
 	return container, textOffsetY, textOffsetX
 end
 
-network:create("createTextFragmentLabels", "BindableFunction", "OnInvoke", module.createTextFragmentLabels)
+
 
 local function buildInteractionPromptText(promptInteractionInterface, textFragments, eventsData, eventSignal, noAnimation)
 	local textOffsetX = 0
@@ -549,7 +549,7 @@ local function buildInteractionPromptText(promptInteractionInterface, textFragme
 	end
 
 	for i, textFragmentData in pairs(textFragments) do
-		local textFragmentSize = textService:GetTextSize(textFragmentData.text, interactionPromptTextLabelTemplate.TextSize, interactionPromptTextLabelTemplate.Font, Vector2.new())
+		local textFragmentSize = TextService:GetTextSize(textFragmentData.text, interactionPromptTextLabelTemplate.TextSize, interactionPromptTextLabelTemplate.Font, Vector2.new())
 		local textColor = textFragmentData.textColor3 or Color3.fromRGB(170, 170, 170)
 		local text = textFragmentData.text or ""
 
@@ -562,7 +562,7 @@ local function buildInteractionPromptText(promptInteractionInterface, textFragme
 			textFragmentTextLabel.Parent 		= interactionPromptCopy.curve.contents
 
 			if textFragmentData.eventType == "key" and textFragmentData.id and textFragmentData.keyCode and not eventsData[textFragmentData.id] then
-				eventsData[textFragmentData.id] = userInputService.InputBegan:connect(function(inputObject)
+				eventsData[textFragmentData.id] = UserInputService.InputBegan:connect(function(inputObject)
 					if inputObject.UserInputType == Enum.UserInputType.Keyboard and inputObject.KeyCode == textFragmentData.keyCode then
 						if eventSignal then
 							eventSignal:Fire(textFragmentData.id)
@@ -609,7 +609,7 @@ local function buildInteractionPromptText(promptInteractionInterface, textFragme
 				interactionPromptCopy.Parent = interactionPromptsFrame
 			end
 
-			local openAnimation = tweenService:Create(interactionPromptCopy, BASE_TWEEN_INFO, {Size = UDim2.new(0, textOffsetX + 15, 0, y)})
+			local openAnimation = TweenService:Create(interactionPromptCopy, BASE_TWEEN_INFO, {Size = UDim2.new(0, textOffsetX + 15, 0, y)})
 			openAnimation:Play()
 		end
 	end
@@ -709,7 +709,7 @@ function module.createInteractionPrompt(properties, ...)
 		function promptInteractionInterface:close(noAnimation)
 			if promptId == nil or interactionPromptCache[promptId].textDisplayedTime == textDisplayedTime then
 				if not noAnimation and interactionPromptCopy then
-					local closeAnimation = tweenService:Create(interactionPromptCopy, BASE_TWEEN_INFO, {Size = UDim2.new(0, 0, 0, y)})
+					local closeAnimation = TweenService:Create(interactionPromptCopy, BASE_TWEEN_INFO, {Size = UDim2.new(0, 0, 0, y)})
 
 					closeAnimation.Completed:connect(function()
 
@@ -727,7 +727,7 @@ function module.createInteractionPrompt(properties, ...)
 		function promptInteractionInterface:hide(noAnimation)
 			promptInteractionInterface.isHiding = true
 
-			local closeAnimation = tweenService:Create(interactionPromptCopy, BASE_TWEEN_INFO, {Size = UDim2.new(0, 0, 0, y)})
+			local closeAnimation = TweenService:Create(interactionPromptCopy, BASE_TWEEN_INFO, {Size = UDim2.new(0, 0, 0, y)})
 			closeAnimation:Play()
 		end
 
@@ -790,9 +790,9 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 	IS_PROCESSING_INVENTORY_SLOT_SWITCH = true
 	if buttonFrom:IsDescendantOf(menu_trade.yourTrade) then
 		if buttonTo:IsDescendantOf(menu_trade.yourTrade) then
-			Modules.trading.swap(buttonFrom, buttonTo)
+			trading.swap(buttonFrom, buttonTo)
 		else
-			Modules.trading.clearLocalTradeSlot(buttonFrom)
+			trading.clearLocalTradeSlot(buttonFrom)
 		end
 	elseif buttonFrom:IsDescendantOf(menu_storage) then
 		if buttonTo and buttonTo:IsDescendantOf(menu_inventory) then
@@ -807,7 +807,7 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 			if buttonTo:IsDescendantOf(menu_enchant) then
 				local buttonFromInventorySlot, buttonFromType = network:invoke("getInventorySlotDataByInventorySlotUI", buttonFrom)
 				if buttonFromInventorySlot and buttonFromType == "ability" then
-					Modules.enchant.dragItem(buttonFromInventorySlot)
+					enchant.dragItem(buttonFromInventorySlot)
 				end
 			elseif buttonTo:IsDescendantOf(menu_storage) then
 				local buttonFromInventorySlot, buttonFromType = network:invoke("getInventorySlotDataByInventorySlotUI", buttonFrom)
@@ -919,7 +919,7 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 
 								local equipmentBaseData = itemData[equipmentSlotData.id]
 
-								if not Modules.dyePreview.prompt(itemBaseData_enchantment, equipmentBaseData) then
+								if not dyePreview.prompt(itemBaseData_enchantment, equipmentBaseData) then
 									continue = false
 								end
 							end
@@ -951,9 +951,9 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 
 
 										local ringInfo = {
-											color = Modules.itemAcquistion.getTitleColorForInventorySlotData(newInventorySlotData) or Color3.new(1,1,1);
+											color = itemAcquistion.getTitleColorForInventorySlotData(newInventorySlotData) or Color3.new(1,1,1);
 										}
-										Modules.fx.ring(ringInfo, pos)
+										fx.ring(ringInfo, pos)
 									end)
 								end
 							end
@@ -986,7 +986,7 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 				local inventorySlotData, buttonFromType = network:invoke("getInventorySlotDataByInventorySlotUI", buttonFrom)
 				if inventorySlotData and buttonFromType == "item" then
 
-					Modules.trading.setLocalTradeSlot(buttonTo.Name, inventorySlotData)
+					trading.setLocalTradeSlot(buttonTo.Name, inventorySlotData)
 				end
 			end
 		else
@@ -1003,10 +1003,10 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 
 
 
-				local accepted = Modules.prompting_Fullscreen.prompt(message)
+				local accepted = prompting_Fullscreen.prompt(message)
 				if accepted then
 
-					if inventoryReal.soulbound and not Modules.prompting_Fullscreen.prompt("⚠ ARE YOU SURE you want to DESTROY your " ..inventoryReal.name.."? This action cannot be undone! ⚠") then
+					if inventoryReal.soulbound and not prompting_Fullscreen.prompt("⚠ ARE YOU SURE you want to DESTROY your " ..inventoryReal.name.."? This action cannot be undone! ⚠") then
 						return false
 					end
 
@@ -1053,7 +1053,7 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 			if buttonTo:IsDescendantOf(menu_enchant) then
 				local equipmentSlotData = network:invoke("getEquipmentSlotDataByEquipmentSlotUI", buttonFrom)
 				if equipmentSlotData then
-					Modules.enchant.dragItem(equipmentSlotData, "equipment")
+					enchant.dragItem(equipmentSlotData, "equipment")
 				end
 
 			elseif buttonTo:IsDescendantOf(menu_inventory) then
@@ -1318,8 +1318,8 @@ local function onInputBegan(inputObject)
 end
 
 
-userInputService.InputChanged:connect(onInputChanged)
-userInputService.InputBegan:connect(onInputBegan)
+UserInputService.InputChanged:connect(onInputChanged)
+UserInputService.InputBegan:connect(onInputBegan)
 
 for i, obj in pairs(ui:GetDescendants()) do
 	if obj.Name == "draggableFrame" then

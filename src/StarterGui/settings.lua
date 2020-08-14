@@ -1,12 +1,9 @@
 local module = {}
 
-local runService = game:GetService("RunService")
+local RunService = game:GetService("RunService")
+local ui = script.Parent.gameUI.menu_settings
 
-local player = game.Players.LocalPlayer
-local playerGui = player.PlayerGui
-
-local ui = playerGui.gameUI.menu_settings
-
+module.priority = 7
 
 function module.show()
 	ui.Visible = not ui.Visible
@@ -21,29 +18,24 @@ function module.refreshKeybinds()
 	warn("settings.refreshKeybinds not ready")
 end
 
-
--- module.remapTarget
+local network
+local focus
+local input
 
 local userSettings
 
-function module.init(Modules)
-
-	local network = Modules.network
+local function main()
 
 	ui.close.Activated:connect(function()
-		Modules.focus.toggle(ui)
+		focus.toggle(ui)
 	end)
-
-	-- PAGE NAVIGATION
-
-
 	local function openPage(pageName)
-		for i,page in pairs(ui.pages:GetChildren()) do
+		for _, page in pairs(ui.pages:GetChildren()) do
 			if page:IsA("GuiObject") then
 				page.Visible = false
 			end
 		end
-		for i,pageButton in pairs(ui.header.buttons:GetChildren()) do
+		for _, pageButton in pairs(ui.header.buttons:GetChildren()) do
 			if pageButton:IsA("ImageButton") then
 				pageButton.ImageColor3 = Color3.fromRGB(212, 212, 212)
 			end
@@ -56,7 +48,7 @@ function module.init(Modules)
 
 	openPage("options")
 
-	for i,pageButton in pairs(ui.header.buttons:GetChildren()) do
+	for _, pageButton in pairs(ui.header.buttons:GetChildren()) do
 		if pageButton:IsA("GuiButton") then
 			pageButton.Activated:connect(function()
 				openPage(pageButton.Name)
@@ -64,9 +56,6 @@ function module.init(Modules)
 		end
 	end
 
-	-- OPTIONS
-
-	-- volume slider
 	local volumeFrame = ui.pages.options.volume
 
 	volumeFrame.bar.InputBegan:connect(function(input)
@@ -94,7 +83,7 @@ function module.init(Modules)
 				end
 
 				volumeFrame.bar.slider.Position = UDim2.new(volume, 0, 0.5, 0)
-				runService.Heartbeat:wait()
+				RunService.Heartbeat:wait()
 			end
 
 			-- post volume changes to server
@@ -105,16 +94,13 @@ function module.init(Modules)
 		end
 	end)
 
-	-- main menu
 	ui.pages.mainMenu.mainMenu.Activated:Connect(function()
 		network:invokeServer("playerRequest_returnToMainMenu")
 	end)
 
-	-- KEYBINDS
-
 	local keybinds = ui.pages.keybinds
 
-	local keybindSample = keybinds:WaitForChild("sampleAction")
+	local keybindSample = keybinds.sampleAction
 	keybindSample.Visible = false
 	keybindSample.Parent = script
 
@@ -136,7 +122,7 @@ function module.init(Modules)
 	end
 
 	function module.open()
-		Modules.focus.toggle(ui)
+		focus.toggle(ui)
 	end
 
 	function module.refreshKeybinds()
@@ -148,7 +134,7 @@ function module.init(Modules)
 
 		module.remapTarget = nil
 
-		for i,child in pairs(keybinds:GetChildren()) do
+		for _,child in pairs(keybinds:GetChildren()) do
 			if child:IsA("GuiObject") then
 				child:Destroy()
 			end
@@ -156,7 +142,7 @@ function module.init(Modules)
 
 		local count = 0
 
-		for actionName,action in pairs(Modules.input.actions) do
+		for actionName,action in pairs(input.actions) do
 			local keybind = keybindSample:Clone()
 			keybind.Name = actionName
 			keybind.title.Text = actionName
@@ -191,7 +177,14 @@ function module.init(Modules)
 			end
 		end
 	end)
+end
 
+function module.init(Modules)
+
+	network = Modules.network
+	focus = Modules.focus
+	input = Modules.input
+	spawn(main)
 	--network:invokeServer("requestChangePlayerSetting", "clearingInteraction", true)
 
 end

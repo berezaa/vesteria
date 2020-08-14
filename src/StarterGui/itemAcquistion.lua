@@ -1,29 +1,26 @@
 local module = {}
 
-local modules = require(game.ReplicatedStorage.modules)
-local network = modules.load("network")
+module.priority = 11
 
-local placeSetup = modules.load("placeSetup")
-local utilities = modules.load("utilities")
-local ability_utilities = modules.load("ability_utilities")
-local enchantment = modules.load("enchantment")
+local network
+local placeSetup
+local utilities
+local ability_utilities
+local enchantment
 
-local userInputService 	= game:GetService("UserInputService")
-local replicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService 	= game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local textService = game:GetService("TextService")
 
-local itemsDataFolder = replicatedStorage:WaitForChild("itemData")
+local itemsDataFolder = ReplicatedStorage:WaitForChild("itemData")
 local itemLookup = require(itemsDataFolder)
-local perkLookup = require(replicatedStorage:WaitForChild("perkLookup"))
-local itemAttributes = require(replicatedStorage:WaitForChild("itemAttributes"))
 
 local player = game.Players.LocalPlayer
 local playerGui = player.PlayerGui
-local itemsFolder = placeSetup.awaitPlaceFolder("items")
+local itemsFolder
 
 local rootFrame = script.Parent.gameUI.itemHoverFrame
 local itemHoverFrame = rootFrame.contents
-local gameUI = rootFrame.Parent
 
 rootFrame.Visible = false
 
@@ -47,18 +44,24 @@ end
 
 local titleTextSize = 20
 
-module.tierColors = enchantment.tierColors
+
 
 pickupInteractionPromptTable.prompt.manifest.LayoutOrder = 3
 pickupInteractionPromptTable.prompt:hide(true)
 
 function module.init(Modules)
 
+	network = Modules.network
+	placeSetup = Modules.placeSetup
+	utilities = Modules.utilities
+	ability_utilities = Modules.ability_utilities
+	enchantment	= Modules.enchantment
+
+	itemsFolder = placeSetup.awaitPlaceFolder("items")
+
+	module.tierColors = enchantment.tierColors
 	local Mouse = player:GetMouse()
-
 	local function reposition()
-
-
 		local screensize = workspace.CurrentCamera.ViewportSize
 
 		local x, y
@@ -101,7 +104,6 @@ function module.init(Modules)
 		end
 
 	end
-
 
 	game:GetService("RunService").Heartbeat:connect(reposition)
 
@@ -159,22 +161,6 @@ function module.init(Modules)
 				for statName,statValue in pairs(modifierData) do
 					statBonuses[statName] = (statBonuses[statName] or 0) + statValue
 					totalStats[statName] = (totalStats[statName] or 0) + statValue
-				end
-			end
-		end
-
-		-- attribute
-		-- new: attributes treated as bonus stats
-
-		if inventorySlotData and inventorySlotData.attribute then
-			local attributeData = itemAttributes[inventorySlotData.attribute]
-			if attributeData and attributeData.modifier then
-				local attributeModifierData = attributeData.modifier(itemBaseData, inventorySlotData)
-				if attributeModifierData then
-					for statName, statValue in pairs(attributeModifierData) do
-						statBonuses[statName] = (statBonuses[statName] or 0) + statValue
-						totalStats[statName] = (totalStats[statName] or 0) + statValue
-					end
 				end
 			end
 		end
@@ -716,20 +702,6 @@ function module.init(Modules)
 		local itemBaseName = itemBaseData.name and localization.translate(itemBaseData.name, itemHoverFrame.header.itemName)
 		local itemname = inventorySlotData and inventorySlotData.customName or itemBaseName or "???"
 
-		local attribute = inventorySlotData.attribute
-		if attribute then
-			local attributeData = itemAttributes[attribute]
-			if attributeData then
-				if attributeData.color then
-					itemHoverFrame.main.thumbnailBG.ImageColor3 = attributeData.color
-				end
-				if attributeData.prefix and not inventorySlotData.customName then
-					local attributeName = localization.translate(attributeData.prefix, itemHoverFrame.header.itemName)
-					itemname = attributeName .. " " .. itemname
-				end
-			end
-		end
-
 		itemname = itemname .. ((inventorySlotData and inventorySlotData.upgrades and inventorySlotData.upgrades > 0 and " +"..(inventorySlotData.successfulUpgrades or 0)) or "")
 
 		itemHoverFrame.header.itemName.Text 	= itemname
@@ -780,25 +752,6 @@ function module.init(Modules)
 			push = push + 24
 		end
 
-		if itemBaseData.perks then
-			for perkName, active in pairs(itemBaseData.perks) do
-				if active then
-					local perkData = perkLookup[perkName]
-					if perkData then
-						local perk = script.perk:Clone()
-						perk.title.Text = perkData.title
-						perk.description.Text = perkData.description
-						if perkData.color then
-							perk.ImageColor3 = perkData.color
-						end
-						perk.Visible = true
-						perk.Parent = itemHoverFrame
-						push = push + 46
-					end
-				end
-			end
-		end
-
 		if additionalInfo and additionalInfo.notOwned then
 			itemHoverFrame.notOwned.Visible = true
 			push = push + 24
@@ -808,9 +761,6 @@ function module.init(Modules)
 		local itemNameLines = 1
 --		local itemNameLines 		= math.ceil(itemNameTextSize.X / itemHoverFrame.header.itemName.AbsoluteSize.X)
 		local itemDescriptionLines 	= math.ceil(itemDescriptionTextSize.X / itemHoverFrame.main.mainContents.itemDescription.AbsoluteSize.X)
-
-
-
 
 
 		itemHoverFrame.main.thumbnail.Image 			= itemBaseData.image
@@ -1548,7 +1498,7 @@ function module.init(Modules)
 	network:invoke("addInputAction", "pick up", inputGained, "F")
 
 	local function main()
-		userInputService.InputChanged:connect(onInputChanged)
+		UserInputService.InputChanged:connect(onInputChanged)
 		--network:connect("pickUpItemRequest", "OnClientEvent", onPickUpItemRequestFromServer)--onPickUpItemRequestFromServer)
 		network:connect("notifyPlayerPickUpItem", "OnClientEvent", onPickUpItemRequestFromServer)
 

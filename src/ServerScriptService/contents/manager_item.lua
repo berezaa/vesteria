@@ -13,6 +13,8 @@ local utilities
 local configuration
 local economy
 
+local rand = Random.new()
+
 local itemLookupContainer = ReplicatedStorage.itemData
 
 local itemLookup = require(itemLookupContainer)
@@ -419,8 +421,8 @@ local function spawnItemOnGround(lootDrop, dropPosition, owners, physItem)
 			hitPosition = dropPosition
 		end
 
-		physItem.CFrame 					= CFrame.new(hitPosition) + Vector3.new(0,0.5,0)
-		physItem.HumanoidRootPart.CFrame 	= CFrame.new(hitPosition) + Vector3.new(0,0.5,0)
+		physItem.CFrame = CFrame.new(hitPosition) + Vector3.new(0,0.5,0)
+		physItem.HumanoidRootPart.CFrame = CFrame.new(hitPosition) + Vector3.new(0,0.5,0)
 
 		if owners and #owners > 0 then
 			local ownersFolder = Instance.new("Folder")
@@ -469,6 +471,19 @@ local function spawnItemOnGround(lootDrop, dropPosition, owners, physItem)
 		end
 
 		physItem.Parent = itemsFolder
+
+
+		local velo = Vector3.new((rand:NextNumber() - 0.5) * 10, (2 + rand:NextNumber()) * 25, (rand:NextNumber() - 0.5) * 10)
+
+		if physItem:IsA("BasePart") then
+			physItem.Velocity = velo
+		elseif physItem:IsA("Model") and (physItem.PrimaryPart or physItem:FindFirstChild("HumanoidRootPart")) then
+			local primaryPart = physItem.PrimaryPart or physItem:FindFirstChild("HumanoidRootPart")
+			if primaryPart then
+				primaryPart.Velocity = velo
+			end
+		end
+
 
 		return physItem
 	end

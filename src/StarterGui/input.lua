@@ -15,15 +15,17 @@ local keybinds = {}
 local inputObjects = {}
 local actions = {}
 
-module.actions = actions
+local network
+local tween
+local control
+local settings
 
 local gameUi = script.Parent.gameUI
-
 local mode = script.Parent.mode
-module.mode = mode
 
--- track all gui objects that belong to a specific (or multiple) platforms
-local platformSpecificGuiObjects = {}
+module.actions = actions
+module.menuScale = 1
+module.mode = mode
 
 module.shortcuts = {
 	Unknown = "???";
@@ -44,11 +46,13 @@ module.shortcuts = {
 	LeftControl = "Lctrl"; RightAlt = "Ralt"; LeftAlt = "Lalt"; RightMeta = "Rmta"; LeftMeta = "Lmta"; RightSuper = "Rspr";
 	LeftSuper = "Lspr"; Break = "Brk"; Power = "Pwr";
 }
+-- track all gui objects that belong to a specific (or multiple) platforms
+local platformSpecificGuiObjects = {}
 
 local shortcuts = module.shortcuts
 
 local setupComplete
-local settings
+
 
 local function preferencesUpdated()
 	if setupComplete then
@@ -63,14 +67,11 @@ local function preferencesUpdated()
 				end
 			end
 		end
-		if settings then
-			settings.refreshKeybinds()
-		end
+		settings.refreshKeybinds()
 	end
 end
 
 function module.addAction(name, target, default, priority)
-
 	priority = priority or 5
 	local action = {["target"] = target; ["default"] = default; ["priority"] = priority;}
 
@@ -91,8 +92,6 @@ function module.addAction(name, target, default, priority)
 end
 
 local add = module.addAction
-
-
 
 local function addInputObject(object)
 	if object:IsA("GuiObject") and object:IsDescendantOf(game.Players.LocalPlayer) then
@@ -126,22 +125,12 @@ for _, object in pairs(game.CollectionService:GetTagged("inputObject")) do
 	addInputObject(object)
 end
 
-game.CollectionService:GetInstanceAddedSignal("inputObject"):connect(addInputObject)
-local network
-
-spawn(function()
-	local modules = require(game.ReplicatedStorage:WaitForChild("modules"))
-	network = modules.load("network")
-	network:create("addInputAction","BindableFunction","OnInvoke",add)
-end)
-
 module.menuButtons = {}
 for _, button in pairs(gameUi.right.buttons:GetChildren()) do
 	if button:IsA("GuiButton") then
 		module.menuButtons[button.Name] = button
 	end
 end
-
 
 -- make all buttons play a cute click sound
 local function buttonSetup(button)
@@ -179,14 +168,16 @@ local function updateModeDisplay()
 
 end
 
-module.menuScale = 1
-
 local buttonsFrame = gameUi.right.buttons
 
 function module.init(Modules)
-	local tween = Modules.tween
-	local control = Modules.control
-	local network = Modules.network
+	tween = Modules.tween
+	control = Modules.control
+	network = Modules.network
+	settings = Modules.settings
+
+	network:create("addInputAction","BindableFunction","OnInvoke",add)
+
 	local currentlySelectedButtonTooltip
 
 	local function processGuiObject(guiObject)
@@ -207,9 +198,7 @@ function module.init(Modules)
 			if guiObject:FindFirstChild("tooltip") then
 				guiObject.MouseEnter:connect(function()
 					currentlySelectedButtonTooltip = guiObject
---					if guiObject.Active then
 						network:invoke("populateItemHoverFrameWithTextData", {text = guiObject.tooltip.Value; source = guiObject})
---					end
 				end)
 				guiObject.MouseLeave:connect(function()
 					if currentlySelectedButtonTooltip == guiObject then
@@ -336,6 +325,8 @@ function module.init(Modules)
 
 	script.Parent.DescendantAdded:connect(processGuiObject)
 
+	game.CollectionService:GetInstanceAddedSignal("inputObject"):connect(addInputObject)
+
 	local function setInputObjectsVisible(visible)
 		for _, inputObject in pairs(inputObjects) do
 			if inputObject then
@@ -348,7 +339,7 @@ function module.init(Modules)
 	-- display relevant information for that input mode
 	function updateModeDisplay()
 		setInputObjectsVisible(mode.Value == "pc")
-		for i,guiObject in pairs(platformSpecificGuiObjects) do
+		for _, guiObject in pairs(platformSpecificGuiObjects) do
 			guiObject.Visible = guiObject:FindFirstChild(mode.Value) ~= nil
 		end
 		if mode.Value == "mobile" then
@@ -398,7 +389,10 @@ function module.init(Modules)
 		mode.Value = "mobile"
 	end
 	mode.Changed:connect(updateModeDisplay)
-	updateModeDisplay()
+	-- I'm sorry
+	spawn(updateModeDisplay)
+	spawn(preferencesUpdated)
+
 	-- old postInit
 	spawn(function()
 		local remapping = false
@@ -491,6 +485,8 @@ function module.init(Modules)
 			updateModeDisplay()
 		end
 
+		spawn(setup)
+
 		--local hotbarBinds = {"1", "2", "Q", "E", "R", "G", "V", "3", "4", "5"}
 
 		-- add hard-coded actions
@@ -509,11 +505,6 @@ function module.init(Modules)
 		add("emote1",function() network:invoke("playerRequest_performEmote", "dance") end, "N", 7)
 		add("emote2",function() network:invoke("playerRequest_performEmote", "sit") end, "M", 7)
 
-		add("swapWeapons", function()
-			if not network:invoke("getIsPlayerCastingAbility") then
-				network:fireServer("playerRequest_swapWeapons")
-			end
-		end, "`", 8)
 		--add("defaultPoint",function() network:invoke("playerRequest_performEmote", "point") end, "P", 7)
 
 
