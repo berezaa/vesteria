@@ -15,7 +15,7 @@ local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlo
 
 	local playerData = network:invoke("getPlayerData", player)
 	if playerData and equipmentInventorySlotDataFromPlayer.id and (itemLocationView == "inventory" or itemLocationView == "equipment") then
-		local itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment = manager_item.getTrueItemSlotData(player, equipmentInventorySlotDataFromPlayer, itemLocationView)
+		local itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment = manager_item.getTrueItemSlotData(playerData, equipmentInventorySlotDataFromPlayer, itemLocationView)
 
 		if not itemLocationViewSlotData_equipment then
 			return false, "could not find equipment to encahnt"
@@ -75,7 +75,7 @@ local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlo
 			end
 
 			if itemBaseData_enchantment and itemBaseData_enchantment.enchantsEquipment and itemBaseData_enchantment.applyScroll and itemBaseData_equipment then
-				local trueInventorySlot_enchantment, inventorySlotData_enchantment = manager_item.getTrueItemSlotData(player, enchantmentInventorySlotDataFromPlayer, "inventory")
+				local trueInventorySlot_enchantment, inventorySlotData_enchantment = manager_item.getTrueItemSlotData(playerData, enchantmentInventorySlotDataFromPlayer, "inventory")
 
 				if inventorySlotData_enchantment and itemLocationViewSlotData_equipment then
 					local upgradeCost = itemBaseData_enchantment.upgradeCost or 1
@@ -196,11 +196,11 @@ local function onEnchantEquipmentRequestReceived(player, enchantmentInventorySlo
 								status = {Text = statusText; Color = additionalInfo.textColor3 or Color3.fromRGB(190,190,190); Font = Enum.Font.SourceSansBold}
 							end
 
-							playerData.nonSerializeData.playerDataChanged:Fire("inventory")
+							playerData.nonSerializeData.setPlayerData("inventory", playerData.inventory)
 
 							-- update item stats if it was equipment
 							if itemLocationView == "equipment" then
-								playerData.nonSerializeData.playerDataChanged:Fire("equipment")
+								playerData.nonSerializeData.setPlayerData("equipment", playerData.equipment)
 							end
 
 							network:fireAllClients("playerAppliedScroll", player, itemBaseData_enchantment.id, successfullyApplyScroll)

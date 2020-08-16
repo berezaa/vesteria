@@ -20,9 +20,20 @@ local function setup(directory)
 end
 
 local function initialize()
+    local queue = {}
     for moduleName, module in pairs(modules) do
         if typeof(module) == "table" and (module.init and not module.__initialized) then
-            print("$ client", "initialize module", moduleName)
+            module.__name = moduleName
+            table.insert(queue,module)
+        end
+    end
+    table.sort(queue, function(module1, module2)
+        return (module1.priority or 10) < (module2.priority or 10)
+    end)
+
+    for _, module in pairs(queue) do
+        if typeof(module) == "table" and (module.init and not module.__initialized) then
+            print("$ client", "initialize module", module.__name)
             module.init(modules)
             module.__initialized = true
         end
@@ -41,14 +52,13 @@ for _, directory in pairs(directories) do
             if typeof(module) == "table" and module.init and beginInit then
                 print("$ client", "initialize module", moduleScript.Name)
                 module.init(modules)
+                module.__initialized = true
             end
         end
     end)
 end
 
-table.sort(modules, function(module1, module2)
-    return (module1.priority or 10) < (module2.priority or 10)
-end)
+
 
 beginInit = true
 initialize()

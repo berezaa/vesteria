@@ -298,7 +298,7 @@ function module.init(Modules)
 				end
 
 				local success, scrollApplied, newInventorySlotData, status = network:invokeServer("playerRequest_enchantEquipment", enchantmentData, target, mode, playerInput)
-
+				print(success, scrollApplied, newInventorySlotData, status)
 				if status then
 					spawn(function()
 						wait(0.5)

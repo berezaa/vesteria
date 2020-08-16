@@ -821,8 +821,7 @@ local function playerRequest_dropItem(player, inventorySlotData)
 	return false, "invalid player data"
 end
 
-local function getTrueInventorySlotDataByInventorySlotDataFromPlayer(player, inventorySlotDataFromPlayer)
-	local playerData = network:invoke("getPlayerData", player)
+local function getTrueInventorySlotDataByInventorySlotDataFromPlayer(playerData, inventorySlotDataFromPlayer)
 	if playerData then
 		for trueInventorySlot, inventorySlotData in pairs(playerData.inventory) do
 			if inventorySlotData.position == inventorySlotDataFromPlayer.position and inventorySlotData.id == inventorySlotDataFromPlayer.id then
@@ -834,8 +833,7 @@ local function getTrueInventorySlotDataByInventorySlotDataFromPlayer(player, inv
 	return nil, nil
 end
 
-local function getTrueEquipmentSlotDataByEquipmentSlotDataFromPlayer(player, equipmentSlotDataFromPlayer)
-	local playerData = network:invoke("getPlayerData", player)
+local function getTrueEquipmentSlotDataByEquipmentSlotDataFromPlayer(playerData, equipmentSlotDataFromPlayer)
 	if playerData then
 		local itemBaseDataFromPlayer = itemLookup[equipmentSlotDataFromPlayer.id]
 		for trueEquipmentSlot, equipmentSlotData in pairs(playerData.equipment) do
@@ -850,12 +848,12 @@ local function getTrueEquipmentSlotDataByEquipmentSlotDataFromPlayer(player, equ
 end
 
 -- Used to match provided player data to its location in real player data
-function module.getTrueItemSlotData(player, unsafeSlotData, itemLocationView)
+function module.getTrueItemSlotData(playerData, unsafeSlotData, itemLocationView)
 	local itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment do
 		if (itemLocationView == "inventory") then
-			itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment = getTrueInventorySlotDataByInventorySlotDataFromPlayer(player, unsafeSlotData)
+			itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment = getTrueInventorySlotDataByInventorySlotDataFromPlayer(playerData, unsafeSlotData)
 		elseif (itemLocationView == "equipment") then
-			itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment = getTrueEquipmentSlotDataByEquipmentSlotDataFromPlayer(player, unsafeSlotData)
+			itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment = getTrueEquipmentSlotDataByEquipmentSlotDataFromPlayer(playerData, unsafeSlotData)
 		end
 	end
 	return itemLocationViewSlot_equipment, itemLocationViewSlotData_equipment

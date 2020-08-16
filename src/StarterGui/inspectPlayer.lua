@@ -7,6 +7,7 @@ local ui = script.Parent.gameUI.inspectPlayer
 
 local slotData = {}
 
+module.priority = 11
 
 function module.init(Modules)
 	local tween = Modules.tween
@@ -14,8 +15,8 @@ function module.init(Modules)
 	local configuration = Modules.configuration
 
 	local replicatedStorage = game:GetService("ReplicatedStorage")
-		local itemLookup = require(replicatedStorage:WaitForChild("itemData"))
-		local itemAttributes = require(replicatedStorage:WaitForChild("itemAttributes"))
+	local itemLookup = require(replicatedStorage:WaitForChild("itemData"))
+
 
 	local slots = {}
 
@@ -213,7 +214,6 @@ function module.init(Modules)
 			slot.ImageTransparency = 0.5
 			slot.LayoutOrder = 99
 			slot.stars.Visible = false
-			slot.attribute.Visible = false
 			Modules.fx.setFlash(slot.frame, false)
 		end
 
@@ -225,7 +225,6 @@ function module.init(Modules)
 						local slot = slots[i]
 						local realItem = itemLookup[equipment.id]
 						slot.stars.Visible = false
-						slot.attribute.Visible = false
 						if realItem then
 							slot.item.Image = realItem.image
 							slot.item.ImageColor3 = Color3.new(1,1,1)
@@ -233,14 +232,6 @@ function module.init(Modules)
 							slot.frame.Visible = true
 							slot.shine.Visible = true
 							slot.ImageTransparency = 0
-
-							if equipment.attribute then
-								local attributeData = itemAttributes[equipment.attribute]
-								if attributeData and attributeData.color then
-									slot.attribute.ImageColor3 = attributeData.color
-									slot.attribute.Visible = true
-								end
-							end
 
 							if equipment.dye then
 								slot.item.ImageColor3 = Color3.fromRGB(equipment.dye.r, equipment.dye.g, equipment.dye.b)

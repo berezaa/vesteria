@@ -30,14 +30,11 @@ local BASE_TWEEN_INFO = TweenInfo.new(0.3, Enum.EasingStyle.Quad, Enum.EasingDir
 
 local interactionPromptCache = {}
 
-local player = game.Players.LocalPlayer
-local playerGui = player.PlayerGui
-
 local dragDropFrameCollection = {}
 local currentDragFrameOriginator = nil
 
 -- ui references
-local ui = playerGui.gameUI
+local ui = script.Parent.gameUI
 local menu_inventory = ui.menu_inventory
 local menu_trade = ui.menu_trade
 local menu_enchant = ui.menu_enchant
@@ -934,7 +931,7 @@ local function processSwap(buttonFrom, buttonTo, isRightClickTrigger, extraData)
 								end
 
 								local success, scrollApplied, newInventorySlotData, status = network:invokeServer("playerRequest_enchantEquipment", inventorySlotData, equipmentSlotData, "equipment", playerInput)
-
+								print(success, scrollApplied, newInventorySlotData, status)
 
 								if status then
 									spawn(function()
@@ -1146,6 +1143,7 @@ local function update(input)
 			end
 
 			dragDropMask.Image = currentDragFrameOriginator.Image
+			dragDropMask.Visible = true
 			dragDropMask.ImageTransparency = 0
 		end
 
@@ -1210,10 +1208,10 @@ function module.drag.setIsDragDropFrame(frame)
 						frame.duplicateCount.Visible = true
 					end
 
-					-- reset stuff!
 					dragDropMask.ImageTransparency 	= 1
-					dragDropMask.Position 			= UDim2.new(-1, -100, -1, -100)
-					frame.ImageTransparency 		= 0
+					dragDropMask.Visible = false
+					dragDropMask.Position = UDim2.new(-1, -100, -1, -100)
+					frame.ImageTransparency = 0
 				end
 			end
 		end

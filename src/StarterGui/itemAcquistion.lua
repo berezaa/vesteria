@@ -702,7 +702,7 @@ function module.init(Modules)
 		local itemBaseName = itemBaseData.name and localization.translate(itemBaseData.name, itemHoverFrame.header.itemName)
 		local itemname = inventorySlotData and inventorySlotData.customName or itemBaseName or "???"
 
-		itemname = itemname .. ((inventorySlotData and inventorySlotData.upgrades and inventorySlotData.upgrades > 0 and " +"..(inventorySlotData.successfulUpgrades or 0)) or "")
+		itemname = itemname .. ((inventorySlotData and inventorySlotData.upgrades and inventorySlotData.upgrades > 0 and (" (+"..(inventorySlotData.successfulUpgrades or 0))..")") or "")
 
 		itemHoverFrame.header.itemName.Text 	= itemname
 
@@ -1041,7 +1041,7 @@ function module.init(Modules)
 			local label = uiCreator.createTextFragmentLabels(itemHoverFrame.stats.container, {
 				{text = (tostring(upgradesLeft).." "..suffix); font = Enum.Font.SourceSans; textColor3 = Color3.new(1,1,1); textTransparency = 0.5; autoLocalize = true}
 			})
-			label.LayoutOrder = 7
+			label.LayoutOrder = 20
 			numStats = numStats + 1
 
 		end
@@ -1496,6 +1496,7 @@ function module.init(Modules)
 	module.pickupInputGained = inputGained
 
 	network:invoke("addInputAction", "pick up", inputGained, "F")
+	warn("$ action created")
 
 	local function main()
 		UserInputService.InputChanged:connect(onInputChanged)

@@ -45,7 +45,7 @@ local function onRegisterHotbarSlotData(player, dataType, id, position)
             local equipmentSlotData = id
             local itemLocationView = equipmentSlotData.itemLocationView
 
-            local trueEquipmentSlot, trueEquipmentSlotData = manager_item.getTrueItemSlotData(player, equipmentSlotData, itemLocationView)
+            local trueEquipmentSlot, trueEquipmentSlotData = manager_item.getTrueItemSlotData(playerData, equipmentSlotData, itemLocationView)
             -- attach the hotbar information to the real item
             if trueEquipmentSlotData then
                 assert((itemLocationView == "inventory" or itemLocationView == "equipment"), "invalid item location view")

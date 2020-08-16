@@ -23,6 +23,8 @@ local settings
 local gameUi = script.Parent.gameUI
 local mode = script.Parent.mode
 
+module.priority = 9
+
 module.actions = actions
 module.menuScale = 1
 module.mode = mode
@@ -74,21 +76,17 @@ end
 function module.addAction(name, target, default, priority)
 	priority = priority or 5
 	local action = {["target"] = target; ["default"] = default; ["priority"] = priority;}
-
 	-- check for an existing binding
 	for input,actionName in pairs(keybinds) do
 		if name == actionName then
 			action["bindedTo"] = input
 			action["priority"] = priority
-
-			-- check for an inputObject
-			preferencesUpdated()
-
 			break
 		end
 	end
-
+	action["bindedTo"] = action["bindedTo"] or default
 	actions[name] = action
+	preferencesUpdated()
 end
 
 local add = module.addAction
