@@ -14,31 +14,31 @@ local currentTeleportUI
 local Player = game.Players.LocalPlayer
 
 spawn(function()
-	
+
 	local existingTeleportUI = teleService:GetArrivingTeleportGui()
 	if existingTeleportUI then
 		existingTeleportUI.Status.Text = "Arriving..."
-		
-		
+
+
 			repeat wait() until Player:FindFirstChild("PlayerGui")
 			existingTeleportUI.Parent = Player.PlayerGui
-		
-		
+
+
 			local replicatedStorage = game:GetService("ReplicatedStorage")
 				local modules = require(replicatedStorage.modules)
-					local network 	= modules.load("network")	
+					local network 	= modules.load("network")
 					local tween     = modules.load("tween")
-					
+
 			Player:WaitForChild("DataLoaded")
-					
+
 			tween(existingTeleportUI.Blackout,{"BackgroundTransparency"},1,1)
-			tween(existingTeleportUI.logo,{"ImageTransparency"},1,1)	
+			tween(existingTeleportUI.logo,{"ImageTransparency"},1,1)
 			tween(existingTeleportUI.Description,{"TextTransparency","TextStrokeTransparency"},1,1)
 			tween(existingTeleportUI.Destination,{"TextTransparency","TextStrokeTransparency"},1,1)
 			tween(existingTeleportUI.Status,{"TextTransparency","TextStrokeTransparency"},1,1)
 			wait(1)
 			existingTeleportUI:Destroy()
-		
+
 	end
 	game.ContentProvider:PreloadAsync({teleportUITemplate:WaitForChild("swoosh")})
 	game.ContentProvider:PreloadAsync({teleportUITemplate:WaitForChild("gradient")})
@@ -52,7 +52,7 @@ local modules = require(game.ReplicatedStorage:WaitForChild("modules"))
 	local network 	= modules.load("network")
 	local tween = modules.load("tween")
 	local utilities = modules.load("utilities")
-	
+
 network:create("clientRequestingTeleport","BindableEvent")
 network:create("forceSpawn","BindableEvent")
 
@@ -60,7 +60,7 @@ Player.CharacterAdded:Connect(function()
 	wait()
 	network:fire("forceSpawn")
 end)
-	
+
 
 
 teleService.TeleportInitFailed:connect(function(player, teleportResult, errorMessage)
@@ -78,7 +78,7 @@ end)
 local preppingTeleportUI
 
 local function prepTeleportUI(destination, teleportType)
-	
+
 	-- map to non-demo version and display that info
 	local placeIdMapping = utilities.placeIdMapping
 	for placeIdString, mappingId in pairs(placeIdMapping) do
@@ -87,13 +87,13 @@ local function prepTeleportUI(destination, teleportType)
 			break
 		end
 	end
-	
+
 	if preppingTeleportUI then
 		return false
 	end
-	
+
 	preppingTeleportUI = true
-	
+
 	if teleportType == "death" then
 		local teleportUI = teleportUITemplate_death:Clone()
 		teleportUI.Parent = Player.PlayerGui
@@ -109,48 +109,48 @@ local function prepTeleportUI(destination, teleportType)
 		end)
 		return teleportUI
 	end
-	
-	
-	
-	teleportUITemplate.Thumbnail.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=768&height=432&assetId="..destination		
+
+
+
+	teleportUITemplate.Thumbnail.Image = "https://www.roblox.com/Thumbs/Asset.ashx?width=768&height=432&assetId="..destination
 
 	local teleportUI = nil
-	
-	if not teleportUI then	
+
+	if not teleportUI then
 		teleportUI = teleportUITemplate:Clone()
 		currentTeleportUI = teleportUI
-		
+
 		teleportUI.Blackout.BackgroundTransparency = 0
 		teleportUI.Blackout.Position = UDim2.new(-1,0,0.5,0)
-		
-		
-		teleportUI.Thumbnail.ImageTransparency = 1	
+
+
+		teleportUI.Thumbnail.ImageTransparency = 1
 		teleportUI.gradient.ImageTransparency = 1
-		
-		
+
+
 		teleportUI.logo.ImageTransparency = 1
-		
+
 		teleportUI.swoosh:Play()
-		
-		
+
+
 		teleportUI.Description.TextTransparency = 1
 		teleportUI.Destination.TextTransparency = 1
 		teleportUI.Status.TextTransparency = 1
-		
-		
-		tween(teleportUI.Blackout,{"Position"},UDim2.new(0,0,0.5,0),0.3)			
+
+
+		tween(teleportUI.Blackout,{"Position"},UDim2.new(0,0,0.5,0),0.3)
 	end
-	
-	
+
+
 	teleportUI.Parent = Player.PlayerGui
 
-	
+
 	teleportUI.Enabled = true
-	
+
 	teleService:SetTeleportGui(teleportUITemplate)
-	
+
 	local runService = game:GetService("RunService")
-	
+
 	teleportUI.spinner.Visible = true
 	spawn(function()
 		while teleporting do
@@ -158,70 +158,70 @@ local function prepTeleportUI(destination, teleportType)
 			runService.RenderStepped:wait()
 		end
 	end)
-	
+
 	local preloadDone
 	local infoDone
-	
+
 	spawn(function()
 		teleportUI.Status.Text = "Loading..."
 		wait(0.3)
-		
+
 		tween(teleportUI.Status,{"TextTransparency"},0,0.5)
 	end)
-	
-	
-	
+
+
+
 	spawn(function()
 		game.ContentProvider:PreloadAsync({teleportUI.logo, teleportUI.Thumbnail})
 		preloadDone = true
 	end)
-	
+
 	local info
-	
+
 	spawn(function()
 		info = game.MarketplaceService:GetProductInfo(destination,Enum.InfoType.Asset	)
 		infoDone = true
 	end)
-	
+
 	local start = tick()
 	repeat wait() until preloadDone and infoDone or (tick() - start > 10)
-	
+
 	local dif = tick() - start
 	if dif < 0.3 then
 		wait(0.3 - dif)
 	end
-	
+
 	teleportUI.gradient.ImageTransparency = 0
 	teleportUI.Thumbnail.UIScale.Scale = 1
-	
-	
+
+
 	tween(teleportUI.logo,{"ImageTransparency"},0,0.7)
 	tween(teleportUI.Thumbnail,{"ImageTransparency"},0,1)
 	tween(teleportUI.Thumbnail.UIScale,{"Scale"}, 1.05, 1)
 	tween(teleportUI.Description,{"TextTransparency"},0,0.5)
 	tween(teleportUI.Destination,{"TextTransparency"},0,0.5)
-	
-	
-	
+
+
+
 	if info then
 		teleportUI.Destination.Text = info.Name
 		teleportUI.Description.Text = info.Description
 		teleportUI.Status.Text = "Preparing to travel..."
-		
+
 		teleportUITemplate.Destination.Text = info.Name
 		teleportUITemplate.Description.Text = info.Description
-		teleportUITemplate.Status.Text = "Traveling to location..."	
-		teleService:SetTeleportGui(teleportUITemplate)	
+		teleportUITemplate.Status.Text = "Traveling to location..."
+		teleService:SetTeleportGui(teleportUITemplate)
 	else
 		teleportUI.Status.Text = "Can't find travel info"
 		teleportUITemplate.Status.Text = "Can't find travel info"
-	end	
+	end
 	spawn(function()
 		wait(1)
 		preppingTeleportUI = false
 	end)
-	
-	
+
+
 	return teleportUI
 end
 
@@ -238,19 +238,19 @@ local function teleportTo(placeId)
 	end
 	if Player:FindFirstChild("JoinTime") then
 		teleService:SetTeleportSetting("joinTime",Player.JoinTime.Value)
-	end		
+	end
 
-	local teleportUI = prepTeleportUI(placeId)	
-	
+	local teleportUI = prepTeleportUI(placeId)
+
 	wait(0.5)
-	teleportUI.Status.Text = "Traveling to location..."				
+	teleportUI.Status.Text = "Traveling to location..."
 	wait(0.5)
 	teleportUI.Body.Position = UDim2.new(0,0,0,0)
 	teleportUI.Blackout.BackgroundTransparency = 0
-	
+
 	game.GuiService.SelectedObject = nil
-	
-	teleService:Teleport(placeId,nil,nil,teleportUI)	
+
+	teleService:Teleport(placeId,nil,nil,teleportUI)
 end
 
 network:create("teleportPlayerTo","BindableFunction","OnInvoke",teleportTo)
@@ -262,81 +262,81 @@ local function updateTeleportPart(teleportPart)
 		teleportPart.CanCollide = true
 		if not game.CollectionService:HasTag(teleportPart, "interact") then
 			game.CollectionService:AddTag(teleportPart, "interact")
-		end			
+		end
 	else
 		teleportPart.CanCollide = false
 		if game.CollectionService:HasTag(teleportPart, "interact") then
 			game.CollectionService:RemoveTag(teleportPart, "interact")
 		end
-	end	
+	end
 end
 
 local function prepDataForTeleport(destination)
-						
+
 	local teleportUI = prepTeleportUI(destination)
-	
+
 	local starttime = os.time()
-	
+
 	local analyticsSessionId
 	if Player:FindFirstChild("AnalyticsSessionId") then
 		analyticsSessionId = Player.AnalyticsSessionId.Value
 	end
-	
-	local joinTime 
+
+	local joinTime
 	if Player:FindFirstChild("JoinTime") then
 		joinTime = Player.JoinTime.Value
 	end
-	
+
 	local dataSlot = Player:FindFirstChild("dataSlot") and Player.dataSlot.Value or 1
-	
+
 	local TimeStamp = network:invokeServer("saveDataForTeleportation")
 	if TimeStamp then
-		
-			
+
+
 		if analyticsSessionId then
 			teleService:SetTeleportSetting("sessionId",analyticsSessionId)
 		end
-		
+
 		if joinTime then
 			teleService:SetTeleportSetting("joinTime",joinTime)
-		end							
-				
+		end
+
 		teleService:SetTeleportSetting("lastTimeStamp",TimeStamp)
-		teleService:SetTeleportSetting("arrivingTeleportId", game.PlaceId)					
-		
+		teleService:SetTeleportSetting("arrivingTeleportId", game.PlaceId)
+
 		teleService:SetTeleportSetting("dataSlot",dataSlot)
 
 		teleportUI.Status.Text = "Traveling to location..."
-		
+
 		local difference = os.time() - starttime
 		if difference <= 1 then
 			wait(1-difference)
-		end				
-		
+		end
+
 		teleportUI.Blackout.BackgroundTransparency = 0
-		
+
 		game.GuiService.SelectedObject = nil
-		
-		wait()	
+
+		wait()
 	end
-	
+
 	return TimeStamp, teleportUI
-	
-end	
+
+end
 
 local function externalTP(destination)
 	if Player:FindFirstChild("DataLoaded") == nil or Player:FindFirstChild("teleporting") or teleporting then
 		return false
-	end	
-	
+	end
+
 	teleporting = true
-	
+
 	local Timestamp, teleportUI = prepDataForTeleport(destination)
-	if Timestamp then					
+	if Timestamp then
 		teleService:Teleport(destination,nil,nil,teleportUI)
 	else
-		-- failed to save data, abort teleportation	
-	end	
+		-- failed to save data, abort teleportation
+	end
 end
 
 network:connect("externalTeleport", "OnClientEvent", externalTP)
@@ -344,7 +344,7 @@ network:connect("externalTeleport", "OnClientEvent", externalTP)
 
 network:create("localPrepareForTeleport", "BindableFunction", "OnInvoke", function(destination)
 	teleporting = true
-	
+
 	local teleportUI = prepTeleportUI(destination)
 end)
 
@@ -353,31 +353,31 @@ local function activate(teleportPart)
 	updateTeleportPart(teleportPart)
 
 	local destination = teleportPart:WaitForChild("teleportDestination").Value
-	
+
 	local db = false
-	
+
 	teleportPart.Touched:connect(function(hit)
 
 
-		
+
 		if Player:FindFirstChild("DataLoaded") == nil or Player:FindFirstChild("teleporting") then
 			return false
 		end
 		if Player.Character and hit == Player.Character.PrimaryPart and (Player.Character.PrimaryPart.Position - teleportPart.Position).magnitude < 50 then
-			
-			
+
+
 			if db then
 				return false
 			end
-			
+
 			local inParty = currentPartyInfo ~= nil
 			local isForced = teleportPart:FindFirstChild("forced") and teleportPart.forced.Value
-			
+
 			if inParty and (not isForced) then
 				network:fire("applyJoltVelocityToCharacter", teleportPart.CFrame.lookVector * 5)
 				return
 			end
-			
+
 			if not teleporting then
 				teleporting = true
 				local teleportUI = prepTeleportUI(destination)
@@ -387,7 +387,7 @@ local function activate(teleportPart)
 					teleportUI:Destroy()
 					teleporting = false
 				end
-			end		
+			end
 		end
 	end)
 end
@@ -413,23 +413,23 @@ local function getPartyLeaderUserId(partyInfo)
 		local player = member.player
 		if player and member.isLeader then
 			return player.userId
-		end 
+		end
 	end
 end
 
 local function updatePartyInfo(partyInfo)
-	
+
 	partyInfo = partyInfo or network:invokeServer("playerRequest_getMyPartyData")
 	currentPartyInfo = partyInfo
-	
+
 
 	for i,teleportPart in pairs(game.CollectionService:GetTagged("teleportPart")) do
 		updateTeleportPart(teleportPart)
 	end
-	
+
 	if partyInfo and partyInfo.teleportState == "teleporting" and not teleporting then
 		network:invoke("setCharacterArrested",true)
-		
+
 		local partyTeleportInfo = {party_guid = partyInfo.guid; partyLeaderUserId = getPartyLeaderUserId(partyInfo)}
 		teleService:SetTeleportSetting("partyInfo", partyTeleportInfo)
 
@@ -439,22 +439,22 @@ local function updatePartyInfo(partyInfo)
 
 
 		teleporting = true
-		
+
 		local teleportUI = prepTeleportUI(currentPartyInfo.teleportDestination)
-		
+
 		network:fireServer("signal_playerReadyToGroupTeleport")
 
 		--[[
 
 		local Timestamp, teleportUI = prepDataForTeleport(currentPartyInfo.teleportDestination)
-		if Timestamp then					
-		
-			
-			
+		if Timestamp then
+
+
+
 		else
-			-- failed to save data, abort teleportation	
+			-- failed to save data, abort teleportation
 		end
-		
+
 		]]
 
 	end
@@ -478,7 +478,7 @@ Player:WaitForChild("DataLoaded", 60)
 
 
 if sessionId and joinTime then
-	network:invokeServer("requestContinueSession",sessionId,joinTime)
+	--network:invokeServer("requestContinueSession",sessionId,joinTime)
 else
-	network:invokeServer("requestNewSession")
+	--network:invokeServer("requestNewSession")
 end
