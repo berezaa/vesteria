@@ -5,11 +5,11 @@ local module = {}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local network
+local placeSetup
 
 local shuttingDown = false
 
--- TODO: give this a value LOL
-local pvpZoneCollectionFolder = workspace.placeFolders.pvpZoneCollection
+local pvpZoneCollectionFolder
 
 local function isPlayerInPVPZone(pvpZone, player)
 	if not player or not player.Character or not player.Character.PrimaryPart then return false end
@@ -138,6 +138,9 @@ end
 
 function module.init(Modules)
 	network = Modules.network
+	placeSetup = Modules.placeSetup
+
+	pvpZoneCollectionFolder = placeSetup.getPlaceFolder("pvpZoneCollection")
 
 	network:create("requestPVPWhitelistPlayer_server", "BindableFunction", "OnInvoke", requestPVPWhitelistPlayer_server)
 	network:create("revokePVPWhitelistPlayer_server", "BindableFunction", "OnInvoke", revokePVPWhitelistPlayer_server)

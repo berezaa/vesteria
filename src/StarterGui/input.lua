@@ -55,6 +55,7 @@ local shortcuts = module.shortcuts
 
 local setupComplete
 
+local updateModeDisplay
 
 local function preferencesUpdated()
 	if setupComplete then
@@ -73,6 +74,35 @@ local function preferencesUpdated()
 	end
 end
 
+local function setup()
+
+	local userSettings = network:invoke("getCacheValueByNameTag", "userSettings")
+	keybinds = {}
+	if userSettings and userSettings.keybinds then
+		keybinds = userSettings.keybinds
+	end
+
+	for key,actionName in pairs(keybinds) do
+		local action = actions[actionName]
+		if action then
+			action.bindedTo = key
+		end
+	end
+
+	-- apply default keys (but don't override!)
+	for actionName,action in pairs(actions) do
+		local default = action.default
+		if default and (action["bindedTo"] == nil or action["bindedTo"] == default) and keybinds[default] == nil then
+			-- apply keybind (no need to ping the server)
+			keybinds[default] = actionName
+			action["bindedTo"] = default
+		end
+	end
+	setupComplete = true
+	preferencesUpdated()
+	updateModeDisplay()
+end
+
 function module.addAction(name, target, default, priority)
 	priority = priority or 5
 	local action = {["target"] = target; ["default"] = default; ["priority"] = priority;}
@@ -84,9 +114,10 @@ function module.addAction(name, target, default, priority)
 			break
 		end
 	end
-	action["bindedTo"] = action["bindedTo"] or default
 	actions[name] = action
-	preferencesUpdated()
+	if setupComplete then
+		setup()
+	end
 end
 
 local add = module.addAction
@@ -160,10 +191,6 @@ function module.setCurrentFocusFrame(focusFrame)
 		currentFocusFrame.Visible = false
 	end
 	currentFocusFrame = focusFrame
-end
-
-local function updateModeDisplay()
-
 end
 
 local buttonsFrame = gameUi.right.buttons
@@ -343,7 +370,6 @@ function module.init(Modules)
 		if mode.Value == "mobile" then
 			module.menuScale = 0.7
 			gameUi.leftBar.UIScale.Scale = 0.65
---			gameUi.leftBar.Position = UDim2.new(0, 5,1, -50)
 
 			gameUi.bottomRight.UIScale.Scale = 0.65
 			gameUi.bottomRight.Size = UDim2.new(1, 0,1.625, 0)
@@ -361,8 +387,6 @@ function module.init(Modules)
 
 			gameUi.leftBar.UIScale.Scale = 1
 			gameUi.leftBar.Size = UDim2.new(0, 100,1, -250)
----			gameUi.leftBar.Position = UDim2.new(0, 5,1, -110)
---			gameUi.leftBar.Position = UDim2.new(0, 5,1, -200)
 
 			gameUi.bottomRight.UIScale.Scale = 1
 			gameUi.bottomRight.Size = UDim2.new(1, 0, 1, 0)
@@ -454,34 +478,13 @@ function module.init(Modules)
 			end
 		end
 
-		local function setup()
-
-			local userSettings = network:invoke("getCacheValueByNameTag", "userSettings")
-			keybinds = {}
-			if userSettings and userSettings.keybinds then
-				keybinds = userSettings.keybinds
-			end
-
-			for key,actionName in pairs(keybinds) do
-				local action = actions[actionName]
-				if action then
-					action.bindedTo = key
-				end
-			end
-
-			-- apply default keys (but don't override!)
-			for actionName,action in pairs(actions) do
-				local default = action.default
-				if default and action["bindedTo"] == nil and keybinds[default] == nil then
-					-- apply keybind (no need to ping the server)
-					keybinds[default] = actionName
-					action["bindedTo"] = default
-				end
-			end
-			setupComplete = true
-			preferencesUpdated()
-			updateModeDisplay()
-		end
+		add("openEquipment",Modules.equipment.show,"Q",3)
+		add("openInventory",Modules.inventory.show,"E",3)
+		add("openAbilities",Modules.abilities.show,"R",3)
+		add("openSettings",Modules.settings.show,"G",3)
+		add("interact",Modules.interaction.interact,"C",4)
+		add("emote1",function() network:invoke("playerRequest_performEmote", "dance") end, "N", 7)
+		add("emote2",function() network:invoke("playerRequest_performEmote", "sit") end, "M", 7)
 
 		spawn(setup)
 
@@ -490,20 +493,6 @@ function module.init(Modules)
 		-- add hard-coded actions
 
 
-		add("openEquipment",Modules.equipment.show,"Q",3)
-		add("openInventory",Modules.inventory.show,"E",3)
-		add("openAbilities",Modules.abilities.show,"R",3)
-		add("openSettings",Modules.settings.show,"G",3)
-
-	--	add("openQuestLog",Modules.questLog.open,"L",3)
-	--	add("openMonsterBook",Modules.monsterBook.open,"B",3)
-	--	add("openGuild",Modules.guild.open,"P",3)
-		add("interact",Modules.interaction.interact,"C",4)
-	--	add("cameraLock",function() network:invoke("toggleCameraLock") end, "Tab", 4)
-		add("emote1",function() network:invoke("playerRequest_performEmote", "dance") end, "N", 7)
-		add("emote2",function() network:invoke("playerRequest_performEmote", "sit") end, "M", 7)
-
-		--add("defaultPoint",function() network:invoke("playerRequest_performEmote", "point") end, "P", 7)
 
 
 
@@ -518,7 +507,6 @@ function module.init(Modules)
 			end
 
 			if mode.Value ~= "mobile" then
-	--			network:invoke("setMobileMovementDirection", nil)
 				network:fire("mobileMovementDirectionChanged", nil)
 				network:fire("mobileCameraRotationChanged", nil)
 			end
@@ -553,11 +541,9 @@ function module.init(Modules)
 								difference = difference.unit * 35
 							end
 							touchJoystick.stick.Position = UDim2.new(0.5, difference.X, 0.5, difference.Y)
-	--						network:invoke("setMobileMovementDirection", difference.unit)
 							network:fire("mobileMovementDirectionChanged", difference.unit)
 							RunService.RenderStepped:wait()
 						end
-	--					network:invoke("setMobileMovementDirection", Vector2.new())
 						network:fire("mobileMovementDirectionChanged", nil)
 						control.doSprint(false)
 						touchJoystickActive = false
@@ -623,13 +609,11 @@ function module.init(Modules)
 						elseif input.KeyCode == Enum.KeyCode.ButtonY then
 							if game.GuiService.SelectedObject and game.GuiService.SelectedObject:FindFirstChild("bindable") then
 							else
-	--							Modules.playerMenu.open()
 							end
 
 						elseif input.KeyCode == Enum.KeyCode.ButtonSelect then
 							Modules.settings.open()
-	--					elseif input.KeyCode == Enum.KeyCode.DPadRight then
-	--						Modules.skillBooks.open()
+
 						elseif input.KeyCode == Enum.KeyCode.ButtonL2 then
 							Modules.hotbarHandler.captureFocus()
 						end

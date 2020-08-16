@@ -2126,11 +2126,7 @@ local function registerTeleportAsSpawn(Child)
 	end
 end
 
-for i,Child in pairs(game.CollectionService:GetTagged("teleportPart")) do
-	registerTeleportAsSpawn(Child)
-end
 
-game.CollectionService:GetInstanceAddedSignal("teleportPart"):Connect(registerTeleportAsSpawn)
 
 spawnPoints.Parent = game.ReplicatedStorage
 -- end spawn point logic
@@ -3934,6 +3930,12 @@ function module.init(Modules)
 	detection = Modules.detection
 	projectile = Modules.projectile
 	tween = Modules.tween
+
+	for _, Child in pairs(game.CollectionService:GetTagged("teleportPart")) do
+		registerTeleportAsSpawn(Child)
+	end
+
+	game.CollectionService:GetInstanceAddedSignal("teleportPart"):Connect(registerTeleportAsSpawn)
 
 	entityManifestCollectionFolder = placeSetup.getPlaceFolder("entityManifestCollection")
 	temporaryEquipmentFolder = placeSetup.getPlaceFolder("temporaryEquipment")
