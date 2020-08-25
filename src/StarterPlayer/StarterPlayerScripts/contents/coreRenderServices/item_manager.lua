@@ -6,6 +6,7 @@ local modules = require(replicatedStorage:WaitForChild("modules"))
 local detection = modules.load("detection")
 local network = modules.load("network")
 local mapping = modules.load("mapping")
+local configuration = modules.load("configuration")
 
 local itemDataLookup = require(replicatedStorage.itemData)
 local itemLookup = replicatedStorage.assets.items
@@ -423,7 +424,13 @@ function item_manager.iterateThroughappearanceData(appearanceData,renderCharacte
             end
 
             if isBowEquipped then
-                bow_manager.int__updateRenderCharacter(renderCharacter,inventoryCountLookup,equipmentSlotData,configuration,itemLookup)
+                bow_manager.int__updateRenderCharacter(
+					renderCharacter,
+					inventoryCountLookup,
+					equipmentSlotData,
+					configuration,
+					itemLookup
+				)
             end
         end
     end
