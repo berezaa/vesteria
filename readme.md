@@ -1,4 +1,5 @@
 Copyright (c) 2020, Vesteria, Inc.
+<br>
 Provided for public use in educational, recreational or commercial purposes under the Apache 2 License.
 
 <div align="center">
