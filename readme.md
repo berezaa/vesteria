@@ -6,7 +6,7 @@
 
 Vesteria is a fantasy MMORPG on Roblox- originally founded by berezaa, sk3let0n and Polymorphic in the Roblox Incubator program.
 
-In early 2020, Vesteria shut down and the team underwent a huge effort to convert the game to support Rojo and VSCode. Multiple global refactors followed, hackily attempting to salvage the game's codebase. Simulatnously, the game went through a signifcant creative overhaul to simplify and refine the gameplay in an attempt to return to our roots. While the project was never completed and the game has reverted back to the original branch, there is value to be found in sharing the lessons we learned with the public. 
+In early 2020, Vesteria shut down and the team underwent a huge effort to convert the game to support Rojo and VSCode. Multiple global refactors followed, hackily attempting to salvage the game's codebase. Simulatnously, the game went through a signifcant creative overhaul to simplify and refine the gameplay in an attempt to return to our roots. While the project was never completed and the game has reverted back to the original version, there is still great value to be found in sharing the lessons we learned with the public. 
 
 ## Play Vesteria 
 https://www.roblox.com/games/2376885433/Vesteria/
